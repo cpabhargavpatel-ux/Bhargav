@@ -54,7 +54,7 @@ if (-not $cmd) { Msg "Could not find how to start the app in:`n$AppFolder"; exit
 $env:BROWSER = 'none'
 $Log = Join-Path $PSScriptRoot 'goal-app.log'
 "Command: $cmd`r`nFolder:  $AppFolder`r`nNode:    $((Get-Command node).Source)`r`n---" | Set-Content $Log
-$p = Start-Process cmd.exe -ArgumentList "/c $cmd >> `\"$Log`\" 2>&1" -WorkingDirectory $AppFolder -WindowStyle Hidden -PassThru
+$p = Start-Process cmd.exe -ArgumentList "/c $cmd >> `"$Log`" 2>&1" -WorkingDirectory $AppFolder -WindowStyle Hidden -PassThru
 $p.Id | Set-Content $PidFile
 
 # Auto-detect the port the server (or its children) starts listening on.
