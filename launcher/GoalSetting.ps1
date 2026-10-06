@@ -32,6 +32,10 @@ if (-not $cmd) {
     $pkg = Get-Content "$AppFolder\package.json" -Raw | ConvertFrom-Json
     if ($pkg.scripts.start) { $cmd = 'npm start' } elseif ($pkg.scripts.dev) { $cmd = 'npm run dev' } else { $cmd = 'node server.js' }
   } else {
+    foreach ($f in 'server.mjs','server.js','app.mjs','app.js','index.mjs','index.js') {
+      if (Test-Path "$AppFolder\$f") { $cmd = "node $f"; break } }
+  }
+  if (-not $cmd) {
     foreach ($f in 'app.py','server.py','main.py','manage.py') {
       if (Test-Path "$AppFolder\$f") { $cmd = if ($f -eq 'manage.py') { 'python manage.py runserver' } else { "python $f" }; break } }
   }
