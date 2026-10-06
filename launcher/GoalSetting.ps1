@@ -39,10 +39,10 @@ if (-not $cmd) {
 $page = ''
 if (-not $cmd) {
   # Plain HTML app: serve it with the built-in static server (no install needed).
-  $home = @('login.html','index.html','app.html') | Where-Object { Test-Path "$AppFolder\$_" } | Select-Object -First 1
-  if ($home) {
-    $page = $home
-    $cmd = "powershell -NoProfile -ExecutionPolicy Bypass -File `"$PSScriptRoot\StaticServer.ps1`" -Root `"$AppFolder`" -Port 8123 -Home $home"
+  $startPage = @('login.html','index.html','app.html') | Where-Object { Test-Path "$AppFolder\$_" } | Select-Object -First 1
+  if ($startPage) {
+    $page = $startPage
+    $cmd = "powershell -NoProfile -ExecutionPolicy Bypass -File `"$PSScriptRoot\StaticServer.ps1`" -Root `"$AppFolder`" -Port 8123 -StartPage $startPage"
   }
 }
 if (-not $cmd) { Msg "Could not find how to start the app in:`n$AppFolder"; exit }

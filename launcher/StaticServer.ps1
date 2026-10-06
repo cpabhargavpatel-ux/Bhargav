@@ -1,4 +1,4 @@
-param([string]$Root, [int]$Port = 8123, [string]$Home = 'login.html')
+param([string]$Root, [int]$Port = 8123, [string]$StartPage = 'login.html')
 $ErrorActionPreference = 'Continue'
 $mime = @{ '.html'='text/html'; '.htm'='text/html'; '.js'='application/javascript'; '.css'='text/css'; '.json'='application/json';
   '.png'='image/png'; '.jpg'='image/jpeg'; '.jpeg'='image/jpeg'; '.gif'='image/gif'; '.svg'='image/svg+xml'; '.ico'='image/x-icon';
@@ -11,7 +11,7 @@ while ($l.IsListening) {
   $ctx = $l.GetContext()
   try {
     $rel = [Uri]::UnescapeDataString($ctx.Request.Url.AbsolutePath.TrimStart('/'))
-    if (-not $rel) { $rel = $Home }
+    if (-not $rel) { $rel = $StartPage }
     $file = [System.IO.Path]::GetFullPath((Join-Path $rootFull $rel))
     if ($file.StartsWith($rootFull) -and (Test-Path $file -PathType Leaf)) {
       $bytes = [System.IO.File]::ReadAllBytes($file)
