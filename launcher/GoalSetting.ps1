@@ -52,7 +52,9 @@ if (-not $cmd) {
 if (-not $cmd) { Msg "Could not find how to start the app in:`n$AppFolder"; exit }
 
 $env:BROWSER = 'none'
-$p = Start-Process cmd.exe -ArgumentList "/c $cmd > goal-app.log 2>&1" -WorkingDirectory $AppFolder -WindowStyle Hidden -PassThru
+$Log = Join-Path $PSScriptRoot 'goal-app.log'
+"Command: $cmd`r`nFolder:  $AppFolder`r`nNode:    $((Get-Command node).Source)`r`n---" | Set-Content $Log
+$p = Start-Process cmd.exe -ArgumentList "/c $cmd >> `\"$Log`\" 2>&1" -WorkingDirectory $AppFolder -WindowStyle Hidden -PassThru
 $p.Id | Set-Content $PidFile
 
 # Auto-detect the port the server (or its children) starts listening on.
@@ -63,7 +65,7 @@ for ($i = 0; $i -lt 90 -and -not $port; $i++) {
   $c = Get-NetTCPConnection -State Listen | Where-Object { $ids -contains $_.OwningProcess } | Sort-Object LocalPort | Select-Object -First 1
   if ($c) { $port = $c.LocalPort }
 }
-if (-not $port) { Msg "Server did not start. See goal-app.log in:`n$AppFolder"; exit }
+if (-not $port) { Start-Process notepad.exe $Log; Msg "Server did not start. The log is open in Notepad (also saved at $Log). Please send me its contents."; exit }
 $port | Set-Content $PortFile
 $u = "http://localhost:$port/$page"
 for ($i = 0; $i -lt 20 -and -not (Test-Url $u); $i++) { Start-Sleep -Milliseconds 500 }
