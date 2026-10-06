@@ -36,6 +36,15 @@ if (-not $cmd) {
       if (Test-Path "$AppFolder\$f") { $cmd = if ($f -eq 'manage.py') { 'python manage.py runserver' } else { "python $f" }; break } }
   }
 }
+$page = ''
+if (-not $cmd) {
+  # Plain HTML app: serve it with the built-in static server (no install needed).
+  $home = @('login.html','index.html','app.html') | Where-Object { Test-Path "$AppFolder\$_" } | Select-Object -First 1
+  if ($home) {
+    $page = $home
+    $cmd = "powershell -NoProfile -ExecutionPolicy Bypass -File `"$PSScriptRoot\StaticServer.ps1`" -Root `"$AppFolder`" -Port 8123 -Home $home"
+  }
+}
 if (-not $cmd) { Msg "Could not find how to start the app in:`n$AppFolder"; exit }
 
 $env:BROWSER = 'none'
@@ -52,6 +61,6 @@ for ($i = 0; $i -lt 90 -and -not $port; $i++) {
 }
 if (-not $port) { Msg "Server did not start. See goal-app.log in:`n$AppFolder"; exit }
 $port | Set-Content $PortFile
-$u = "http://localhost:$port/"
+$u = "http://localhost:$port/$page"
 for ($i = 0; $i -lt 20 -and -not (Test-Url $u); $i++) { Start-Sleep -Milliseconds 500 }
 Start-Process $u
