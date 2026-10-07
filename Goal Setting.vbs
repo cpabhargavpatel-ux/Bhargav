@@ -45,5 +45,4 @@ If Not IsUp() Then
   End If
 End If
 
-' Open with this PC's name (same address other people on the network use).
-sh.Run "http://" & LCase(sh.ExpandEnvironmentStrings("%COMPUTERNAME%")) & ":" & port & "/"
+sh.Run url
