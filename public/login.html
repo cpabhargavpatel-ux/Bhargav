@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in — Goal Setting to the Now</title>
+<style>
+  :root{ --brand:#0f3057; --accent:#c98a1b; --ink:#1c2733; --muted:#5c6b7a; --line:#dde3ea; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--brand);color:var(--ink);
+    font:15px/1.55 "Segoe UI",system-ui,sans-serif;
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .card{background:#fff;border-radius:14px;box-shadow:0 14px 50px rgba(5,15,28,.45);
+    width:min(400px,94vw);padding:28px 30px}
+  h1{margin:0;font-size:19px;color:var(--brand)}
+  .sub{font-size:12.5px;color:var(--muted);margin:4px 0 18px}
+  .tabs{display:flex;gap:6px;margin-bottom:16px}
+  .tabs button{flex:1;border:1px solid var(--line);background:#f4f6f8;border-radius:8px;
+    padding:8px;font:inherit;font-size:13.5px;cursor:pointer}
+  .tabs button.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+  label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:12px 0 4px}
+  input{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 11px;font:inherit}
+  input:focus{outline:2px solid #2f6fb2}
+  .rem{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--muted)}
+  .rem input{width:16px;height:16px;accent-color:var(--brand)}
+  .go{width:100%;margin-top:18px;background:var(--accent);border:none;border-radius:8px;
+    padding:11px;font:inherit;font-size:15px;font-weight:700;color:#20180a;cursor:pointer}
+  .go:hover{filter:brightness(1.06)}
+  .msg{margin-top:14px;font-size:13.5px;border-radius:8px;padding:10px 12px;display:none}
+  .msg.err{display:block;background:#fdecea;color:#8c2f0d}
+  .msg.ok{display:block;background:#e3f3ea;color:#1e7a46}
+  .first{font-size:12px;color:var(--muted);margin-top:16px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Goal Setting to the Now</h1>
+  <div class="sub">The ONE Thing &mdash; your goals, on this server, private to your account.</div>
+  <div class="tabs">
+    <button id="tabIn" class="on">Sign in</button>
+    <button id="tabUp">Create account</button>
+  </div>
+
+  <div id="fUp" style="display:none">
+    <label>Your name</label>
+    <input id="upName" maxlength="60" autocomplete="name">
+  </div>
+  <label>Username</label>
+  <input id="user" maxlength="32" autocomplete="username" autofocus>
+  <label>Password</label>
+  <input id="pass" type="password" maxlength="128" autocomplete="current-password">
+  <div class="rem" id="remRow"><input type="checkbox" id="rem"><label for="rem" style="margin:0;font-weight:400">Keep me signed in on this device (30 days)</label></div>
+
+  <button class="go" id="go">Sign in</button>
+  <div class="msg" id="msg"></div>
+  <div class="first">First account on a fresh server becomes the <b>administrator</b>.
+  Passwords need at least 10 characters.</div>
+</div>
+
+<script>
+"use strict";
+let mode = "in";
+const $ = s => document.querySelector(s);
+function setMode(m){
+  mode = m;
+  $("#tabIn").classList.toggle("on", m==="in");
+  $("#tabUp").classList.toggle("on", m==="up");
+  $("#fUp").style.display = m==="up" ? "" : "none";
+  $("#remRow").style.display = m==="in" ? "" : "none";
+  $("#go").textContent = m==="in" ? "Sign in" : "Create account";
+  msg("", "");
+}
+$("#tabIn").onclick = () => setMode("in");
+$("#tabUp").onclick = () => setMode("up");
+function msg(t, cls){ const m = $("#msg"); m.textContent = t; m.className = "msg" + (cls ? " "+cls : ""); }
+
+async function go(){
+  const username = $("#user").value.trim(), password = $("#pass").value;
+  if (!username || !password){ msg("Enter a username and password.", "err"); return; }
+  $("#go").disabled = true;
+  try{
+    if (mode === "up"){
+      const r = await fetch("/api/signup", { method:"POST", headers:{"content-type":"application/json"},
+        body: JSON.stringify({ username, password, displayName: $("#upName").value.trim() }) });
+      const j = await r.json();
+      if (!r.ok){ msg(j.error || "Could not create the account.", "err"); return; }
+      if (j.accountStatus !== "active"){ msg(j.message, "ok"); return; }
+      msg(j.message + " Signing you in…", "ok");
+    }
+    const r2 = await fetch("/api/login", { method:"POST", headers:{"content-type":"application/json"},
+      body: JSON.stringify({ username, password, remember: $("#rem").checked }) });
+    const j2 = await r2.json();
+    if (!r2.ok){ msg(j2.error || "Sign-in failed.", "err"); return; }
+    location.href = "/";
+  }catch(e){ msg("Could not reach the server.", "err"); }
+  finally{ $("#go").disabled = false; }
+}
+$("#go").onclick = go;
+document.addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+</script>
+</body>
+</html>

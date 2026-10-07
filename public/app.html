@@ -1,0 +1,2066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goal Setting to the Now</title>
+<style>
+  :root{
+    --bg:#f4f5f7; --card:#ffffff; --ink:#1c2733; --muted:#5c6b7a; --line:#dde3ea;
+    --brand:#0f3057; --brand-ink:#ffffff; --accent:#c98a1b; --accent-soft:#fdf3df;
+    --good:#1e7a46; --good-soft:#e3f3ea; --warn:#a05a00; --warn-soft:#fff3e0;
+    --now:#8c2f0d; --now-soft:#fdece4; --focus:#2f6fb2; --sketch:#d4705f; --sketch-soft:#f0c9bf;
+    --radius:12px; --shadow:0 1px 2px rgba(16,32,48,.10), 0 10px 26px rgba(16,32,48,.13);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:linear-gradient(135deg,#eef2f7 0%,#e7edf5 45%,#f2ece2 100%) fixed;color:var(--ink);
+    font:15px/1.55 "Segoe UI",system-ui,-apple-system,sans-serif}
+  /* depth: cards are lifted gradient surfaces, inputs are inset */
+  .card,.tool-card,.today,aside .panel{background-image:linear-gradient(180deg,#ffffff,#f5f8fb)}
+  .ctl,.card textarea,#wkBody textarea,.wz-body textarea,.nm-body input{box-shadow:inset 0 1.5px 3px rgba(16,32,48,.09)}
+  .chip{box-shadow:inset 0 1px 0 rgba(255,255,255,.65), 0 1px 2px rgba(16,32,48,.10)}
+  .btn{background:linear-gradient(180deg,#ffffff,#edf1f6);box-shadow:0 1.5px 3px rgba(16,32,48,.16), inset 0 1px 0 #fff}
+  .btn:active,.views button:active,.hd-actions button:active,.btn-done:active{transform:translateY(1px)}
+  .btn.brand{background:linear-gradient(160deg,#1a4c82,#0f3057);box-shadow:0 3px 9px rgba(15,48,87,.35), inset 0 1px 0 rgba(255,255,255,.22)}
+  .btn.good{background:linear-gradient(160deg,#27955a,#1e7a46);box-shadow:0 3px 9px rgba(30,122,70,.35), inset 0 1px 0 rgba(255,255,255,.28)}
+  button{font:inherit;cursor:pointer}
+  textarea,input,select{font:inherit;color:inherit}
+
+  /* ---------- header ---------- */
+  header{background:linear-gradient(140deg,#0b2341,#15406f 55%,#1d568f);color:var(--brand-ink);padding:14px 22px 0;
+    position:sticky;top:0;z-index:20;box-shadow:0 2px 6px rgba(8,22,40,.3), 0 12px 32px rgba(8,22,40,.22)}
+  .hd-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .hd-top h1{margin:0;flex:1 1 100%;
+    font-family:Georgia,"Times New Roman",serif;font-style:italic;
+    font-size:21px;font-weight:700;letter-spacing:.2px;line-height:1.35;
+    background:linear-gradient(95deg,#ffd44f 10%,#ffb45e 55%,#ff8f73 95%);
+    -webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;
+    text-shadow:0 2px 10px rgba(255,180,80,.18)}
+  .hd-top h1 .one{font-style:normal;
+    -webkit-text-fill-color:#ffffff;text-shadow:0 0 12px rgba(255,220,130,.6);
+    animation:onePulse 1.5s ease-in-out infinite}
+  @keyframes onePulse{
+    0%,100%{ -webkit-text-fill-color:#fff8e7;
+      text-shadow:0 0 5px rgba(255,220,130,.3) }
+    50%{ -webkit-text-fill-color:#ffd44f;
+      text-shadow:0 0 18px rgba(255,210,100,1), 0 0 36px rgba(255,170,70,.65) }
+  }
+  @media (prefers-reduced-motion: reduce){ .hd-top h1 .one{animation:none} }
+  .hd-top .sub{opacity:.75;font-size:12.5px}
+  .hd-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .hd-actions button{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.28);
+    border-radius:7px;padding:5px 12px;font-size:13px}
+  .hd-actions button:hover{background:rgba(255,255,255,.22)}
+  .hd-actions button.primary{background:linear-gradient(160deg,#e5a930,#c98a1b);border-color:#c98a1b;color:#20180a;font-weight:600;
+    box-shadow:0 3px 9px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.4)}
+  .hd-actions button.primary:hover{filter:brightness(1.06)}
+  .tabs{display:flex;gap:4px;margin-top:12px;flex-wrap:wrap}
+  .tabs button{background:transparent;color:rgba(255,255,255,.75);border:none;
+    border-radius:8px 8px 0 0;padding:8px 16px;font-size:14px;border-bottom:3px solid transparent}
+  .tabs button.on{background:#eef2f7;color:var(--ink);font-weight:600;box-shadow:0 -2px 5px rgba(8,22,40,.18)}
+  .tabs button:not(.on):hover{background:rgba(255,255,255,.10);color:#fff}
+  .tabs button.add{font-weight:700;padding:8px 12px}
+
+  /* ---------- layout ---------- */
+  main{max-width:1180px;margin:0 auto;padding:20px 22px 60px;
+    display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px}
+  @media(max-width:980px){main{grid-template-columns:1fr}}
+
+  /* ---------- mantra: the chain as one sentence ---------- */
+  .mantra{grid-column:1/-1;background:linear-gradient(145deg,#143d6b,#0c2747 60%,#0a1f38);color:#f4ede0;border-radius:var(--radius);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.15), 0 12px 32px rgba(8,22,40,.35);padding:18px 22px;position:relative}
+  .mantra .kicker{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+    color:#d9b465;margin-bottom:6px}
+  .mantra .sentence{font-family:Georgia,"Times New Roman",serif;font-size:17.5px;line-height:1.7}
+  .mantra .lead{color:#e8c065;font-weight:700;font-family:"Segoe UI",system-ui,sans-serif;
+    font-size:13px;letter-spacing:.4px;text-transform:uppercase;margin-right:4px}
+  .mantra .sep{opacity:.45;margin:0 6px}
+  .mantra .empty-note{color:#c7d2dd}
+  .mantra .copy{position:absolute;top:12px;right:14px;background:rgba(255,255,255,.12);
+    color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:3px 10px;font-size:12px}
+  .mantra .copy:hover{background:rgba(255,255,255,.22)}
+
+  /* ---------- storage warning ---------- */
+  #storeWarn{display:none;background:#7a1f1f;color:#fff;font-size:13px;padding:7px 22px}
+  #storeWarn.on{display:block}
+
+  /* ---------- name dialog ---------- */
+  .nm-body{padding:18px 20px}
+  .nm-body h3{margin:0 0 10px;font-size:15px}
+  .nm-body input{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:15px}
+  .nm-body input:focus{outline:2px solid var(--focus)}
+
+  /* ---------- today banner ---------- */
+  .today{grid-column:1/-1;background:var(--card);border:1px solid var(--line);
+    border-left:5px solid var(--accent);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:16px 20px}
+  .today .kicker{font-size:11.5px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;color:var(--warn)}
+  .today .rows{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px}
+  @media(max-width:760px){.today .rows{grid-template-columns:1fr}}
+  .today .slot{border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:#fbfcfd}
+  .today .slot.now{background:var(--now-soft);border-color:#eccdb9}
+  .today .slot h3{margin:0 0 4px;font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+  .today .slot .txt{font-size:16.5px;font-weight:600;min-height:24px;white-space:pre-wrap}
+  .today .slot .txt.empty{color:var(--muted);font-weight:400;font-style:italic}
+  .today .slot .foot{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
+  .today .slot .foot .meta{font-size:12px;color:var(--muted)}
+  .btn-done{background:linear-gradient(160deg,#27955a,#1e7a46);color:#fff;border:none;border-radius:7px;padding:5px 14px;font-size:13px;font-weight:600;
+    box-shadow:0 3px 8px rgba(30,122,70,.35), inset 0 1px 0 rgba(255,255,255,.28)}
+  .btn-done:hover{filter:brightness(1.08)}
+  .btn-done[disabled]{background:var(--good-soft);color:var(--good);cursor:default}
+
+  /* ---------- chain ---------- */
+  .chain{display:flex;flex-direction:column}
+  /* the cascade IS the structure, exactly like the Backward Map (his pick):
+     each level's card nests inside the level it comes from, stepping right,
+     and a fixed elbow with a filled head branches from the parent's
+     underside into the child's title. */
+  .c-step{position:relative}
+  .c-step .c-step{margin-left:30px}
+  .c-step > .elbow{position:absolute;left:-31px;top:8px;margin:0;pointer-events:none}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:14px 18px;margin-bottom:14px}
+  .c-step.lv-now > .card{border-left:5px solid var(--now)}
+  .card .top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .card .lvl{font-size:13px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--brand)}
+  .c-step.lv-now > .card .lvl{color:var(--now)}
+  .card .q{font-size:13px;color:var(--muted);font-style:italic;margin:2px 0 8px}
+  .chip{font-size:11.5px;font-weight:600;border-radius:20px;padding:2px 10px;white-space:nowrap}
+  .chip.fresh{background:var(--good-soft);color:var(--good)}
+  .chip.stale{background:var(--warn-soft);color:var(--warn)}
+  .chip.unset{background:#eef1f4;color:var(--muted)}
+  .card textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:#fbfcfd;
+    padding:9px 11px;min-height:44px;resize:vertical;font-size:15.5px;line-height:1.5}
+  .card textarea:focus{outline:2px solid var(--focus);outline-offset:1px;background:#fff}
+  .card .meta{font-size:12px;color:var(--muted);margin-top:6px;display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+  .card .meta button{background:none;border:none;color:var(--focus);padding:0;font-size:12px;text-decoration:underline}
+
+  /* ---------- side panel ---------- */
+  aside .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:14px 16px;margin-bottom:16px}
+  aside h2{margin:0 0 8px;font-size:13px;letter-spacing:.7px;text-transform:uppercase;color:var(--brand)}
+  .hist{list-style:none;margin:0;padding:0;max-height:480px;overflow:auto}
+  .hist li{padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .hist li:last-child{border-bottom:none}
+  .hist .when{color:var(--muted);font-size:11.5px}
+  .hist .tag{font-weight:700;font-size:11px;letter-spacing:.5px;text-transform:uppercase;margin-right:6px}
+  .hist .tag.done{color:var(--good)} .hist .tag.set{color:var(--focus)}
+  .empty-note{color:var(--muted);font-size:13px;font-style:italic}
+  .method p{font-size:13px;color:var(--muted);margin:6px 0}
+  .method b{color:var(--ink)}
+
+  /* ---------- wizard ---------- */
+  dialog{border:none;border-radius:12px;box-shadow:0 12px 44px rgba(10,25,40,.35);
+    padding:0;width:min(620px,92vw)}
+  dialog::backdrop{background:rgba(12,24,36,.55)}
+  .wz-head{background:var(--brand);color:#fff;padding:14px 20px;border-radius:12px 12px 0 0;
+    display:flex;justify-content:space-between;align-items:center}
+  .wz-head h2{margin:0;font-size:15px}
+  .wz-head .n{font-size:12.5px;opacity:.8}
+  .wz-body{padding:18px 20px}
+  .wz-ctx{background:var(--accent-soft);border:1px solid #eeddb5;border-radius:8px;
+    padding:10px 12px;font-size:13.5px;margin-bottom:12px}
+  .wz-ctx .lbl{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--warn)}
+  .wz-q{font-size:16px;font-weight:600;margin:0 0 10px}
+  .wz-body textarea{width:100%;min-height:84px;border:1px solid var(--line);border-radius:8px;
+    padding:10px 12px;font-size:15.5px;resize:vertical}
+  .wz-body textarea:focus{outline:2px solid var(--focus)}
+  .wz-foot{display:flex;justify-content:space-between;padding:0 20px 18px;gap:10px}
+  .wz-foot .grp{display:flex;gap:8px}
+  .wz-foot button{border-radius:7px;padding:7px 16px;font-size:13.5px;border:1px solid var(--line);background:#fff}
+  .wz-foot button.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+  .wz-foot button:hover{filter:brightness(.97)}
+
+  /* ---------- view switcher ---------- */
+  .views{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .views button{background:rgba(255,255,255,.10);color:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.22);
+    border-radius:20px;padding:4px 14px;font-size:12.5px}
+  .views button.on{border:none;color:#fff;font-weight:600;
+    box-shadow:0 3px 7px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.28)}
+  /* each tab wears its own color when active */
+  .views button:nth-child(1).on{background:linear-gradient(160deg,#e0a52e,#b47a12);color:#1c1405}
+  .views button:nth-child(2).on{background:linear-gradient(160deg,#e08a76,#c05f4e)}
+  .views button:nth-child(3).on{background:linear-gradient(160deg,#c04b59,#8c2433)}
+  .views button:nth-child(4).on{background:linear-gradient(160deg,#27955a,#135c33)}
+  .views button:nth-child(5).on{background:linear-gradient(160deg,#8a6cba,#5d4584)}
+  .views button:nth-child(6).on{background:linear-gradient(160deg,#3a80c7,#1f4f86)}
+  .views button:nth-child(7).on{background:linear-gradient(160deg,#b56a0a,#7e4600)}
+  .views button:nth-child(8).on{background:linear-gradient(160deg,#148aa8,#0a5568)}
+  .views button:nth-child(9).on{background:linear-gradient(160deg,#6b7b8b,#44525f)}
+  .views button:nth-child(10).on{background:linear-gradient(160deg,#1c9148,#0f5f2d)}
+  .views button:nth-child(11).on{background:linear-gradient(160deg,#d3511a,#9a3109)}
+  .views button:not(.on):hover{background:rgba(255,255,255,.2)}
+
+  /* ---------- tool views ---------- */
+  .wide{grid-column:1/-1}
+  .tools-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+  .tool-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:16px 18px}
+  .tool-card h2{margin:0 0 2px;font-size:14px;letter-spacing:.6px;text-transform:uppercase;color:var(--brand)}
+  .tool-card .why{font-size:12.5px;color:var(--muted);font-style:italic;margin:0 0 10px}
+  .tool-card label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:8px 0 3px}
+  .ctl{border:1px solid var(--line);border-radius:7px;padding:6px 9px;background:#fbfcfd;font-size:14px}
+  .ctl:focus{outline:2px solid var(--focus)}
+  .tool-card textarea.ctl{width:100%;resize:vertical;min-height:40px}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:7px;padding:6px 14px;font-size:13px}
+  .btn:hover{filter:brightness(.97)}
+  .btn.brand{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+  .btn.good{background:var(--good);border-color:var(--good);color:#fff;font-weight:600}
+  .btn.good[disabled]{background:var(--good-soft);color:var(--good);cursor:default}
+  .statline{font-size:12.5px;color:var(--muted);margin-top:8px}
+  .statline b{color:var(--ink)}
+
+  /* ---------- 66-day grid ---------- */
+  .c66{display:grid;grid-template-columns:repeat(11,26px);gap:5px;margin:10px 0}
+  .c66 .cell{width:26px;height:26px;border-radius:5px;background:#e8edf2;border:1px solid var(--line);
+    cursor:pointer;font-size:9.5px;color:var(--muted);display:flex;align-items:center;justify-content:center;user-select:none}
+  .c66 .cell.done{background:var(--good);color:#fff;border-color:var(--good)}
+  .c66 .cell.today{outline:2px solid var(--accent);outline-offset:1px}
+  .c66 .cell.future{opacity:.4;cursor:default}
+  .ch-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .ch-head .habit{font-size:15.5px;font-weight:600}
+  .ch-done-banner{background:var(--good-soft);color:var(--good);border-radius:8px;padding:8px 12px;
+    font-weight:600;font-size:13.5px;margin-top:8px}
+
+  /* ---------- success list ---------- */
+  .sl-item{display:flex;align-items:center;gap:9px;padding:7px 2px;border-bottom:1px solid var(--line);font-size:14.5px}
+  .sl-item:last-child{border-bottom:none}
+  .sl-item input[type=checkbox]{width:17px;height:17px;accent-color:var(--brand)}
+  .sl-item .x{margin-left:auto;background:none;border:none;color:var(--muted);font-size:15px;padding:0 4px}
+  .sl-item .x:hover{color:var(--now)}
+  .sl-round{background:var(--accent-soft);border:1px solid #eeddb5;border-radius:8px;padding:10px 12px;
+    font-size:13.5px;margin-bottom:10px}
+  .sl-one{background:var(--brand);color:#f4ede0;border-radius:10px;padding:16px 18px;margin-top:12px}
+  .sl-one .t{font-family:Georgia,serif;font-size:18px;line-height:1.5}
+  .sl-one .acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+
+  /* ---------- GPS + 4-1-1 ---------- */
+  .gps-goal{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px}
+  .gps-goal input{flex:1;min-width:220px}
+  .strat{display:flex;align-items:center;gap:8px;margin:6px 0}
+  .strat input[type=checkbox]{width:16px;height:16px;accent-color:var(--good);flex:none}
+  .strat input[type=text]{flex:1}
+  .strat input[type=text].done{text-decoration:line-through;color:var(--muted)}
+  .strat .n{font-size:11px;color:var(--muted);width:14px;flex:none;text-align:right}
+  .f411-week{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}
+  .f411-week:last-child{border-bottom:none}
+  .f411-week .wlab{width:148px;flex:none;font-size:12.5px;color:var(--muted);padding-top:8px}
+  .f411-week .wlab b{color:var(--ink)}
+  .f411-week textarea{flex:1}
+  .f411-week label.dn{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);padding-top:8px;flex:none}
+  .f411-week label.dn input{width:16px;height:16px;accent-color:var(--good)}
+  .mo-nav{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+  .mo-nav b{font-size:15.5px;min-width:78px;text-align:center}
+  .pullbtn{background:none;border:none;color:var(--focus);padding:0;font-size:12px;text-decoration:underline}
+
+  /* ---------- backward map ---------- */
+  .bm-outcome{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .bm-outcome input{flex:1;min-width:220px;font-size:15.5px;font-weight:600}
+  /* the same sketch arrows as the chain: every requirement hangs off the thing
+     that needs it — a light spine down the siblings, a curved elbow with a
+     crisp filled head diving into each row */
+  .bm-kids{margin-left:20px}
+  .bm-kids.bm-root{margin-left:8px;margin-top:6px}
+  .bm-branch{position:relative}
+  .bm-kids .bm-branch:not(:last-child), .bm-kids.bm-root .bm-branch:not(:last-child){border-left:2px solid var(--sketch-soft)}
+  .bm-branch:not(:last-child) > .bm-kids{margin-left:18px}
+  .elbow{width:36px;height:38px;flex:none;margin:-8px 0 -6px -2px;overflow:visible;pointer-events:none}
+  .elbow .ln{fill:none;stroke:var(--sketch);stroke-width:2.6;stroke-linecap:round}
+  .elbow .hd{fill:var(--sketch)}
+  .bm-node{display:flex;align-items:center;gap:8px;margin:5px 0}
+  .bm-num{font-size:11px;font-weight:600;color:var(--muted);flex:none;min-width:26px;text-align:right;font-variant-numeric:tabular-nums}
+  .bm-node .grip{cursor:grab;color:var(--muted);font-size:13px;flex:none;padding:0 2px;user-select:none}
+  .bm-node .grip:active{cursor:grabbing}
+  .bm-node.drop-before{box-shadow:0 -3px 0 0 var(--focus)}
+  .bm-node.drop-after{box-shadow:0 3px 0 0 var(--focus)}
+  .bm-branch.dragging > .bm-node{opacity:.45}
+  .bm-node input[type=checkbox]{width:16px;height:16px;accent-color:var(--good);flex:none}
+  .bm-node input[type=text]{flex:1}
+  .bm-node input[type=text].done{text-decoration:line-through;color:var(--muted)}
+  .bm-node input[type=text].rc{color:var(--now);font-weight:600}
+  .bm-node .mini{background:none;border:none;color:var(--focus);padding:0 2px;font-size:12px;text-decoration:underline;flex:none;white-space:nowrap}
+  .bm-node .mini.del{color:var(--muted);text-decoration:none;font-size:14px}
+  .bm-node .mini.del:hover{color:var(--now)}
+  .bm-req-lbl{font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--warn);flex:none}
+
+  /* ---------- weekly hour ---------- */
+  .wk-lbl{font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--warn);margin:12px 0 4px}
+  .wk-lbl:first-child{margin-top:0}
+  .wk-sentence{font-family:Georgia,serif;font-size:15.5px;line-height:1.7;background:var(--accent-soft);
+    border:1px solid #eeddb5;border-radius:8px;padding:12px 14px}
+  #wkBody textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:15px;resize:vertical}
+  #wkBody input[type=text]{width:100%}
+  .chk{display:flex;gap:9px;align-items:flex-start;font-size:14px;margin:8px 0}
+  .chk input{width:17px;height:17px;accent-color:var(--brand);margin-top:2px}
+
+  /* ---------- print ---------- */
+  @media print{
+    header .hd-actions, header .views, header .tabs button.add, aside, .btn-done, .card .meta button, .rail{display:none !important}
+    header{position:static;background:#fff;color:#000;box-shadow:none;border-bottom:2px solid #000}
+    .hd-top h1, .hd-top h1 .one{background:none;-webkit-text-fill-color:#000;color:#000;text-shadow:none;animation:none}
+    .tabs button{color:#000}
+    body{background:#fff}
+    main{grid-template-columns:1fr;max-width:100%}
+    .card,.today{box-shadow:none;break-inside:avoid}
+    .step{grid-template-columns:1fr}
+    .mantra{background:#fff;color:#000;border:2px solid #000;box-shadow:none}
+    .mantra .kicker,.mantra .lead{color:#000}
+    .mantra .copy{display:none}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hd-top">
+    <h1>What is the <b class="one">ONE Thing</b> I can do such that by doing it, everything else will be easier or unnecessary?</h1>
+    <div class="hd-actions">
+      <button class="primary" id="btnWizard" title="Guided pass from the someday goal down to right now">&#9654; Work backward</button>
+      <button id="btnExport">Export</button>
+      <button id="btnImport">Import</button>
+      <button id="btnPrint">Print</button>
+    </div>
+  </div>
+  <div class="views" id="views"></div>
+  <div class="tabs" id="tabs"></div>
+</header>
+<div id="storeWarn">&#9888; This browser is not letting the app save. Your entries live only in this window &mdash; use <b>Export</b> to keep them.</div>
+
+<main id="main"></main>
+
+<dialog id="wz">
+  <div class="wz-head">
+    <h2 id="wzTitle">Work backward</h2>
+    <span class="n" id="wzStep"></span>
+  </div>
+  <div class="wz-body">
+    <div class="wz-ctx" id="wzCtx" hidden>
+      <div class="lbl" id="wzCtxLbl"></div>
+      <div id="wzCtxTxt"></div>
+    </div>
+    <p class="wz-q" id="wzQ"></p>
+    <textarea id="wzInput" placeholder="One thing. Specific enough that you'd know it was done."></textarea>
+  </div>
+  <div class="wz-foot">
+    <button id="wzCancel">Cancel</button>
+    <div class="grp">
+      <button id="wzBack">&#8592; Back</button>
+      <button id="wzNext" class="primary">Next &#8594;</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="wk">
+  <div class="wz-head">
+    <h2>Weekly Planning Hour</h2>
+    <span class="n" id="wkStep"></span>
+  </div>
+  <div class="wz-body" id="wkBody"></div>
+  <div class="wz-foot">
+    <button id="wkCancel">Cancel</button>
+    <div class="grp">
+      <button id="wkBack">&#8592; Back</button>
+      <button id="wkNext" class="primary">Next &#8594;</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="confirmDlg">
+  <div class="wz-head"><h2 id="cfTitle">Confirm</h2></div>
+  <div class="nm-body"><p id="cfMsg" style="margin:0;font-size:14px;line-height:1.6"></p></div>
+  <div class="wz-foot">
+    <button id="cfCancel">Cancel</button>
+    <div class="grp"><button id="cfOk" class="primary">Yes, do it</button></div>
+  </div>
+</dialog>
+
+<dialog id="nameDlg">
+  <div class="wz-head"><h2 id="nmTitle">Goal line</h2></div>
+  <div class="nm-body">
+    <h3 id="nmLabel">Name</h3>
+    <input id="nmInput" maxlength="40" placeholder="e.g. Work, Health, Family">
+  </div>
+  <div class="wz-foot">
+    <button id="nmCancel">Cancel</button>
+    <div class="grp"><button id="nmOk" class="primary">Save</button></div>
+  </div>
+</dialog>
+
+<input type="file" id="fileImport" accept=".json,application/json" hidden>
+
+<script>
+"use strict";
+
+/* ================= data ================= */
+
+const STORE_KEY = "goal-to-now-v1";
+
+const LEVELS = [
+  { key:"someday", label:"Someday goal",
+    q:"What's the ONE Thing I want to do someday?" },
+  { key:"five", label:"Five-year goal",
+    q:"Based on my someday goal, what's the ONE Thing I can do in the next five years?" },
+  { key:"year", label:"One-year goal",
+    q:"Based on my five-year goal, what's the ONE Thing I can do this year?" },
+  { key:"month", label:"Monthly goal",
+    q:"Based on my one-year goal, what's the ONE Thing I can do this month?" },
+  { key:"week", label:"Weekly goal",
+    q:"Based on my monthly goal, what's the ONE Thing I can do this week?" },
+  { key:"day", label:"Daily goal",
+    q:"Based on my weekly goal, what's the ONE Thing I can do today?" },
+  { key:"now", label:"Right now",
+    q:"Based on my daily goal, what's the ONE Thing I can do right now, such that by doing it everything else will be easier or unnecessary?" }
+];
+const LEVEL_IX = Object.fromEntries(LEVELS.map((l,i)=>[l.key,i]));
+
+/* a goal line's chain can start lower than "someday" — the first level gets
+   the direct question instead of a "based on" one */
+const HORIZONS = [
+  { key:"someday", label:"Someday (the full ladder)" },
+  { key:"five", label:"Five years" },
+  { key:"year", label:"One year" },
+  { key:"month", label:"One month" }
+];
+const TOP_QUESTIONS = {
+  someday:"What's the ONE Thing I want to do someday?",
+  five:"What's the ONE Thing I want to do in the next five years?",
+  year:"What's the ONE Thing I want to do this year?",
+  month:"What's the ONE Thing I want to do this month?"
+};
+function levelsFor(dom){
+  const ix = LEVEL_IX[dom.horizon];
+  return LEVELS.slice(ix >= 0 ? ix : 0);
+}
+function chainHasYear(dom){
+  return LEVEL_IX[dom.horizon] <= LEVEL_IX.year;
+}
+
+let state = load();
+
+function blankLevels(){
+  const o = {};
+  for (const l of LEVELS) o[l.key] = { text:"", updated:null };
+  return o;
+}
+function newDomain(name){
+  return ensureDomainTools({ id:"d"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36),
+           name, archived:false, created:todayISO(), levels:blankLevels() });
+}
+/* GPS = 1 goal, 3 priorities, 5 strategies each; 4-1-1 = year / month / weeks sheet */
+function ensureDomainTools(d){
+  if (!HORIZONS.some(h=>h.key===d.horizon)) d.horizon = "someday";
+  if (!d.gps) d.gps = { goal:"", priorities:[] };
+  while (d.gps.priorities.length < 3) d.gps.priorities.push({ text:"", strategies:[] });
+  for (const p of d.gps.priorities){
+    if (!Array.isArray(p.strategies)) p.strategies = [];
+    while (p.strategies.length < 5) p.strategies.push({ text:"", done:false });
+  }
+  if (!d.f411) d.f411 = { annual:"", months:{} };
+  return d;
+}
+/* v2 adds the book's other planning tools; older stores are upgraded in place */
+function withDefaults(s){
+  if (!s.blocks) s.blocks = { oneThingStart:"08:00", oneThingHours:4,
+    planningDay:1, planningStart:"09:00", timeOffNote:"", protectedLog:{} };
+  if (!Array.isArray(s.challenges)) s.challenges = [];
+  if (!s.successList || !Array.isArray(s.successList.items)) s.successList = { items:[], distilling:false, round:0 };
+  if (!Array.isArray(s.reviews)) s.reviews = [];
+  if (!Array.isArray(s.maps)) s.maps = [];   // backward maps: requirement trees, no dates
+  if (!Array.isArray(s.whys)) s.whys = [];   // why-why analyses: same tree, causes instead of requirements
+  if (!Array.isArray(s.hows)) s.hows = [];   // how-how plans: same tree, means instead of causes; may link back to a why
+  if (!Array.isArray(s.whats)) s.whats = []; // what-what breakdowns: same tree, parts instead of causes
+  if (!Array.isArray(s.fish)) s.fish = [];   // fishbone diagrams: problem + category bones + causes
+  if (!s.view) s.view = "chain";
+  for (const d of s.domains) ensureDomainTools(d);
+  s.version = 9;
+  return s;
+}
+function load(){
+  if (!window.GTN_REMOTE){                       // server mode never reads this browser's storage
+    try{
+      const raw = localStorage.getItem(STORE_KEY);
+      if (raw){
+        const s = JSON.parse(raw);
+        if (s && Array.isArray(s.domains) && s.domains.length) return withDefaults(s);
+      }
+    }catch(e){ /* corrupted store: fall through to a fresh one */ }
+  }
+  const d = newDomain("My ONE Thing");
+  return withDefaults({ savedAt:null, activeDomain:d.id, domains:[d], history:[] });
+}
+let storageOk = true;
+function save(){
+  state.savedAt = new Date().toISOString();
+  /* served by the Goal Setting Server, data lives in the server's database,
+     one document per signed-in user — never in this browser */
+  if (window.GTN_REMOTE){ window.GTN_REMOTE.push(state); return; }
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  }catch(e){
+    if (storageOk){ storageOk = false; document.getElementById("storeWarn").classList.add("on"); }
+  }
+}
+
+/* ================= dates (display mm-dd-yyyy) ================= */
+
+function todayISO(){
+  const d = new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function fmtDate(iso){
+  if (!iso) return "";
+  const [y,m,d] = iso.slice(0,10).split("-");
+  return m+"-"+d+"-"+y;
+}
+function weekStartISO(){
+  const d = new Date(); // Monday-start week
+  const day = (d.getDay()+6)%7;
+  d.setDate(d.getDate()-day);
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+
+/* freshness: has this level been revisited inside its own horizon? */
+function freshness(levelKey, entry){
+  if (!entry.text.trim()) return { cls:"unset", label:"Not set yet" };
+  const u = entry.updated;
+  if (!u) return { cls:"stale", label:"Review" };
+  const today = todayISO();
+  if (levelKey==="day" || levelKey==="now")
+    return u >= today ? {cls:"fresh",label:"Set today"} : {cls:"stale",label:"New day — reset"};
+  if (levelKey==="week")
+    return u >= weekStartISO() ? {cls:"fresh",label:"Set this week"} : {cls:"stale",label:"New week — review"};
+  if (levelKey==="month")
+    return u.slice(0,7)===today.slice(0,7) ? {cls:"fresh",label:"Set this month"} : {cls:"stale",label:"New month — review"};
+  if (levelKey==="year")
+    return u.slice(0,4)===today.slice(0,4) ? {cls:"fresh",label:"Set this year"} : {cls:"stale",label:"New year — review"};
+  // someday / five-year: nudge after a year
+  const yearAgo = new Date(); yearAgo.setFullYear(yearAgo.getFullYear()-1);
+  const cut = yearAgo.toISOString().slice(0,10);
+  return u >= cut ? {cls:"fresh",label:"Set "+fmtDate(u)} : {cls:"stale",label:"Annual review"};
+}
+
+/* ================= state helpers ================= */
+
+function activeDomain(){
+  return state.domains.find(d=>d.id===state.activeDomain && !d.archived)
+      || state.domains.find(d=>!d.archived);
+}
+function setLevelText(dom, key, text){
+  const entry = dom.levels[key];
+  const t = text.trim();
+  if (entry.text === t) return false;
+  entry.text = t;
+  entry.updated = todayISO();
+  if (t) state.history.unshift({ ts:new Date().toISOString(), domainId:dom.id, level:key, text:t, type:"set" });
+  save();
+  return true;
+}
+function markDone(dom, key){
+  const entry = dom.levels[key];
+  if (!entry.text.trim()) return;
+  state.history.unshift({ ts:new Date().toISOString(), domainId:dom.id, level:key, text:entry.text, type:"done" });
+  // doing today's ONE Thing also checks today's cell on this goal line's 66-day challenge
+  if (key === "day"){
+    const today = todayISO();
+    for (const c of state.challenges){
+      if (c.domainId === dom.id && !c.closed && c.start <= today && dayOffset(c.start, today) < 66)
+        c.marks[today] = true;
+    }
+  }
+  save();
+  render();
+}
+function dayOffset(fromISO, toISO){
+  return Math.round((new Date(toISO+"T12:00") - new Date(fromISO+"T12:00")) / 86400000);
+}
+function addDaysISO(iso, n){
+  const d = new Date(iso+"T12:00");
+  d.setDate(d.getDate()+n);
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function doneTodayFor(dom, key){
+  const today = todayISO();
+  return state.history.find(h => h.domainId===dom.id && h.level===key && h.type==="done"
+    && h.ts.slice(0,10)===today && h.text===dom.levels[key].text);
+}
+
+/* ================= render ================= */
+
+const $ = s => document.querySelector(s);
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+/* ---- the chain as one sentence ---- */
+const SENTENCE_LEADS = {
+  someday:"Someday:", five:"So in the next five years:", year:"So this year:",
+  month:"So this month:", week:"So this week:", day:"So today:", now:"So right now:"
+};
+function sentenceParts(dom){
+  const parts = [];
+  for (const lv of levelsFor(dom)){
+    const t = dom.levels[lv.key].text.trim();
+    if (!t) continue;
+    let lead = SENTENCE_LEADS[lv.key];
+    if (!parts.length && lead.startsWith("So "))
+      lead = lead.slice(3).charAt(0).toUpperCase() + lead.slice(4);
+    parts.push({ lead, text:t });
+  }
+  return parts;
+}
+function sentencePlain(dom){
+  return sentenceParts(dom)
+    .map(p => p.lead + " " + p.text + (/[.!?]$/.test(p.text) ? "" : "."))
+    .join(" ");
+}
+
+const VIEWS = [
+  { key:"chain", label:"Goal Chain" },
+  { key:"map", label:"Backward Map" },
+  { key:"why", label:"Why-Why" },
+  { key:"how", label:"How-How" },
+  { key:"what", label:"What-What" },
+  { key:"fish", label:"Fishbone" },
+  { key:"gps", label:"GPS 1-3-5" },
+  { key:"f411", label:"4-1-1" },
+  { key:"blocks", label:"Time Blocking" },
+  { key:"challenge", label:"66-Day Challenge" },
+  { key:"list", label:"Success List" }
+];
+
+function render(){
+  renderViews();
+  renderTabs();
+  renderMain();
+}
+
+function renderViews(){
+  const el = $("#views");
+  el.innerHTML = "";
+  for (const v of VIEWS){
+    const b = document.createElement("button");
+    b.textContent = v.label;
+    if (state.view === v.key) b.classList.add("on");
+    b.onclick = ()=>{ state.view = v.key; save(); render(); };
+    el.appendChild(b);
+  }
+  const wk = document.createElement("button");
+  wk.innerHTML = "&#128337; Weekly Hour" + (planningDoneThisWeek() ? " &#10003;" : "");
+  wk.title = "The book's one weekly appointment: review the chain, set the week, guard the block";
+  wk.onclick = openWeeklyHour;
+  el.appendChild(wk);
+}
+function planningDoneThisWeek(){
+  const ws = weekStartISO();
+  return state.reviews.some(r => r.weekStart === ws);
+}
+function blockEnd(){
+  const [h,m] = state.blocks.oneThingStart.split(":").map(Number);
+  const t = h*60 + m + state.blocks.oneThingHours*60;
+  return String(Math.floor(t/60)%24).padStart(2,"0")+":"+String(t%60).padStart(2,"0");
+}
+
+function renderTabs(){
+  const el = $("#tabs");
+  el.innerHTML = "";
+  for (const d of state.domains.filter(d=>!d.archived)){
+    const b = document.createElement("button");
+    b.textContent = d.name;
+    if (d.id === activeDomain()?.id) b.classList.add("on");
+    b.onclick = () => { state.activeDomain = d.id; save(); render(); };
+    b.ondblclick = () => renameDomain(d);
+    b.title = "Double-click to rename";
+    el.appendChild(b);
+  }
+  const add = document.createElement("button");
+  add.className = "add"; add.textContent = "+"; add.title = "New goal line (e.g. Work, Health, Family)";
+  add.onclick = addDomain;
+  el.appendChild(add);
+}
+
+function renderMain(){
+  const dom = activeDomain();
+  const main = $("#main");
+  if (!dom){ main.innerHTML = '<p class="empty-note">No goal line. Use + to create one.</p>'; return; }
+
+  if (state.view === "map"){ renderMap(main, dom, MAP_CFG); return; }
+  if (state.view === "why"){ renderMap(main, dom, WHY_CFG); return; }
+  if (state.view === "how"){ renderMap(main, dom, HOW_CFG); return; }
+  if (state.view === "what"){ renderMap(main, dom, WHAT_CFG); return; }
+  if (state.view === "fish"){ renderFish(main, dom); return; }
+  if (state.view === "gps"){ renderGPS(main, dom); return; }
+  if (state.view === "f411"){ render411(main, dom); return; }
+  if (state.view === "blocks"){ renderBlocks(main, dom); return; }
+  if (state.view === "challenge"){ renderChallenge(main, dom); return; }
+  if (state.view === "list"){ renderList(main, dom); return; }
+
+  const day = dom.levels.day, now = dom.levels.now;
+  const dayDone = doneTodayFor(dom,"day"), nowDone = doneTodayFor(dom,"now");
+
+  let html = "";
+
+  /* --- the chain as one sentence --- */
+  const parts = sentenceParts(dom);
+  html += '<section class="mantra">'
+    + '<button class="copy" id="btnCopySentence" title="Copy the sentence">Copy</button>'
+    + '<div class="kicker">'+esc(dom.name)+' &mdash; the whole chain in one breath</div>'
+    + '<div class="sentence">'
+    + (parts.length
+        ? parts.map(p=>'<span class="lead">'+esc(p.lead)+'</span> '+esc(p.text)).join('<span class="sep">&mdash;</span> ')
+        : '<span class="empty-note">Nothing set yet. Run &ldquo;Work backward&rdquo; and this becomes one sentence from your someday goal down to what you do right now.</span>')
+    + '</div></section>';
+
+  /* --- today banner --- */
+  html += '<section class="today">'
+    + '<div class="kicker">Today &mdash; '+fmtDate(todayISO())+' &middot; '+esc(dom.name)+'</div>'
+    + '<div class="rows">'
+    + todaySlot("Today's ONE Thing", "day", day, dayDone)
+    + todaySlot("Right now", "now", now, nowDone, true)
+    + '</div>'
+    + '<div class="statline" style="margin-top:10px">Your ONE Thing block: <b>'
+    + esc(state.blocks.oneThingStart)+'&ndash;'+esc(blockEnd())+'</b>'
+    + (state.blocks.protectedLog[todayISO()] ? ' &middot; <b style="color:var(--good)">protected today &#10003;</b>'
+        : ' &middot; not yet marked protected today')
+    + ' &middot; Weekly planning hour: '
+    + (planningDoneThisWeek() ? '<b style="color:var(--good)">done this week &#10003;</b>' : '<b style="color:var(--warn)">not yet this week</b>')
+    + '</div></section>';
+
+  /* --- chain --- */
+  const shown = levelsFor(dom);
+  const hiddenWithText = LEVELS.slice(0, LEVEL_IX[dom.horizon])
+    .filter(l=>dom.levels[l.key].text.trim()).length;
+  html += '<section class="chain">'
+    + '<div class="card" style="padding:10px 18px;margin-bottom:14px">'
+    + '<span style="font-size:13px;color:var(--muted)">This goal line runs from </span>'
+    + '<select class="ctl" id="horizonSel" style="padding:4px 8px;font-size:13px">'
+    + HORIZONS.map(h=>'<option value="'+h.key+'"'+(h.key===dom.horizon?' selected':'')+'>'+h.label+'</option>').join('')
+    + '</select><span style="font-size:13px;color:var(--muted)"> down to right now.</span>'
+    + (hiddenWithText ? '<span style="font-size:12px;color:var(--warn)"> '+hiddenWithText
+        + ' longer-horizon level'+(hiddenWithText>1?'s':'')+' above this keep their text and come back if you extend the chain.</span>' : '')
+    + '</div>';
+  /* built innermost-first so each level nests inside the one it comes from */
+  let inner = '';
+  for (let i = shown.length - 1; i >= 0; i--){
+    const lv = shown[i];
+    const e = dom.levels[lv.key];
+    const f = freshness(lv.key, e);
+    const elbow = i === 0 ? '' :
+      '<svg class="elbow" viewBox="0 0 36 38" aria-hidden="true">'
+      + '<path class="ln" d="M1 -22 C1 6 6 16 22 20"/>'
+      + '<path class="hd" d="M20 13.5 L33 20 L21 27 Z"/></svg>';
+    inner = '<div class="c-step lv-'+lv.key+'">'
+      + elbow
+      + '<div class="card">'
+      + '<div class="top"><span class="lvl">'+lv.label+'</span>'
+      + '<span class="chip '+f.cls+'">'+f.label+'</span></div>'
+      + '<div class="q">'+esc(i===0 ? TOP_QUESTIONS[lv.key] : lv.q)+'</div>'
+      + '<textarea data-level="'+lv.key+'" rows="2" placeholder="One thing.">'+esc(e.text)+'</textarea>'
+      + '<div class="meta">'
+      + (e.updated ? '<span>Last set '+fmtDate(e.updated)+'</span>' : '<span>Never set</span>')
+      + ((lv.key==="day"||lv.key==="now") && e.text.trim()
+          ? '<button data-done="'+lv.key+'">Mark done today</button>' : '')
+      + '</div></div>'
+      + inner
+      + '</div>';
+  }
+  html += inner + '</section>';
+
+  /* --- side panel --- */
+  html += '<aside>'
+    + '<div class="panel method"><h2>The method</h2>'
+    + '<p><b>Work backward, connect every level.</b> The someday goal sets the five-year goal, which sets this year, this month, this week, today, and the very next action.</p>'
+    + '<p>Not every goal needs the full ladder &mdash; the control above the chain lets a goal line start at five years, one year, or one month instead.</p>'
+    + '<p>The test at every level: <i>&ldquo;&hellip;such that by doing it everything else will be easier or unnecessary?&rdquo;</i></p>'
+    + '<p>Reset <b>today</b> and <b>right now</b> every day; review the week weekly and the month monthly. The amber chips tell you when a level is due.</p>'
+    + '<p class="statline">Last Weekly Hour: '+(state.reviews.length ? '<b>'+fmtDate(state.reviews[0].ts.slice(0,10))+'</b>' : 'never — the &#128337; button up top runs it')+'</p>'
+    + '<p style="margin-top:10px"><button id="btnArchive" style="background:none;border:none;color:var(--focus);text-decoration:underline;padding:0;font-size:12.5px">Archive this goal line</button></p>'
+    + '</div>'
+    + '<div class="panel"><h2>History &mdash; '+esc(dom.name)+'</h2>'
+    + renderHistory(dom)
+    + '</div></aside>';
+
+  main.innerHTML = html;
+
+  /* wire */
+  $("#horizonSel").addEventListener("change", e=>{
+    dom.horizon = e.target.value;
+    save(); render();
+  });
+  const cp = $("#btnCopySentence");
+  if (cp) cp.onclick = ()=>{
+    const txt = sentencePlain(dom);
+    if (!txt) return;
+    const done = ()=>{ cp.textContent = "Copied ✓"; setTimeout(()=>{ cp.textContent = "Copy"; }, 1500); };
+    if (navigator.clipboard && navigator.clipboard.writeText)
+      navigator.clipboard.writeText(txt).then(done, ()=>{});
+  };
+  main.querySelectorAll("textarea[data-level]").forEach(t=>{
+    t.addEventListener("change", ()=>{
+      if (setLevelText(dom, t.dataset.level, t.value)) render();
+    });
+  });
+  main.querySelectorAll("button[data-done]").forEach(b=>{
+    b.onclick = ()=> markDone(dom, b.dataset.done);
+  });
+  const arch = $("#btnArchive");
+  if (arch) arch.onclick = ()=>{
+    askConfirm("Archive goal line",
+      'Archive "'+dom.name+'"? Its data and history are kept (nothing is deleted) — it just leaves the tabs. An Export restores it.',
+      ()=>{
+        dom.archived = true;
+        const next = state.domains.find(d=>!d.archived);
+        if (!next){ const nd = newDomain("My ONE Thing"); state.domains.push(nd); state.activeDomain = nd.id; }
+        else state.activeDomain = next.id;
+        save(); render();
+      });
+  };
+}
+
+function todaySlot(title, key, entry, doneRec, isNow){
+  const has = !!entry.text.trim();
+  return '<div class="slot'+(isNow?' now':'')+'">'
+    + '<h3>'+title+'</h3>'
+    + '<div class="txt'+(has?'':' empty')+'">'+(has?esc(entry.text):"Not set yet — run &ldquo;Work backward&rdquo; or type it in the chain below.")+'</div>'
+    + '<div class="foot">'
+    + (has ? '<button class="btn-done" data-done="'+key+'"'+(doneRec?' disabled':'')+'>'
+        + (doneRec ? '&#10003; Done today' : 'Mark done today')+'</button>' : '')
+    + (entry.updated && entry.updated < todayISO() && has
+        ? '<span class="meta">set '+fmtDate(entry.updated)+' — yesterday’s answer, reset it</span>' : '')
+    + '</div></div>';
+}
+
+function renderHistory(dom){
+  const rows = state.history.filter(h=>h.domainId===dom.id).slice(0,80);
+  if (!rows.length) return '<p class="empty-note">Nothing yet. Entries appear when you set a goal or mark one done.</p>';
+  let out = '<ul class="hist">';
+  for (const h of rows){
+    const lv = LEVELS[LEVEL_IX[h.level]];
+    out += '<li><span class="tag '+(h.type==="done"?"done":"set")+'">'+(h.type==="done"?"Done":"Set")+'</span>'
+      + '<span class="when">'+fmtDate(h.ts.slice(0,10))+' &middot; '+(lv?lv.label:h.level)+'</span><br>'
+      + esc(h.text)+'</li>';
+  }
+  return out + '</ul>';
+}
+
+/* ================= backward map (no timeline) ================= */
+/* Pure backward thinking: an outcome, then the tree of what must be in place
+   before it — each level answering "what has to be true immediately before
+   this can happen?" — until you hit something you could start right now.
+   No dates anywhere; the Goal Chain owns time. */
+
+const BM_MAX_DEPTH = 8;
+let bmFocusId = null;
+let bmDragId = null;
+
+function bmContains(node, id){
+  if (node.id === id) return true;
+  return node.children.some(c => bmContains(c, id));
+}
+
+/* one tree engine, two meanings: the Backward Map (outcome → requirements)
+   and the Why-Why analysis (problem → causes) share every mechanic — nesting,
+   drag, reorder, archive — and differ only in these words. */
+const MAP_CFG = {
+  coll: ()=> state.maps, noun: "map",
+  title: "Backward map &mdash; no dates, just dominoes",
+  blurb: "Name the outcome, then keep asking one question &mdash; <i>what has to be in place immediately before this can happen?</i> &mdash; and nest each answer under the step it unlocks. Stop each branch when you reach something you could start right now, and send it to the Goal Chain with &#8594;&nbsp;now. Tick a requirement once it&rsquo;s secured. Drag a row by its &#10495; grip (or use &#8593;&#8595;) to reorder, or drop it beside a row in another branch to move it there. Time lives on the Goal Chain; this is only the order things must fall.",
+  newBtn: "+ New map",
+  newTitle: "New backward map — the outcome to achieve",
+  emptyNote: "No maps yet. Start one with the outcome you want to achieve.",
+  topLabel: "Outcome", topPh: "The thing to achieve",
+  rowLabel: "needs", doneCls: "done", doneTitle: "In place / done",
+  ph: d => d ? "What has to be in place before the step above?" : "What has to be in place before the outcome?",
+  addBtn: "+ requires", addTitle: "Add what THIS step requires",
+  nowTitle: "Make this my Right now on the goal chain",
+  rootBtn: "+ What&rsquo;s required for this outcome?",
+  chip: c => c.total ? c.done+" of "+c.total+" in place" : "nothing plotted yet",
+  chipCls: c => c.total && c.done===c.total ? "fresh" : "unset",
+  banner: c => c.total && c.done===c.total ? "Every requirement is in place — nothing is standing in the way but doing it." : ""
+};
+const WHY_CFG = {
+  coll: ()=> state.whys, noun: "analysis",
+  title: "Why-why analysis &mdash; ask until the root shows",
+  blurb: "Name the problem, then keep asking one question &mdash; <i>why does this happen?</i> &mdash; and nest each answer under the thing it explains. One row can have several whys. When a why has no deeper why behind it, that&rsquo;s a <b>root cause</b> &mdash; tick it (it turns rust, nothing is struck through: a root cause is a finding, not a task). Drag &#10495; or use &#8593;&#8595; to rearrange; &#8594;&nbsp;now sends a cause to the Goal Chain, and &#8594;&nbsp;how starts a linked How-How plan for fixing it.",
+  newBtn: "+ New analysis",
+  newTitle: "New why-why analysis — the problem to explain",
+  emptyNote: "No analyses yet. Start one with the problem you want to explain.",
+  topLabel: "Problem", topPh: "What is going wrong",
+  rowLabel: "why", doneCls: "rc", doneTitle: "Mark as root cause",
+  ph: d => d ? "Why does the cause above happen?" : "Why does this problem happen?",
+  addBtn: "+ why", addTitle: "Ask why THIS happens",
+  nowTitle: "Make dealing with this my Right now on the goal chain",
+  rootBtn: "+ Why does this happen?",
+  chip: c => c.total ? (c.done ? c.done+" root cause"+(c.done>1?"s":"")+" marked" : c.total+" why"+(c.total>1?"s":"")+" — still digging") : "nothing asked yet",
+  chipCls: c => c.done ? "fresh" : "unset",
+  banner: ()=> "",
+  canSpawnHow: true,
+  numbered: true
+};
+const HOW_CFG = {
+  coll: ()=> state.hows, noun: "plan",
+  title: "How-how &mdash; from objective to concrete steps",
+  blurb: "Name the objective, then keep asking one question &mdash; <i>how does this get done?</i> &mdash; and nest each answer under the step it serves, until every branch ends in something concrete enough to just do. Tick a step once it&rsquo;s done. A plan can be started straight from a Why-Why root cause with its &#8594;&nbsp;how button, and the two stay linked. Drag &#10495; or use &#8593;&#8595; to rearrange; &#8594;&nbsp;now sends a step to the Goal Chain.",
+  newBtn: "+ New how-how",
+  newTitle: "New how-how — the objective",
+  emptyNote: "No plans yet. Start one here, or send a root cause over from Why-Why with its → how button.",
+  topLabel: "Objective", topPh: "What to accomplish",
+  rowLabel: "how", doneCls: "done", doneTitle: "Done",
+  ph: () => "How will this be done?",
+  addBtn: "+ how", addTitle: "Ask how THIS gets done",
+  nowTitle: "Make this step my Right now on the goal chain",
+  rootBtn: "+ How does this get accomplished?",
+  chip: c => c.total ? c.done+" of "+c.total+" done" : "no steps yet",
+  chipCls: c => c.total && c.done===c.total ? "fresh" : "unset",
+  banner: c => c.total && c.done===c.total ? "Every step is done — the objective should be standing." : "",
+  numbered: true
+};
+const WHAT_CFG = {
+  coll: ()=> state.whats, noun: "breakdown",
+  title: "What-what &mdash; break it into its parts",
+  blurb: "Name the subject, then keep asking one question &mdash; <i>what does this consist of?</i> &mdash; and nest each part under what it belongs to, until the pieces are small enough to see clearly. Tick a part once it&rsquo;s covered. Drag &#10495; or use &#8593;&#8595; to rearrange; &#8594;&nbsp;now sends a part to the Goal Chain.",
+  newBtn: "+ New what-what",
+  newTitle: "New what-what — the subject to break down",
+  emptyNote: "No breakdowns yet. Start one with the subject you want to take apart.",
+  topLabel: "Subject", topPh: "The thing to break down",
+  rowLabel: "what", doneCls: "done", doneTitle: "Covered / accounted for",
+  ph: () => "What exactly is this? What are its parts?",
+  addBtn: "+ what", addTitle: "Break THIS part down further",
+  nowTitle: "Make this my Right now on the goal chain",
+  rootBtn: "+ What does this consist of?",
+  chip: c => c.total ? c.total+" part"+(c.total>1?"s":"")+(c.done ? " · "+c.done+" covered" : "") : "no parts yet",
+  chipCls: c => c.total && c.done===c.total ? "fresh" : "unset",
+  banner: c => c.total && c.done===c.total ? "Every part identified is covered." : "",
+  numbered: true
+};
+let bmCfg = MAP_CFG;
+let bmJumpTo = null;   // item id to scroll to after a cross-tab jump
+
+function bmNewNode(){
+  return { id:"n"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36),
+           text:"", done:false, children:[] };
+}
+function bmFind(list, id){
+  for (const n of list){
+    if (n.id === id) return { node:n, list };
+    const r = bmFind(n.children, id);
+    if (r) return r;
+  }
+  return null;
+}
+function bmCount(list){
+  let done = 0, total = 0;
+  for (const n of list){
+    if (n.text.trim()){ total++; if (n.done) done++; }   // blank rows aren't parts
+    const c = bmCount(n.children);
+    done += c.done; total += c.total;
+  }
+  return { done, total };
+}
+function bmRows(map, list, depth, prefix){
+  prefix = prefix || "";
+  return list.map((n, ix) => {
+    const num = prefix + (ix + 1);
+    return '<div class="bm-branch">'
+    + '<div class="bm-node">'
+    + '<svg class="elbow" viewBox="0 0 36 38" aria-hidden="true">'
+    + '<path class="ln" d="M1 -4 C1 14 6 24 22 28"/>'
+    + '<path class="hd" d="M20 21.5 L33 28 L21 35 Z"/></svg>'
+    + '<span class="grip" draggable="true" data-bmgrip="'+n.id+'" title="Drag to reorder, or drop beside a row in another branch to move it there (its branches come along)">&#10495;</span>'
+    + (bmCfg.numbered ? '<span class="bm-num">'+num+'</span>' : '')
+    + '<span class="bm-req-lbl"'+(depth ? '' : ' style="color:var(--brand)"')+'>'+bmCfg.rowLabel+'</span>'
+    + '<input type="checkbox" data-bmdone="'+n.id+'"'+(n.done?' checked':'')+(n.text.trim()?'':' disabled')+' title="'+bmCfg.doneTitle+'">'
+    + '<input type="text" class="ctl'+(n.done?' '+bmCfg.doneCls:'')+'" data-bmtext="'+n.id+'" value="'+esc(n.text)+'" placeholder="'+bmCfg.ph(depth)+'">'
+    + (depth < BM_MAX_DEPTH ? '<button class="mini" data-bmadd="'+n.id+'" title="'+bmCfg.addTitle+'">'+bmCfg.addBtn+'</button>' : '')
+    + (n.text.trim() ? '<button class="mini" data-bmnow="'+n.id+'" title="'+bmCfg.nowTitle+'">&#8594; now</button>' : '')
+    + (bmCfg.canSpawnHow && n.text.trim()
+        ? (n.howRef && state.hows.some(h=>h.id===n.howRef && !h.closed)
+            ? '<button class="mini" data-bmgotohow="'+n.id+'" title="Open the linked How-How plan">how &#8599;</button>'
+            : '<button class="mini" data-bmhow="'+n.id+'" title="Start a How-How plan for this cause (linked both ways)">&#8594; how</button>')
+        : '')
+    + (ix > 0 ? '<button class="mini del" data-bmup="'+n.id+'" title="Move up (with its branches)">&#8593;</button>' : '')
+    + (ix < list.length-1 ? '<button class="mini del" data-bmdn="'+n.id+'" title="Move down (with its branches)">&#8595;</button>' : '')
+    + '<button class="mini del" data-bmdel="'+n.id+'" title="Remove (and everything under it)">&times;</button>'
+    + '</div>'
+    + (n.children.length ? '<div class="bm-kids">'+bmRows(map, n.children, depth+1, num+".")+'</div>' : '')
+    + '</div>';
+  }).join("");
+}
+
+function renderMap(main, dom, cfg){
+  bmCfg = cfg || MAP_CFG;
+  const open = bmCfg.coll().filter(m=>!m.closed);
+  let html = '<section class="wide">'
+    + '<div class="tool-card" style="margin-bottom:16px"><h2>'+bmCfg.title+'</h2>'
+    + '<p class="why">'+bmCfg.blurb+'</p>'
+    + '<button class="btn brand" id="bmNew">'+bmCfg.newBtn+'</button>'
+    + '</div>';
+
+  if (!open.length) html += '<p class="empty-note">'+bmCfg.emptyNote+'</p>';
+
+  for (const m of open){
+    const c = bmCount(m.nodes);
+    const banner = bmCfg.banner(c);
+    html += '<div class="tool-card" data-bmcard="'+m.id+'" style="margin-bottom:16px">'
+      + '<div class="bm-outcome"><span class="bm-req-lbl" style="color:var(--now)">'+bmCfg.topLabel+'</span>'
+      + '<input type="text" class="ctl" data-bmoutcome="'+m.id+'" value="'+esc(m.outcome)+'" placeholder="'+bmCfg.topPh+'">'
+      + '<span class="chip '+bmCfg.chipCls(c)+'">'+bmCfg.chip(c)+'</span>'
+      + '</div>'
+      + (m.from ? '<div class="statline" style="margin-top:4px">From Why-Why: '+esc(m.from.problem)
+          +' &mdash; &ldquo;'+esc(m.from.cause)+'&rdquo; <button class="mini" data-bmgotowhy="'+m.from.itemId+'">why &#8599;</button></div>' : '')
+      + (banner ? '<div class="ch-done-banner">'+banner+'</div>' : '')
+      + '<div class="bm-kids bm-root">'+bmRows(m, m.nodes, 0)+'</div>'
+      + '<p style="margin:10px 0 0"><button class="btn" data-bmroot="'+m.id+'">'+bmCfg.rootBtn+'</button> '
+      + '<button class="btn" data-bmclose="'+m.id+'">Archive '+bmCfg.noun+'</button> '
+      + '<button class="btn" data-bmdelitem="'+m.id+'" style="color:var(--now)">Delete</button></p>'
+      + '</div>';
+  }
+  html += '</section>';
+  main.innerHTML = html;
+
+  /* wire */
+  $("#bmNew").onclick = ()=> askName(bmCfg.newTitle, "", outcome=>{
+    bmCfg.coll().unshift({ id:"m"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36),
+      outcome, created:todayISO(), closed:false, nodes:[] });
+    save(); render();
+  });
+  main.querySelectorAll("[data-bmoutcome]").forEach(el=>{
+    el.addEventListener("change", ()=>{
+      const m = bmCfg.coll().find(x=>x.id===el.dataset.bmoutcome);
+      if (m){ m.outcome = el.value.trim(); save(); }
+    });
+  });
+  main.querySelectorAll("[data-bmroot]").forEach(b=>{
+    b.onclick = ()=>{
+      const m = bmCfg.coll().find(x=>x.id===b.dataset.bmroot);
+      if (!m) return;
+      const n = bmNewNode();
+      m.nodes.push(n);
+      bmFocusId = n.id;
+      save(); render();
+    };
+  });
+  main.querySelectorAll("[data-bmclose]").forEach(b=>{
+    b.onclick = ()=> askConfirm("Archive "+bmCfg.noun,
+      "Archive this "+bmCfg.noun+"? It keeps everything in the data; it just leaves the screen.",
+      ()=>{ const m = bmCfg.coll().find(x=>x.id===b.dataset.bmclose); if (m){ m.closed = true; save(); render(); } });
+  });
+  main.querySelectorAll("[data-bmdelitem]").forEach(b=>{
+    b.onclick = ()=> askConfirm("Delete "+bmCfg.noun,
+      "PERMANENTLY delete this "+bmCfg.noun+" and everything in it? This cannot be undone — use Archive instead if you might want it back.",
+      ()=>{ const coll = bmCfg.coll(); const i = coll.findIndex(x=>x.id===b.dataset.bmdelitem);
+        if (i >= 0){ coll.splice(i, 1); save(); render(); } });
+  });
+  const mapOf = id => bmCfg.coll().find(m => bmFind(m.nodes, id));
+  main.querySelectorAll("[data-bmtext]").forEach(el=>{
+    el.addEventListener("change", ()=>{
+      const m = mapOf(el.dataset.bmtext); if (!m) return;
+      const r = bmFind(m.nodes, el.dataset.bmtext);
+      r.node.text = el.value.trim();
+      if (!r.node.text) r.node.done = false;
+      save(); render();
+    });
+  });
+  main.querySelectorAll("[data-bmdone]").forEach(el=>{
+    el.addEventListener("change", ()=>{
+      const m = mapOf(el.dataset.bmdone); if (!m) return;
+      bmFind(m.nodes, el.dataset.bmdone).node.done = el.checked;
+      save(); render();
+    });
+  });
+  main.querySelectorAll("[data-bmadd]").forEach(b=>{
+    b.onclick = ()=>{
+      const m = mapOf(b.dataset.bmadd); if (!m) return;
+      const n = bmNewNode();
+      bmFind(m.nodes, b.dataset.bmadd).node.children.push(n);
+      bmFocusId = n.id;
+      save(); render();
+    };
+  });
+  main.querySelectorAll("[data-bmdel]").forEach(b=>{
+    b.onclick = ()=>{
+      const m = mapOf(b.dataset.bmdel); if (!m) return;
+      const r = bmFind(m.nodes, b.dataset.bmdel);
+      const kids = r.node.children.length;
+      askConfirm("Remove requirement",
+        kids ? 'Remove this requirement AND the '+kids+' branch(es) under it?' : 'Remove this requirement?',
+        ()=>{ r.list.splice(r.list.indexOf(r.node), 1); save(); render(); });
+    };
+  });
+  const bmShift = (id, dir)=>{
+    const m = mapOf(id); if (!m) return;
+    const r = bmFind(m.nodes, id);
+    const i = r.list.indexOf(r.node), j = i + dir;
+    if (j < 0 || j >= r.list.length) return;
+    r.list.splice(i, 1);
+    r.list.splice(j, 0, r.node);
+    save(); render();
+  };
+  main.querySelectorAll("[data-bmup]").forEach(b=>{ b.onclick = ()=> bmShift(b.dataset.bmup, -1); });
+  main.querySelectorAll("[data-bmdn]").forEach(b=>{ b.onclick = ()=> bmShift(b.dataset.bmdn, 1); });
+
+  /* drag a row (by its grip) to reorder or move it under another step;
+     its whole branch travels with it. A row can never be dropped inside
+     its own branch. */
+  const clearDropMarks = ()=> main.querySelectorAll(".dragging,.drop-before,.drop-after")
+    .forEach(el=>el.classList.remove("dragging","drop-before","drop-after"));
+  main.querySelectorAll("[data-bmgrip]").forEach(g=>{
+    g.addEventListener("dragstart", e=>{
+      bmDragId = g.dataset.bmgrip;
+      e.dataTransfer.setData("text/plain", bmDragId);
+      e.dataTransfer.effectAllowed = "move";
+      g.closest(".bm-branch").classList.add("dragging");
+    });
+    g.addEventListener("dragend", ()=>{ bmDragId = null; clearDropMarks(); });
+  });
+  main.querySelectorAll(".bm-node").forEach(row=>{
+    const rowId = row.querySelector("[data-bmtext]").dataset.bmtext;
+    row.addEventListener("dragover", e=>{
+      if (!bmDragId || bmDragId === rowId) return;
+      const srcMap = mapOf(bmDragId); if (!srcMap) return;
+      if (bmContains(bmFind(srcMap.nodes, bmDragId).node, rowId)) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      const rc = row.getBoundingClientRect();
+      const before = e.clientY < rc.top + rc.height/2;
+      row.classList.toggle("drop-before", before);
+      row.classList.toggle("drop-after", !before);
+    });
+    row.addEventListener("dragleave", ()=> row.classList.remove("drop-before","drop-after"));
+    row.addEventListener("drop", e=>{
+      e.preventDefault();
+      if (!bmDragId || bmDragId === rowId){ clearDropMarks(); return; }
+      const srcMap = mapOf(bmDragId), tgtMap = mapOf(rowId);
+      if (!srcMap || !tgtMap){ clearDropMarks(); return; }
+      const src = bmFind(srcMap.nodes, bmDragId);
+      if (bmContains(src.node, rowId)){ clearDropMarks(); return; }
+      const rc = row.getBoundingClientRect();
+      const before = e.clientY < rc.top + rc.height/2;
+      src.list.splice(src.list.indexOf(src.node), 1);
+      const tgt = bmFind(tgtMap.nodes, rowId);
+      tgt.list.splice(tgt.list.indexOf(tgt.node) + (before ? 0 : 1), 0, src.node);
+      bmDragId = null;
+      save(); render();
+    });
+  });
+  main.querySelectorAll("[data-bmnow]").forEach(b=>{
+    b.onclick = ()=>{
+      const m = mapOf(b.dataset.bmnow); if (!m) return;
+      const r = bmFind(m.nodes, b.dataset.bmnow);
+      if (!r.node.text.trim()) return;
+      setLevelText(dom, "now", r.node.text);
+      state.view = "chain";
+      save(); render();
+    };
+  });
+
+  /* why ⇄ how: a root cause spawns a linked plan; both sides can jump */
+  main.querySelectorAll("[data-bmhow]").forEach(b=>{
+    b.onclick = ()=>{
+      const m = mapOf(b.dataset.bmhow); if (!m) return;
+      const node = bmFind(m.nodes, b.dataset.bmhow).node;
+      if (!node.text.trim()) return;
+      const h = { id:"m"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36),
+        outcome: node.text, created: todayISO(), closed: false, nodes: [],
+        from: { itemId: m.id, nodeId: node.id, problem: m.outcome, cause: node.text } };
+      state.hows.unshift(h);
+      node.howRef = h.id;
+      state.view = "how";
+      bmJumpTo = h.id;
+      save(); render();
+    };
+  });
+  main.querySelectorAll("[data-bmgotohow]").forEach(b=>{
+    b.onclick = ()=>{
+      const m = mapOf(b.dataset.bmgotohow); if (!m) return;
+      const node = bmFind(m.nodes, b.dataset.bmgotohow).node;
+      state.view = "how";
+      bmJumpTo = node.howRef;
+      save(); render();
+    };
+  });
+  main.querySelectorAll("[data-bmgotowhy]").forEach(b=>{
+    b.onclick = ()=>{
+      state.view = "why";
+      bmJumpTo = b.dataset.bmgotowhy;
+      save(); render();
+    };
+  });
+  if (bmFocusId){
+    const el = main.querySelector('[data-bmtext="'+bmFocusId+'"]');
+    if (el) el.focus();
+    bmFocusId = null;
+  }
+  if (bmJumpTo){
+    const card = main.querySelector('[data-bmcard="'+bmJumpTo+'"]');
+    if (card){
+      card.scrollIntoView({ block: "start" });
+      card.style.outline = "2px solid var(--focus)";
+      setTimeout(()=>{ card.style.outline = ""; }, 1600);
+    }
+    bmJumpTo = null;
+  }
+}
+
+/* ================= GPS (1-3-5) ================= */
+
+function renderGPS(main, dom){
+  ensureDomainTools(dom);
+  const g = dom.gps;
+  const hasYear = chainHasYear(dom);
+  const yearTxt = hasYear ? dom.levels.year.text.trim() : "";
+
+  let html = '<section class="wide">'
+    + '<div class="tool-card" style="margin-bottom:16px"><h2>GPS &mdash; 1 goal &middot; 3 priorities &middot; 5 strategies</h2>'
+    + '<p class="why">Keller&rsquo;s one-page plan behind the one-year goal (from his MREA/KW system, not the book itself): the goal, the three priorities that must happen for it, and up to five strategies that deliver each priority.</p>'
+    + '<label>The Goal (this year)</label>'
+    + '<div class="gps-goal"><input type="text" class="ctl" id="gpsGoal" value="'+esc(g.goal)+'" placeholder="One goal for the year">'
+    + '<button class="pullbtn" id="gpsPull"'+(yearTxt?'':' disabled')+' title="'+esc(yearTxt||(hasYear?"No one-year goal on the chain yet":"This goal line's chain starts below one year"))+'">&#8592; pull from chain</button>'
+    + '<button class="pullbtn" id="gpsPush"'+(hasYear && g.goal.trim()?'':' disabled')+' title="'+(hasYear?'':"This goal line's chain starts below one year — nowhere to push")+'">&#8594; set as one-year on chain</button>'
+    + (hasYear ? '' : '<span class="statline" style="margin:0">This goal line runs from '+esc(HORIZONS.find(h=>h.key===dom.horizon).label.toLowerCase())+', so there is no one-year level to sync with.</span>')
+    + '</div></div>'
+    + '<div class="tools-grid">';
+
+  g.priorities.forEach((p,pi)=>{
+    html += '<div class="tool-card"><h2>Priority '+(pi+1)+'</h2>'
+      + '<input type="text" class="ctl" style="width:100%" data-gp="'+pi+'" value="'+esc(p.text)+'" placeholder="What must happen for the goal">'
+      + '<label style="margin-top:10px">Strategies</label>'
+      + p.strategies.map((s,si)=>'<div class="strat"><span class="n">'+(si+1)+'</span>'
+        + '<input type="checkbox" data-gsd="'+pi+'-'+si+'"'+(s.done?' checked':'')+(s.text.trim()?'':' disabled')+'>'
+        + '<input type="text" class="ctl'+(s.done?' done':'')+'" data-gs="'+pi+'-'+si+'" value="'+esc(s.text)+'" placeholder="How">'
+        + '</div>').join("")
+      + '</div>';
+  });
+
+  html += '</div></section>';
+  main.innerHTML = html;
+
+  $("#gpsGoal").addEventListener("change", e=>{ g.goal = e.target.value.trim(); save(); render(); });
+  $("#gpsPull").onclick = ()=>{ if (yearTxt){ g.goal = yearTxt; save(); render(); } };
+  $("#gpsPush").onclick = ()=>{ if (g.goal.trim()){ setLevelText(dom, "year", g.goal); render(); } };
+  main.querySelectorAll("[data-gp]").forEach(el=>{
+    el.addEventListener("change", ()=>{ g.priorities[+el.dataset.gp].text = el.value.trim(); save(); });
+  });
+  main.querySelectorAll("[data-gs]").forEach(el=>{
+    el.addEventListener("change", ()=>{
+      const [pi,si] = el.dataset.gs.split("-").map(Number);
+      const s = g.priorities[pi].strategies[si];
+      s.text = el.value.trim();
+      if (!s.text) s.done = false;
+      save(); render();
+    });
+  });
+  main.querySelectorAll("[data-gsd]").forEach(el=>{
+    el.addEventListener("change", ()=>{
+      const [pi,si] = el.dataset.gsd.split("-").map(Number);
+      g.priorities[pi].strategies[si].done = el.checked;
+      save(); render();
+    });
+  });
+}
+
+/* ================= 4-1-1 ================= */
+
+function fmtYM(ym){ const [y,m] = ym.split("-"); return m+"-"+y; }
+function addMonths(ym, n){
+  let [y,m] = ym.split("-").map(Number);
+  m += n; y += Math.floor((m-1)/12); m = ((m-1)%12+12)%12+1;
+  return y+"-"+String(m).padStart(2,"0");
+}
+function mondaysInMonth(ym){
+  const [y,m] = ym.split("-").map(Number);
+  const list = [];
+  const d = new Date(y, m-1, 1, 12);
+  while (d.getDay() !== 1) d.setDate(d.getDate()+1);
+  while (d.getMonth() === m-1){
+    list.push(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"));
+    d.setDate(d.getDate()+7);
+  }
+  return list;
+}
+
+let f411YM = null; // month being viewed; resets to the current month each open of the app
+
+function render411(main, dom){
+  ensureDomainTools(dom);
+  if (!f411YM) f411YM = todayISO().slice(0,7);
+  const sheet = dom.f411.months[f411YM] || (dom.f411.months[f411YM] = { month:"", weeks:{} });
+  const mondays = mondaysInMonth(f411YM);
+  const curWS = weekStartISO();
+  const yearTxt = chainHasYear(dom) ? dom.levels.year.text.trim() : "";
+  const monthTxt = dom.levels.month.text.trim();
+  const weekTxt = dom.levels.week.text.trim();
+
+  let html = '<section class="wide"><div class="tool-card">'
+    + '<h2>4-1-1 &mdash; 4 weeks &middot; 1 month &middot; 1 year</h2>'
+    + '<p class="why">Keller&rsquo;s weekly accountability sheet (MREA/KW): what I do this week serves this month, which serves this year. The Weekly Hour fills the current week here automatically when the row is empty.</p>'
+    + '<div class="mo-nav">'
+    + '<button class="btn" id="moPrev">&#8592;</button><b>'+fmtYM(f411YM)+'</b><button class="btn" id="moNext">&#8594;</button>'
+    + (f411YM !== todayISO().slice(0,7) ? '<button class="pullbtn" id="moNow">back to this month</button>' : '')
+    + '</div>'
+
+    + '<label>1 year &mdash; annual goal</label>'
+    + '<div class="gps-goal"><textarea class="ctl" id="f4Year" rows="2" style="flex:1" placeholder="The year&rsquo;s goal">'+esc(dom.f411.annual)+'</textarea>'
+    + '<button class="pullbtn" id="f4PullY"'+(yearTxt?'':' disabled')+'>&#8592; from chain</button></div>'
+
+    + '<label style="margin-top:12px">1 month &mdash; '+fmtYM(f411YM)+' goal</label>'
+    + '<div class="gps-goal"><textarea class="ctl" id="f4Month" rows="2" style="flex:1" placeholder="This month&rsquo;s goal">'+esc(sheet.month)+'</textarea>'
+    + '<button class="pullbtn" id="f4PullM"'+(monthTxt?'':' disabled')+'>&#8592; from chain</button></div>'
+
+    + '<label style="margin-top:14px">The weeks</label>';
+
+  for (const ws of mondays){
+    const row = sheet.weeks[ws] || { text:"", done:false };
+    const isCur = ws === curWS;
+    html += '<div class="f411-week">'
+      + '<div class="wlab">Week of <b>'+fmtDate(ws)+'</b>'+(isCur?' <span class="chip fresh">this week</span>':'')+'</div>'
+      + '<textarea class="ctl" rows="2" data-f4w="'+ws+'" placeholder="'+(isCur?'This week&rsquo;s goals':'')+'">'+esc(row.text)+'</textarea>'
+      + (isCur && weekTxt ? '<button class="pullbtn" data-f4pull="'+ws+'" style="padding-top:8px">&#8592; from chain</button>' : '')
+      + '<label class="dn"><input type="checkbox" data-f4d="'+ws+'"'+(row.done?' checked':'')+'> done</label>'
+      + '</div>';
+  }
+
+  html += '</div></section>';
+  main.innerHTML = html;
+
+  $("#moPrev").onclick = ()=>{ f411YM = addMonths(f411YM,-1); render(); };
+  $("#moNext").onclick = ()=>{ f411YM = addMonths(f411YM, 1); render(); };
+  const moNow = $("#moNow");
+  if (moNow) moNow.onclick = ()=>{ f411YM = todayISO().slice(0,7); render(); };
+  $("#f4Year").addEventListener("change", e=>{ dom.f411.annual = e.target.value.trim(); save(); });
+  $("#f4PullY").onclick = ()=>{ if (yearTxt){ dom.f411.annual = yearTxt; save(); render(); } };
+  $("#f4Month").addEventListener("change", e=>{ sheet.month = e.target.value.trim(); save(); });
+  $("#f4PullM").onclick = ()=>{ if (monthTxt){ sheet.month = monthTxt; save(); render(); } };
+  main.querySelectorAll("[data-f4w]").forEach(el=>{
+    el.addEventListener("change", ()=>{
+      const ws = el.dataset.f4w;
+      const row = sheet.weeks[ws] || (sheet.weeks[ws] = { text:"", done:false });
+      row.text = el.value.trim();
+      save();
+    });
+  });
+  main.querySelectorAll("[data-f4pull]").forEach(b=>{
+    b.onclick = ()=>{
+      const ws = b.dataset.f4pull;
+      const row = sheet.weeks[ws] || (sheet.weeks[ws] = { text:"", done:false });
+      row.text = dom.levels.week.text.trim();
+      save(); render();
+    };
+  });
+  main.querySelectorAll("[data-f4d]").forEach(el=>{
+    el.addEventListener("change", ()=>{
+      const ws = el.dataset.f4d;
+      const row = sheet.weeks[ws] || (sheet.weeks[ws] = { text:"", done:false });
+      row.done = el.checked;
+      save();
+    });
+  });
+}
+
+/* ================= fishbone (Ishikawa) ================= */
+
+const FB_COLORS = ["#c98a1b","#b23a48","#7b5ea7","#2f6fb2","#1e7a46","#a05a00","#5c6b7a","#8c2f0d"];
+const FB_DEFAULT_CATS = ["Methods","Machines","People","Materials","Measurement","Environment"];
+const fbId = p => p + Date.now().toString(36) + Math.floor(Math.random()*1e4).toString(36);
+
+function fbFindCause(f, id){
+  for (const cat of f.cats){
+    for (const c of cat.causes){
+      if (c.id === id) return { cause:c, list:cat.causes, cat, parent:null };
+      for (const ch of c.children)
+        if (ch.id === id) return { cause:ch, list:c.children, cat, parent:c };
+    }
+  }
+  return null;
+}
+function fbCounts(f){
+  let total = 0, marked = 0;
+  for (const cat of f.cats) for (const c of cat.causes){
+    total++; if (c.mark) marked++;
+    for (const ch of c.children){ total++; if (ch.mark) marked++; }
+  }
+  return { total, marked };
+}
+const fbTr = (s,n) => s.length > n ? s.slice(0, n-1) + "…" : s;
+
+/* geometry: a glossy pill badge per category at the outer edge, a thick
+   colored bone slanting into the metallic spine, causes as tinted capsules
+   joined to the bone by ball joints, sub-causes as smaller capsules hanging
+   from their parent, and a glossy fish head holding the problem. All styling
+   is inline attributes + <defs>, so Download SVG stays self-contained. */
+function fbSvg(f){
+  const SPX0 = 100, SPX1 = 810, VBW = 1150;
+  const nTop = Math.ceil(f.cats.length / 2);
+  const top = f.cats.slice(0, nTop), bot = f.cats.slice(nTop);
+  const blockH = c => 38 + 22 * c.children.length;
+  const catH = cat => 118 + cat.causes.reduce((a,c)=>a+blockH(c), 0);
+  const topH = Math.max(180, ...top.map(catH));
+  const botH = Math.max(bot.length ? 180 : 100, ...bot.map(catH));
+  const H = topH + botH, spineY = topH;
+  let out = '<defs>'
+    + '<linearGradient id="gSpine" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4dae0"/><stop offset=".45" stop-color="#939ea9"/><stop offset="1" stop-color="#5d6771"/></linearGradient>'
+    + '<linearGradient id="gHead" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5593d4"/><stop offset=".55" stop-color="#1f5fa8"/><stop offset="1" stop-color="#15457e"/></linearGradient>'
+    + '<linearGradient id="gTail" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5f7187"/><stop offset="1" stop-color="#394655"/></linearGradient>'
+    + '</defs>';
+  const G = (sideCats, isTop) => {
+    const slotW = (SPX1 - SPX0 - 30) / Math.max(sideCats.length, 1);
+    sideCats.forEach((cat, k) => {
+      const color = FB_COLORS[f.cats.indexOf(cat) % FB_COLORS.length];
+      const x0 = SPX0 + 20 + k * slotW;
+      const attX = x0 + slotW - 14;
+      const Lp = slotW * 0.68;
+      const wB = Math.min(slotW - 24, cat.name.length * 8.4 + 96);
+      const bx = x0 + 2, by = isTop ? 12 : H - 46;
+      /* category badge: pill, gloss, medallion with initial, ＋ and ✕ inside */
+      out += '<rect x="'+bx+'" y="'+by+'" width="'+wB+'" height="34" rx="17" fill="'+color+'" stroke="rgba(0,0,0,.18)"/>'
+        + '<rect x="'+(bx+3)+'" y="'+(by+3)+'" width="'+(wB-6)+'" height="11" rx="6" fill="#fff" opacity=".28"/>'
+        + '<circle cx="'+(bx+18)+'" cy="'+(by+17)+'" r="11" fill="rgba(255,255,255,.25)" stroke="#fff" stroke-width="1.4"/>'
+        + '<text x="'+(bx+18)+'" y="'+(by+21.5)+'" font-size="12.5" font-weight="700" fill="#fff" text-anchor="middle">'+esc(cat.name.charAt(0).toUpperCase())+'</text>'
+        + '<text x="'+(bx+34)+'" y="'+(by+22)+'" font-size="14" font-weight="700" fill="#fff" data-fbcat="'+cat.id+'" style="cursor:pointer"><title>Rename category</title>'+esc(fbTr(cat.name, Math.floor((wB-78)/7.8)))+'</text>'
+        + '<text x="'+(bx+wB-36)+'" y="'+(by+22)+'" font-size="14" font-weight="700" fill="#fff" data-fbaddc="'+cat.id+'" style="cursor:pointer"><title>Add a cause to '+esc(cat.name)+'</title>＋</text>'
+        + '<text x="'+(bx+wB-17)+'" y="'+(by+22)+'" font-size="12" fill="#fff" opacity=".85" data-fbdelc="'+cat.id+'" style="cursor:pointer"><title>Remove category</title>✕</text>';
+      /* the bone, in the category's color */
+      const boneY0 = isTop ? by + 32 : by + 2;
+      const bX = bx + wB * 0.45;
+      out += '<line x1="'+bX+'" y1="'+boneY0+'" x2="'+attX+'" y2="'+spineY+'" stroke="'+color+'" stroke-width="4.5" stroke-linecap="round"/>';
+      /* causes: ball joint on the bone, capsule toward the tail */
+      let s = 82;
+      cat.causes.forEach((c, cz) => {
+        const y = isTop ? (boneY0 - 20 + s) : (boneY0 + 20 - s);
+        const t = (y - boneY0) / (spineY - boneY0);
+        const x = bX + (attX - bX) * t;
+        const mk = c.mark;
+        const w = Math.min(Lp - 30, Math.max(96, c.text.length * 6.3 + 24));
+        const xc = x - 16, xr = xc - w;
+        out += '<line x1="'+(x-4)+'" y1="'+y+'" x2="'+xc+'" y2="'+y+'" stroke="'+color+'" stroke-width="2"/>'
+          + '<circle cx="'+x+'" cy="'+y+'" r="5.5" fill="'+color+'" stroke="#fff" stroke-width="1.6"/>'
+          + '<rect x="'+xr+'" y="'+(y-12)+'" width="'+w+'" height="24" rx="12" fill="'+color+'" fill-opacity=".15" '+(mk?'stroke="#8c2f0d" stroke-width="2"':'stroke="'+color+'" stroke-opacity=".55" stroke-width="1.4"')+'/>'
+          + '<rect x="'+(xr+4)+'" y="'+(y-9)+'" width="'+(w-8)+'" height="8" rx="4" fill="#fff" opacity=".5"/>'
+          + '<text x="'+(xr+11)+'" y="'+(y+4)+'" font-size="11.5" '+(mk?'font-weight="700" fill="#8c2f0d"':'fill="#1c2733"')+' data-fbedit="'+c.id+'" style="cursor:pointer"><title>'+esc(c.text)+' — click to edit</title>'+esc(fbTr(c.text, Math.floor((w-18)/6.1)))+'</text>'
+          + '<text x="'+(xr-16)+'" y="'+(y+4)+'" font-size="11" fill="#2f6fb2" data-fbadds="'+c.id+'" style="cursor:pointer"><title>Add a sub-cause</title>＋</text>'
+          + '<text x="'+(xr-29)+'" y="'+(y+4)+'" font-size="11" '+(mk?'font-weight="700" fill="#8c2f0d"':'fill="#9aa7b2"')+' data-fbmark="'+c.id+'" style="cursor:pointer"><title>'+(mk?'Unmark':'Mark as suspected root cause')+'</title>!</text>'
+          + '<text x="'+(xr-42)+'" y="'+(y+4)+'" font-size="11" fill="#9aa7b2" data-fbdel="'+c.id+'" style="cursor:pointer"><title>Remove</title>✕</text>'
+          + (cz > 0 ? '<text x="'+(xr-55)+'" y="'+(y+4)+'" font-size="11" fill="#2f6fb2" data-fbup="'+c.id+'" style="cursor:pointer"><title>Move up the bone</title>&#8593;</text>' : '')
+          + (cz < cat.causes.length-1 ? '<text x="'+(xr-67)+'" y="'+(y+4)+'" font-size="11" fill="#2f6fb2" data-fbdn="'+c.id+'" style="cursor:pointer"><title>Move down the bone</title>&#8595;</text>' : '');
+        const vx = xc - 24;
+        c.children.forEach((ch, ci) => {
+          const yc2 = y + (isTop ? 1 : -1) * 22 * (ci + 1);
+          const mk2 = ch.mark;
+          const ws = Math.min(w - 8, Math.max(84, ch.text.length * 5.9 + 20));
+          const sxr = vx - 6 - ws;
+          out += '<line x1="'+vx+'" y1="'+(y + (isTop ? 12 : -12))+'" x2="'+vx+'" y2="'+yc2+'" stroke="'+color+'" stroke-opacity=".45" stroke-width="1.6"/>'
+            + '<circle cx="'+vx+'" cy="'+yc2+'" r="3.5" fill="'+color+'" stroke="#fff" stroke-width="1.2"/>'
+            + '<rect x="'+sxr+'" y="'+(yc2-10)+'" width="'+ws+'" height="20" rx="10" fill="'+color+'" fill-opacity=".09" '+(mk2?'stroke="#8c2f0d" stroke-width="1.8"':'stroke="'+color+'" stroke-opacity=".4" stroke-width="1.2"')+'/>'
+            + '<text x="'+(sxr+9)+'" y="'+(yc2+3.5)+'" font-size="10.5" '+(mk2?'font-weight="700" fill="#8c2f0d"':'fill="#44535f"')+' data-fbedit="'+ch.id+'" style="cursor:pointer"><title>'+esc(ch.text)+' — click to edit</title>'+esc(fbTr(ch.text, Math.floor((ws-14)/5.7)))+'</text>'
+            + '<text x="'+(sxr-14)+'" y="'+(yc2+4)+'" font-size="10.5" '+(mk2?'font-weight="700" fill="#8c2f0d"':'fill="#9aa7b2"')+' data-fbmark="'+ch.id+'" style="cursor:pointer"><title>'+(mk2?'Unmark':'Mark as suspected root cause')+'</title>!</text>'
+            + '<text x="'+(sxr-26)+'" y="'+(yc2+4)+'" font-size="10.5" fill="#9aa7b2" data-fbdel="'+ch.id+'" style="cursor:pointer"><title>Remove</title>✕</text>'
+            + (ci > 0 ? '<text x="'+(sxr-38)+'" y="'+(yc2+4)+'" font-size="10.5" fill="#2f6fb2" data-fbup="'+ch.id+'" style="cursor:pointer"><title>Move up</title>&#8593;</text>' : '')
+            + (ci < c.children.length-1 ? '<text x="'+(sxr-50)+'" y="'+(yc2+4)+'" font-size="10.5" fill="#2f6fb2" data-fbdn="'+ch.id+'" style="cursor:pointer"><title>Move down</title>&#8595;</text>' : '');
+        });
+        s += blockH(c);
+      });
+    });
+  };
+  G(top, true);
+  G(bot, false);
+  /* tail, metallic spine, glossy head */
+  out += '<path d="M '+(SPX0-6)+' '+spineY+' C '+(SPX0-30)+' '+(spineY-10)+' '+(SPX0-38)+' '+(spineY-44)+' '+(SPX0-74)+' '+(spineY-54)+' C '+(SPX0-52)+' '+(spineY-22)+' '+(SPX0-52)+' '+(spineY+22)+' '+(SPX0-74)+' '+(spineY+54)+' C '+(SPX0-38)+' '+(spineY+44)+' '+(SPX0-30)+' '+(spineY+10)+' '+(SPX0-6)+' '+spineY+' Z" fill="url(#gTail)"/>'
+    + '<rect x="'+(SPX0-14)+'" y="'+(spineY-4.5)+'" width="'+((SPX1+18)-(SPX0-14))+'" height="9" rx="4.5" fill="url(#gSpine)" stroke="#525c66" stroke-width=".6"/>'
+    + '<line x1="'+(SPX0-8)+'" y1="'+(spineY-2.4)+'" x2="'+(SPX1+10)+'" y2="'+(spineY-2.4)+'" stroke="#fff" stroke-opacity=".55" stroke-width="1.2"/>';
+  const words = f.problem.split(/\s+/);
+  const lines = [];
+  let cur = "";
+  for (const w of words){
+    if ((cur + " " + w).trim().length > 20 && cur){ lines.push(cur); cur = w; }
+    else cur = (cur + " " + w).trim();
+    if (lines.length === 3) break;
+  }
+  if (cur && lines.length < 3) lines.push(cur);
+  if (lines.length === 3 && words.join(" ").length > lines.join(" ").length) lines[2] = fbTr(lines[2], 17);
+  out += '<g data-fbprob="'+f.id+'" style="cursor:pointer"><title>'+esc(f.problem)+' — click to edit</title>'
+    + '<path d="M '+(SPX1+4)+' '+spineY+' Q '+(SPX1+38)+' '+(spineY-70)+' '+(SPX1+140)+' '+(spineY-72)+' Q '+(SPX1+262)+' '+(spineY-64)+' '+(SPX1+292)+' '+(spineY-6)+' Q '+(SPX1+288)+' '+(spineY+30)+' '+(SPX1+240)+' '+(spineY+54)+' Q '+(SPX1+130)+' '+(spineY+86)+' '+(SPX1+40)+' '+(spineY+64)+' Q '+(SPX1+14)+' '+(spineY+38)+' '+(SPX1+4)+' '+spineY+' Z" fill="url(#gHead)" stroke="#123c6b" stroke-width="1.5"/>'
+    + '<ellipse cx="'+(SPX1+140)+'" cy="'+(spineY-42)+'" rx="92" ry="16" fill="#fff" opacity=".22"/>'
+    + '<circle cx="'+(SPX1+240)+'" cy="'+(spineY-24)+'" r="13" fill="#fff"/>'
+    + '<circle cx="'+(SPX1+243)+'" cy="'+(spineY-23)+'" r="6.5" fill="#15202b"/>'
+    + '<circle cx="'+(SPX1+241)+'" cy="'+(spineY-26)+'" r="2.2" fill="#fff"/>'
+    + '<path d="M '+(SPX1+266)+' '+(spineY+24)+' Q '+(SPX1+282)+' '+(spineY+28)+' '+(SPX1+288)+' '+(spineY+12)+'" fill="none" stroke="#123c6b" stroke-width="2" stroke-linecap="round"/>'
+    + lines.map((ln,i)=>'<text x="'+(SPX1+148)+'" y="'+(spineY - (lines.length-1)*9 + i*18 + 6)+'" font-size="15" font-weight="700" fill="#ffffff" text-anchor="middle">'+esc(ln)+'</text>').join("")
+    + '</g>';
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+VBW+' '+H+'" style="width:100%;height:auto;background:#fff" font-family="Segoe UI, system-ui, sans-serif">'+out+'</svg>';
+}
+
+function renderFish(main, dom){
+  const open = state.fish.filter(x=>!x.closed);
+  let html = '<section class="wide">'
+    + '<div class="tool-card" style="margin-bottom:16px"><h2>Fishbone &mdash; causes by category</h2>'
+    + '<p class="why">The Ishikawa diagram: the problem in the head, one bone per cause category (the classic 6M to start &mdash; rename or remove freely), causes on the bones, sub-causes beneath them. Click any text to edit; ＋ adds, ! marks a <b>suspected root cause</b> (collected below the diagram, where it can jump to a Why-Why or become your Right now), ✕ removes, &#8593;&#8595; reshuffle a cause along its bone. Download gives the diagram as an SVG file.</p>'
+    + '<button class="btn brand" id="fbNew">+ New fishbone</button>'
+    + '</div>';
+  if (!open.length) html += '<p class="empty-note">No diagrams yet. Start one with the problem.</p>';
+
+  for (const f of open){
+    const c = fbCounts(f);
+    const marked = [];
+    for (const cat of f.cats) for (const cz of cat.causes){
+      if (cz.mark) marked.push({ cat, cause: cz });
+      for (const ch of cz.children) if (ch.mark) marked.push({ cat, cause: ch });
+    }
+    html += '<div class="tool-card" data-bmcard="'+f.id+'" style="margin-bottom:16px">'
+      + '<div class="bm-outcome" style="margin-bottom:8px"><span class="bm-req-lbl" style="color:var(--now)">Problem</span>'
+      + '<span style="flex:1;font-size:15.5px;font-weight:600">'+esc(f.problem)+'</span>'
+      + '<span class="chip '+(c.total?'fresh':'unset')+'">'+(c.total? c.total+' cause'+(c.total>1?'s':'')+(c.marked?' · '+c.marked+' marked':'') : 'no causes yet')+'</span>'
+      + '<button class="btn" data-fbaddcat="'+f.id+'">+ Category</button>'
+      + '<button class="btn" data-fbdl="'+f.id+'">Download SVG</button>'
+      + '<button class="btn" data-fbarch="'+f.id+'">Archive</button>'
+      + '<button class="btn" data-fbdelf="'+f.id+'" style="color:var(--now)">Delete</button>'
+      + '</div>'
+      + '<div data-fbsvg="'+f.id+'">'+fbSvg(f)+'</div>'
+      + (marked.length ? '<div style="margin-top:10px"><span class="bm-req-lbl" style="color:var(--now)">Suspected root causes</span>'
+          + marked.map(m=>'<div class="sl-item"><span style="color:var(--muted);font-size:12px">'+esc(m.cat.name)+' ›</span> <span style="font-weight:600;color:var(--now)">'+esc(m.cause.text)+'</span>'
+            + '<span style="margin-left:auto;display:flex;gap:10px">'
+            + (m.cause.whyRef && state.whys.some(w=>w.id===m.cause.whyRef && !w.closed)
+                ? '<button class="mini" data-fbgotowhy="'+m.cause.id+'">why &#8599;</button>'
+                : '<button class="mini" data-fbwhy="'+m.cause.id+'" title="Drill into this with a Why-Why analysis">&#8594; why</button>')
+            + '<button class="mini" data-fbnow="'+m.cause.id+'" title="Make this my Right now on the goal chain">&#8594; now</button>'
+            + '</span></div>').join("")
+          + '</div>' : '')
+      + '</div>';
+  }
+  html += '</section>';
+  main.innerHTML = html;
+
+  const fishOf = id => state.fish.find(x=>!x.closed && (x.id===id || x.cats.some(ct=>ct.id===id) || fbFindCause(x, id)));
+  $("#fbNew").onclick = ()=> askName("New fishbone — the problem", "", p=>{
+    state.fish.unshift({ id:fbId("f"), problem:p, created:todayISO(), closed:false,
+      cats: FB_DEFAULT_CATS.map(n=>({ id:fbId("c"), name:n, causes:[] })) });
+    save(); render();
+  });
+  main.querySelectorAll("[data-fbprob]").forEach(el=> el.addEventListener("click", ()=>{
+    const f = state.fish.find(x=>x.id===el.dataset.fbprob); if (!f) return;
+    askName("The problem", f.problem, t=>{ f.problem = t; save(); render(); });
+  }));
+  main.querySelectorAll("[data-fbaddcat]").forEach(b=> b.onclick = ()=>{
+    const f = state.fish.find(x=>x.id===b.dataset.fbaddcat); if (!f || f.cats.length >= 8) return;
+    askName("New category", "", n=>{ f.cats.push({ id:fbId("c"), name:n, causes:[] }); save(); render(); });
+  });
+  main.querySelectorAll("[data-fbcat]").forEach(el=> el.addEventListener("click", ()=>{
+    const f = fishOf(el.dataset.fbcat); if (!f) return;
+    const cat = f.cats.find(ct=>ct.id===el.dataset.fbcat);
+    askName("Rename category", cat.name, n=>{ cat.name = n; save(); render(); });
+  }));
+  main.querySelectorAll("[data-fbaddc]").forEach(el=> el.addEventListener("click", ()=>{
+    const f = fishOf(el.dataset.fbaddc); if (!f) return;
+    const cat = f.cats.find(ct=>ct.id===el.dataset.fbaddc);
+    askName("New cause under "+cat.name, "", t=>{ cat.causes.push({ id:fbId("z"), text:t, mark:false, whyRef:null, children:[] }); save(); render(); });
+  }));
+  main.querySelectorAll("[data-fbdelc]").forEach(el=> el.addEventListener("click", ()=>{
+    const f = fishOf(el.dataset.fbdelc); if (!f) return;
+    if (f.cats.length <= 1) return;
+    const cat = f.cats.find(ct=>ct.id===el.dataset.fbdelc);
+    const n = cat.causes.reduce((a,c)=>a+1+c.children.length, 0);
+    askConfirm("Remove category", 'Remove "'+cat.name+'"'+(n?' and its '+n+' cause(s)?':'?'),
+      ()=>{ f.cats.splice(f.cats.indexOf(cat), 1); save(); render(); });
+  }));
+  main.querySelectorAll("[data-fbadds]").forEach(el=> el.addEventListener("click", ()=>{
+    const f = fishOf(el.dataset.fbadds); if (!f) return;
+    const r = fbFindCause(f, el.dataset.fbadds);
+    askName("Sub-cause under: "+fbTr(r.cause.text, 40), "", t=>{ r.cause.children.push({ id:fbId("z"), text:t, mark:false, whyRef:null, children:[] }); save(); render(); });
+  }));
+  main.querySelectorAll("[data-fbedit]").forEach(el=> el.addEventListener("click", ()=>{
+    const f = fishOf(el.dataset.fbedit); if (!f) return;
+    const r = fbFindCause(f, el.dataset.fbedit);
+    askName("Edit cause", r.cause.text, t=>{ r.cause.text = t; save(); render(); });
+  }));
+  main.querySelectorAll("[data-fbmark]").forEach(el=> el.addEventListener("click", ()=>{
+    const f = fishOf(el.dataset.fbmark); if (!f) return;
+    const r = fbFindCause(f, el.dataset.fbmark);
+    r.cause.mark = !r.cause.mark;
+    save(); render();
+  }));
+  main.querySelectorAll("[data-fbdel]").forEach(el=> el.addEventListener("click", ()=>{
+    const f = fishOf(el.dataset.fbdel); if (!f) return;
+    const r = fbFindCause(f, el.dataset.fbdel);
+    const kids = r.cause.children ? r.cause.children.length : 0;
+    askConfirm("Remove cause", kids ? 'Remove this cause and its '+kids+' sub-cause(s)?' : 'Remove this cause?',
+      ()=>{ r.list.splice(r.list.indexOf(r.cause), 1); save(); render(); });
+  }));
+  const fbShift = (id, dir) => {
+    const f = fishOf(id); if (!f) return;
+    const r = fbFindCause(f, id);
+    const i = r.list.indexOf(r.cause), j = i + dir;
+    if (j < 0 || j >= r.list.length) return;
+    r.list.splice(i, 1);
+    r.list.splice(j, 0, r.cause);
+    save(); render();
+  };
+  main.querySelectorAll("[data-fbup]").forEach(el=> el.addEventListener("click", ()=> fbShift(el.dataset.fbup, -1)));
+  main.querySelectorAll("[data-fbdn]").forEach(el=> el.addEventListener("click", ()=> fbShift(el.dataset.fbdn, 1)));
+  main.querySelectorAll("[data-fbwhy]").forEach(b=> b.onclick = ()=>{
+    const f = fishOf(b.dataset.fbwhy); if (!f) return;
+    const r = fbFindCause(f, b.dataset.fbwhy);
+    const w = { id:fbId("m"), outcome: r.cause.text, created:todayISO(), closed:false, nodes:[] };
+    state.whys.unshift(w);
+    r.cause.whyRef = w.id;
+    state.view = "why";
+    bmJumpTo = w.id;
+    save(); render();
+  });
+  main.querySelectorAll("[data-fbgotowhy]").forEach(b=> b.onclick = ()=>{
+    const f = fishOf(b.dataset.fbgotowhy); if (!f) return;
+    state.view = "why";
+    bmJumpTo = fbFindCause(f, b.dataset.fbgotowhy).cause.whyRef;
+    save(); render();
+  });
+  main.querySelectorAll("[data-fbnow]").forEach(b=> b.onclick = ()=>{
+    const f = fishOf(b.dataset.fbnow); if (!f) return;
+    setLevelText(dom, "now", fbFindCause(f, b.dataset.fbnow).cause.text);
+    state.view = "chain";
+    save(); render();
+  });
+  main.querySelectorAll("[data-fbdl]").forEach(b=> b.onclick = ()=>{
+    const f = state.fish.find(x=>x.id===b.dataset.fbdl); if (!f) return;
+    const blob = new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n'+fbSvg(f)], { type:"image/svg+xml" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "Fishbone — "+fbTr(f.problem, 40).replace(/[\\/:*?"<>|]/g, "")+".svg";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+  main.querySelectorAll("[data-fbarch]").forEach(b=> b.onclick = ()=>
+    askConfirm("Archive diagram", "Archive this fishbone? Everything stays in the data; it just leaves the screen.",
+      ()=>{ const f = state.fish.find(x=>x.id===b.dataset.fbarch); if (f){ f.closed = true; save(); render(); } }));
+  main.querySelectorAll("[data-fbdelf]").forEach(b=> b.onclick = ()=>
+    askConfirm("Delete diagram", "PERMANENTLY delete this fishbone and all its causes? This cannot be undone — use Archive instead if you might want it back.",
+      ()=>{ const i = state.fish.findIndex(x=>x.id===b.dataset.fbdelf); if (i >= 0){ state.fish.splice(i, 1); save(); render(); } }));
+}
+
+/* ================= time blocking ================= */
+
+const WEEKDAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+function renderBlocks(main, dom){
+  const b = state.blocks;
+  const today = todayISO();
+  let prot7 = 0;
+  for (let i=0;i<7;i++) if (b.protectedLog[addDaysISO(today,-i)]) prot7++;
+  const dayTxt = dom.levels.day.text.trim();
+
+  main.innerHTML = '<section class="wide"><div class="tools-grid">'
+
+    + '<div class="tool-card"><h2>1 &middot; Time off first</h2>'
+    + '<p class="why">Block your time off before anything else &mdash; resting is a responsibility. Plan the rest, then build the work around it.</p>'
+    + '<label>Planned time off / rest</label>'
+    + '<textarea class="ctl" id="tbOff" rows="3" placeholder="e.g. Thanksgiving week; long weekend 10-09; evenings after 6 are family time">'+esc(b.timeOffNote)+'</textarea>'
+    + '</div>'
+
+    + '<div class="tool-card"><h2>2 &middot; The ONE Thing block</h2>'
+    + '<p class="why">Four hours a day, as early as you can, until your ONE Thing is done. Everything else waits its turn.</p>'
+    + '<label>Starts at</label><input type="time" class="ctl" id="tbStart" value="'+esc(b.oneThingStart)+'">'
+    + '<label>Hours</label><input type="number" class="ctl" id="tbHours" min="1" max="8" step="1" value="'+b.oneThingHours+'" style="width:80px">'
+    + '<div class="statline">Block: <b>'+esc(b.oneThingStart)+'&ndash;'+esc(blockEnd())+'</b> &middot; protected <b>'+prot7+' of the last 7 days</b></div>'
+    + '<div class="statline">In the block today: '+(dayTxt ? '<b>'+esc(dayTxt)+'</b>' : '<i>no daily ONE Thing set &mdash; set it on the Goal Chain</i>')+'</div>'
+    + '<p style="margin:10px 0 0"><button class="btn good" id="tbProtect"'+(b.protectedLog[today]?' disabled':'')+'>'
+    + (b.protectedLog[today] ? '&#10003; Protected today' : 'I protected my block today')+'</button></p>'
+    + '</div>'
+
+    + '<div class="tool-card"><h2>3 &middot; The planning hour</h2>'
+    + '<p class="why">One hour a week to review the chain and set the week &mdash; the appointment that keeps every other appointment honest.</p>'
+    + '<label>Day</label><select class="ctl" id="tbPlanDay">'
+    + WEEKDAYS.map((w,i)=>'<option value="'+i+'"'+(i===b.planningDay?' selected':'')+'>'+w+'</option>').join('')
+    + '</select>'
+    + '<label>At</label><input type="time" class="ctl" id="tbPlanStart" value="'+esc(b.planningStart)+'">'
+    + '<div class="statline">This week: '+(planningDoneThisWeek() ? '<b style="color:var(--good)">done &#10003;</b>' : '<b style="color:var(--warn)">not yet</b>')+'</div>'
+    + '<p style="margin:10px 0 0"><button class="btn brand" id="tbRunWeekly">Start the Weekly Hour &#8594;</button></p>'
+    + '</div>'
+
+    + '<div class="tool-card"><h2>Protect the block</h2>'
+    + '<p class="why">The block only works if it survives. The book&rsquo;s four defenses:</p>'
+    + '<ul style="margin:0;padding-left:18px;font-size:13.5px;line-height:1.7">'
+    + '<li><b>Build a bunker</b> &mdash; a door that closes, notifications off.</li>'
+    + '<li><b>Station provisions</b> &mdash; everything you need is already inside.</li>'
+    + '<li><b>Sweep for mines</b> &mdash; clear known interruptions in advance.</li>'
+    + '<li><b>Enlist support</b> &mdash; tell people when you go dark, and when you resurface.</li></ul>'
+    + '<p class="why" style="margin-top:10px">The four thieves it guards against &mdash; saying yes when you should say no, fear of chaos, poor health habits, an environment that doesn&rsquo;t support your goals &mdash; get audited in the Weekly Hour.</p>'
+    + '</div>'
+
+    + '</div></section>';
+
+  $("#tbOff").addEventListener("change", e=>{ b.timeOffNote = e.target.value.trim(); save(); });
+  $("#tbStart").addEventListener("change", e=>{ if (e.target.value){ b.oneThingStart = e.target.value; save(); render(); } });
+  $("#tbHours").addEventListener("change", e=>{ const n = parseInt(e.target.value,10); if (n>=1 && n<=8){ b.oneThingHours = n; save(); render(); } });
+  $("#tbPlanDay").addEventListener("change", e=>{ b.planningDay = parseInt(e.target.value,10); save(); });
+  $("#tbPlanStart").addEventListener("change", e=>{ if (e.target.value){ b.planningStart = e.target.value; save(); } });
+  $("#tbProtect").onclick = ()=>{ b.protectedLog[today] = true; save(); render(); };
+  $("#tbRunWeekly").onclick = openWeeklyHour;
+}
+
+/* ================= 66-day challenge ================= */
+
+function renderChallenge(main, dom){
+  const open = state.challenges.filter(c=>!c.closed);
+  const today = todayISO();
+  let html = '<section class="wide">'
+    + '<div class="tool-card" style="margin-bottom:16px"><h2>The 66-day challenge</h2>'
+    + '<p class="why">On average it takes 66 days for a behavior to become automatic. Do the ONE habit in your time block every day and mark the day. If you slip, leave the miss honest and keep going &mdash; the average survives a missed day; quitting doesn&rsquo;t.</p>'
+    + '<button class="btn brand" id="chNew">+ Start a 66-day challenge</button>'
+    + '<span class="statline" style="margin-left:10px">Marking today&rsquo;s ONE Thing done on the Goal Chain auto-checks today here (same goal line).</span>'
+    + '</div>';
+
+  if (!open.length) html += '<p class="empty-note">No challenge running.</p>';
+
+  for (const c of open){
+    const cdom = state.domains.find(d=>d.id===c.domainId);
+    const count = Object.keys(c.marks).length;
+    const dayN = Math.min(66, dayOffset(c.start, today)+1);
+    const end = addDaysISO(c.start, 65);
+    let streak = 0, cur = c.marks[today] ? today : addDaysISO(today,-1);
+    while (c.marks[cur]){ streak++; cur = addDaysISO(cur,-1); }
+    let cells = "";
+    for (let i=0;i<66;i++){
+      const d = addDaysISO(c.start,i);
+      const cls = "cell"+(c.marks[d]?" done":"")+(d===today?" today":"")+(d>today?" future":"");
+      cells += '<div class="'+cls+'" data-ch="'+c.id+'" data-date="'+d+'" title="Day '+(i+1)+' — '+fmtDate(d)+'">'+(i+1)+'</div>';
+    }
+    html += '<div class="tool-card" style="margin-bottom:16px">'
+      + '<div class="ch-head"><span class="habit">'+esc(c.habit)+'</span>'
+      + '<span class="chip unset">'+esc(cdom?cdom.name:"(archived line)")+'</span>'
+      + '<span class="statline" style="margin:0">started '+fmtDate(c.start)+' &middot; ends '+fmtDate(end)+'</span></div>'
+      + '<div class="c66">'+cells+'</div>'
+      + '<div class="statline">'+(today<c.start?'starts '+fmtDate(c.start):'day <b>'+dayN+'</b> of 66')
+      + ' &middot; <b>'+count+'</b> marked &middot; current streak <b>'+streak+'</b></div>'
+      + (count>=66 ? '<div class="ch-done-banner">66 of 66 &mdash; the habit is yours. Keep the block; pick the next ONE Thing to make automatic.</div>' : '')
+      + '<p style="margin:10px 0 0"><button class="btn" data-chclose="'+c.id+'">Archive challenge</button></p>'
+      + '</div>';
+  }
+  html += '</section>';
+  main.innerHTML = html;
+
+  $("#chNew").onclick = ()=> askName("New 66-day challenge — the daily habit",
+    "Do my ONE Thing in my time block", habit=>{
+      state.challenges.push({ id:"c"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36),
+        domainId:dom.id, habit, start:todayISO(), marks:{}, closed:false });
+      save(); render();
+    });
+  main.querySelectorAll(".cell").forEach(el=>{
+    const d = el.dataset.date;
+    if (d > today) return;
+    el.onclick = ()=>{
+      const c = state.challenges.find(x=>x.id===el.dataset.ch);
+      if (!c) return;
+      if (c.marks[d]) delete c.marks[d]; else c.marks[d] = true;
+      save(); render();
+    };
+  });
+  main.querySelectorAll("[data-chclose]").forEach(b=>{
+    b.onclick = ()=> askConfirm("Archive challenge",
+      "Archive this challenge? Its marks stay in the data; it just leaves the screen.",
+      ()=>{ const c = state.challenges.find(x=>x.id===b.dataset.chclose); if (c){ c.closed = true; save(); render(); } });
+  });
+}
+
+/* ================= success list ================= */
+
+function renderList(main, dom){
+  const sl = state.successList;
+  const alive = sl.items.filter(i=>i.alive);
+  let html = '<section class="wide"><div class="tool-card">'
+    + '<h2>Success list &mdash; not a to-do list</h2>'
+    + '<p class="why">A to-do list is everything that could be done; a success list is the shortest path to what must be done. Dump the list, then apply 80/20 again and again until one item is left standing.</p>';
+
+  if (!sl.distilling){
+    html += '<label>Add items (one per line)</label>'
+      + '<textarea class="ctl" id="slAdd" rows="3" placeholder="Everything competing for your attention — paste the whole mess"></textarea>'
+      + '<p style="margin:8px 0 14px"><button class="btn" id="slAddBtn">Add</button></p>';
+    if (alive.length){
+      html += alive.map(i=>'<div class="sl-item"><span>'+esc(i.text)+'</span>'
+        + '<button class="x" data-slx="'+i.id+'" title="Remove">&times;</button></div>').join("");
+      html += '<p style="margin:14px 0 0"><button class="btn brand" id="slGo"'+(alive.length<2?" disabled":"")+'>Distill to the ONE &#8594;</button>'
+        + (alive.length<2?' <span class="statline">Need at least two items.</span>':"")+'</p>';
+    } else {
+      html += '<p class="empty-note">Empty. Add what&rsquo;s competing for your attention.</p>';
+    }
+  } else if (alive.length > 1){
+    const keep = Math.max(1, Math.round(alive.length*0.2));
+    html += '<div class="sl-round"><b>Round '+sl.round+'</b> &mdash; of these '+alive.length+', check the vital few (about '+keep+') that matter most, then Next. Repeat until one is left.</div>'
+      + alive.map(i=>'<div class="sl-item"><input type="checkbox" data-slk="'+i.id+'"><span>'+esc(i.text)+'</span></div>').join("")
+      + '<p style="margin:14px 0 0"><button class="btn brand" id="slNext">Next round &#8594;</button> '
+      + '<button class="btn" id="slStop">Stop distilling</button></p>';
+  } else {
+    const one = alive[0];
+    html += '<div class="sl-one"><div style="color:#e8c065;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase">The ONE</div>'
+      + '<div class="t">'+esc(one?one.text:"")+'</div>'
+      + '<div class="acts">'
+      + '<button class="btn good" id="slToDay">Make it Today&rsquo;s ONE Thing</button>'
+      + '<button class="btn" id="slToWeek" style="color:#fff;background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.4)">Make it This Week&rsquo;s</button>'
+      + '<button class="btn" id="slReset" style="color:#fff;background:none;border-color:rgba(255,255,255,.4)">Start a new list</button>'
+      + '</div></div>';
+  }
+  html += '</div></section>';
+  main.innerHTML = html;
+
+  const addBtn = $("#slAddBtn");
+  if (addBtn) addBtn.onclick = ()=>{
+    const lines = $("#slAdd").value.split("\n").map(s=>s.trim()).filter(Boolean);
+    for (const t of lines) sl.items.push({ id:"i"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36), text:t, alive:true });
+    if (lines.length){ save(); render(); }
+  };
+  main.querySelectorAll("[data-slx]").forEach(b=>{
+    b.onclick = ()=>{ sl.items = sl.items.filter(i=>i.id!==b.dataset.slx); save(); render(); };
+  });
+  const go = $("#slGo");
+  if (go) go.onclick = ()=>{ sl.distilling = true; sl.round = 1; save(); render(); };
+  const next = $("#slNext");
+  if (next) next.onclick = ()=>{
+    const kept = [...main.querySelectorAll("[data-slk]:checked")].map(c=>c.dataset.slk);
+    if (!kept.length){ $(".sl-round").innerHTML = "<b>Pick at least one.</b> Check the few that matter most, then Next."; return; }
+    if (kept.length >= alive.length){ $(".sl-round").innerHTML = "<b>It has to shrink.</b> Leave at least one unchecked &mdash; the point is to cut."; return; }
+    for (const i of sl.items) if (i.alive && !kept.includes(i.id)) i.alive = false;
+    sl.round++;
+    save(); render();
+  };
+  const stop = $("#slStop");
+  if (stop) stop.onclick = ()=>{ sl.distilling = false; sl.items.forEach(i=>i.alive = true); save(); render(); };
+  function resetList(){ sl.items = []; sl.distilling = false; sl.round = 0; }
+  const promote = (level)=>{
+    const one = sl.items.filter(i=>i.alive)[0];
+    if (!one) return;
+    setLevelText(dom, level, one.text);
+    resetList();
+    state.view = "chain";
+    save(); render();
+  };
+  const toDay = $("#slToDay");
+  if (toDay) toDay.onclick = ()=> promote("day");
+  const toWeek = $("#slToWeek");
+  if (toWeek) toWeek.onclick = ()=> promote("week");
+  const rst = $("#slReset");
+  if (rst) rst.onclick = ()=>{ resetList(); save(); render(); };
+}
+
+/* ================= weekly planning hour ================= */
+
+const wk = $("#wk");
+const WK_STEPS = 5;
+let wkIx = 0, wkVals = null;
+
+function openWeeklyHour(){
+  const dom = activeDomain(); if (!dom) return;
+  wkIx = 0;
+  wkVals = { month: dom.levels.month.text, week: dom.levels.week.text,
+    blocked:false, thieves:{ no:"", chaos:"", health:"", env:"" } };
+  wkPaint();
+  wk.showModal();
+}
+
+function wkPaint(){
+  const dom = activeDomain();
+  const body = $("#wkBody");
+  $("#wkStep").textContent = "Step "+(wkIx+1)+" of "+WK_STEPS;
+  if (wkIx===0){
+    const parts = sentenceParts(dom);
+    body.innerHTML = '<div class="wk-lbl">Connect &mdash; read your chain aloud</div>'
+      + '<div class="wk-sentence">'+(parts.length
+          ? parts.map(p=>'<b>'+esc(p.lead)+'</b> '+esc(p.text)).join(" ")
+          : '<i>No chain yet &mdash; run &ldquo;Work backward&rdquo; on the Goal Chain first.</i>')+'</div>'
+      + '<p class="statline">This is the point of the hour: today has to connect to all your tomorrows.</p>';
+  } else if (wkIx===1){
+    body.innerHTML = '<div class="wk-lbl">Review the month</div>'
+      + '<p class="wz-q" style="font-size:14.5px">Based on my one-year goal, what&rsquo;s the ONE Thing I can do this month?</p>'
+      + '<textarea id="wkMonth">'+esc(wkVals.month)+'</textarea>';
+  } else if (wkIx===2){
+    body.innerHTML = '<div class="wk-lbl">Set the week</div>'
+      + '<p class="wz-q" style="font-size:14.5px">Based on my monthly goal, what&rsquo;s the ONE Thing I can do this week?</p>'
+      + '<textarea id="wkWeek">'+esc(wkVals.week)+'</textarea>';
+  } else if (wkIx===3){
+    body.innerHTML = '<div class="wk-lbl">Guard the block</div>'
+      + '<p class="statline" style="margin:0 0 8px">Your ONE Thing block is <b>'+esc(state.blocks.oneThingStart)+'&ndash;'+esc(blockEnd())+'</b>; planning hour '
+      + WEEKDAYS[state.blocks.planningDay]+' at '+esc(state.blocks.planningStart)+'. Adjust these on the Time Blocking view.</p>'
+      + '<label class="chk"><input type="checkbox" id="wkBlocked"'+(wkVals.blocked?" checked":"")+'> My ONE Thing block is on the calendar for every workday this week, and my time off is blocked first.</label>';
+  } else {
+    const t = wkVals.thieves;
+    body.innerHTML = '<div class="wk-lbl">Audit the four thieves</div>'
+      + '<label style="font-size:12.5px;font-weight:600;color:var(--muted)">1 &middot; Saying yes when I should say no &mdash; what will I say <b>no</b> to this week?</label>'
+      + '<input type="text" class="ctl" id="wkNo" value="'+esc(t.no)+'">'
+      + '<label style="font-size:12.5px;font-weight:600;color:var(--muted);margin-top:8px;display:block">2 &middot; Fear of chaos &mdash; what mess will I deliberately let sit?</label>'
+      + '<input type="text" class="ctl" id="wkChaos" value="'+esc(t.chaos)+'">'
+      + '<label style="font-size:12.5px;font-weight:600;color:var(--muted);margin-top:8px;display:block">3 &middot; Health &mdash; how will I guard sleep, food and movement?</label>'
+      + '<input type="text" class="ctl" id="wkHealth" value="'+esc(t.health)+'">'
+      + '<label style="font-size:12.5px;font-weight:600;color:var(--muted);margin-top:8px;display:block">4 &middot; Environment &mdash; who or what could pull me off the block, and what&rsquo;s the counter?</label>'
+      + '<input type="text" class="ctl" id="wkEnv" value="'+esc(t.env)+'">';
+  }
+  $("#wkBack").style.visibility = wkIx===0 ? "hidden" : "visible";
+  $("#wkNext").textContent = wkIx===WK_STEPS-1 ? "Finish ✓" : "Next →";
+}
+
+function wkCollect(){
+  if (wkIx===1){ const el = $("#wkMonth"); if (el) wkVals.month = el.value; }
+  if (wkIx===2){ const el = $("#wkWeek"); if (el) wkVals.week = el.value; }
+  if (wkIx===3){ const el = $("#wkBlocked"); if (el) wkVals.blocked = el.checked; }
+  if (wkIx===4){
+    wkVals.thieves = { no:$("#wkNo").value.trim(), chaos:$("#wkChaos").value.trim(),
+      health:$("#wkHealth").value.trim(), env:$("#wkEnv").value.trim() };
+  }
+}
+$("#wkBack").onclick = ()=>{ wkCollect(); if (wkIx>0){ wkIx--; wkPaint(); } };
+$("#wkNext").onclick = ()=>{
+  wkCollect();
+  if (wkIx < WK_STEPS-1){ wkIx++; wkPaint(); return; }
+  const dom = activeDomain();
+  setLevelText(dom, "month", wkVals.month);
+  setLevelText(dom, "week", wkVals.week);
+  state.reviews.unshift({ ts:new Date().toISOString(), weekStart:weekStartISO(),
+    domainId:dom.id, blocked:wkVals.blocked, thieves:wkVals.thieves });
+  // mirror into the 4-1-1 sheet — fills only rows that are still empty
+  ensureDomainTools(dom);
+  const ws = weekStartISO();
+  const wkSheet = dom.f411.months[ws.slice(0,7)] || (dom.f411.months[ws.slice(0,7)] = { month:"", weeks:{} });
+  const wkRow = wkSheet.weeks[ws] || (wkSheet.weeks[ws] = { text:"", done:false });
+  if (!wkRow.text.trim() && wkVals.week.trim()) wkRow.text = wkVals.week.trim();
+  const moSheet = dom.f411.months[todayISO().slice(0,7)] || (dom.f411.months[todayISO().slice(0,7)] = { month:"", weeks:{} });
+  if (!moSheet.month.trim() && wkVals.month.trim()) moSheet.month = wkVals.month.trim();
+  if (!dom.f411.annual.trim() && chainHasYear(dom) && dom.levels.year.text.trim()) dom.f411.annual = dom.levels.year.text.trim();
+  save();
+  wk.close();
+  render();
+};
+$("#wkCancel").onclick = ()=> wk.close();
+
+/* ================= domains ================= */
+
+/* in-app confirm — native confirm() is silently blocked in embedded panes */
+const confirmDlg = $("#confirmDlg");
+let cfCb = null;
+function askConfirm(title, msg, cb){
+  $("#cfTitle").textContent = title;
+  $("#cfMsg").textContent = msg;
+  cfCb = cb;
+  confirmDlg.showModal();
+}
+$("#cfOk").onclick = ()=>{ confirmDlg.close(); const cb = cfCb; cfCb = null; if (cb) cb(); };
+$("#cfCancel").onclick = ()=>{ confirmDlg.close(); cfCb = null; };
+
+const nameDlg = $("#nameDlg");
+let nameCb = null;
+function askName(title, initial, cb){
+  $("#nmTitle").textContent = title;
+  $("#nmInput").value = initial;
+  nameCb = cb;
+  nameDlg.showModal();
+  $("#nmInput").focus();
+}
+$("#nmOk").onclick = ()=>{
+  const v = $("#nmInput").value.trim();
+  nameDlg.close();
+  if (v && nameCb) nameCb(v);
+  nameCb = null;
+};
+$("#nmCancel").onclick = ()=>{ nameDlg.close(); nameCb = null; };
+$("#nmInput").addEventListener("keydown", e=>{ if (e.key==="Enter"){ e.preventDefault(); $("#nmOk").click(); } });
+
+function addDomain(){
+  askName("New goal line", "", name=>{
+    const d = newDomain(name);
+    state.domains.push(d);
+    state.activeDomain = d.id;
+    save(); render();
+  });
+}
+function renameDomain(d){
+  askName("Rename goal line", d.name, name=>{
+    d.name = name;
+    save(); render();
+  });
+}
+
+/* ================= wizard ================= */
+
+const wz = $("#wz");
+let wzIx = 0, wzVals = [], wzLevels = LEVELS;
+
+$("#btnWizard").onclick = ()=>{
+  const dom = activeDomain(); if (!dom) return;
+  wzIx = 0;
+  wzLevels = levelsFor(dom);
+  wzVals = wzLevels.map(l=>dom.levels[l.key].text);
+  wzPaint();
+  wz.showModal();
+};
+function wzPaint(){
+  const lv = wzLevels[wzIx];
+  $("#wzStep").textContent = "Step "+(wzIx+1)+" of "+wzLevels.length+" — "+lv.label;
+  $("#wzQ").textContent = wzIx===0 ? TOP_QUESTIONS[lv.key] : lv.q;
+  const ctx = $("#wzCtx");
+  if (wzIx>0 && wzVals[wzIx-1].trim()){
+    ctx.hidden = false;
+    $("#wzCtxLbl").textContent = "Based on my "+wzLevels[wzIx-1].label.toLowerCase();
+    $("#wzCtxTxt").textContent = wzVals[wzIx-1];
+  } else ctx.hidden = true;
+  const inp = $("#wzInput");
+  inp.value = wzVals[wzIx];
+  $("#wzBack").style.visibility = wzIx===0 ? "hidden" : "visible";
+  $("#wzNext").textContent = wzIx===wzLevels.length-1 ? "Finish ✓" : "Next →";
+  inp.focus();
+}
+$("#wzBack").onclick = ()=>{ wzVals[wzIx] = $("#wzInput").value; if (wzIx>0){ wzIx--; wzPaint(); } };
+$("#wzNext").onclick = ()=>{
+  wzVals[wzIx] = $("#wzInput").value;
+  if (wzIx < wzLevels.length-1){ wzIx++; wzPaint(); return; }
+  const dom = activeDomain();
+  let changed = false;
+  wzLevels.forEach((l,i)=>{ if (setLevelText(dom, l.key, wzVals[i])) changed = true; });
+  wz.close();
+  if (changed) render();
+};
+$("#wzCancel").onclick = ()=> wz.close();
+
+/* ================= export / import / print ================= */
+
+$("#btnExport").onclick = ()=>{
+  const blob = new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "Goal Setting to the Now "+todayISO()+".json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+$("#btnImport").onclick = ()=> $("#fileImport").click();
+$("#fileImport").addEventListener("change", e=>{
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{
+    try{
+      const s = JSON.parse(r.result);
+      if (!s || !Array.isArray(s.domains) || !s.domains.length) throw new Error("Not a Goal Setting export.");
+      for (const d of s.domains){
+        if (!d.levels) throw new Error("Not a Goal Setting export.");
+        for (const l of LEVELS) if (!d.levels[l.key]) d.levels[l.key] = { text:"", updated:null };
+      }
+      if (!Array.isArray(s.history)) s.history = [];
+      askConfirm("Import backup",
+        "Replace everything in this browser with the imported file? Export first if you want a copy of the current data.",
+        ()=>{
+          state = withDefaults(s);
+          if (!activeDomain()) state.activeDomain = state.domains.find(d=>!d.archived)?.id;
+          save(); render();
+        });
+    }catch(err){ alert("Import failed: "+err.message); }
+  };
+  r.readAsText(f);
+  e.target.value = "";
+});
+$("#btnPrint").onclick = ()=> window.print();
+
+/* ================= boot ================= */
+if (window.GTN_REMOTE){
+  $("#main").innerHTML = '<p class="empty-note" style="padding:24px">Loading your goals from the server…</p>';
+  window.GTN_REMOTE.init().then(remote=>{
+    if (remote) state = withDefaults(remote);
+    render();
+  }).catch(()=>{
+    $("#main").innerHTML = '<p class="empty-note" style="padding:24px">Could not reach the server. Refresh to try again.</p>';
+  });
+} else {
+  render();
+}
+</script>
+</body>
+</html>

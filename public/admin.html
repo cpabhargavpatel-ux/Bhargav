@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Users — Goal Setting to the Now</title>
+<style>
+  :root{ --brand:#0f3057; --accent:#c98a1b; --ink:#1c2733; --muted:#5c6b7a; --line:#dde3ea;
+    --good:#1e7a46; --warn:#a05a00; --bad:#8c2f0d; }
+  *{box-sizing:border-box}
+  body{margin:0;background:#f4f5f7;color:var(--ink);font:14.5px/1.55 "Segoe UI",system-ui,sans-serif}
+  header{background:var(--brand);color:#fff;padding:14px 24px;display:flex;align-items:baseline;gap:14px}
+  header h1{margin:0;font-size:17px}
+  header a{color:#e8c065;font-size:13px;margin-left:auto}
+  main{max-width:980px;margin:24px auto;padding:0 20px}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);font-size:13.5px}
+  th{background:#eef1f4;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+  tr:last-child td{border-bottom:none}
+  .pill{font-size:11.5px;font-weight:600;border-radius:20px;padding:2px 10px}
+  .pill.active{background:#e3f3ea;color:var(--good)}
+  .pill.pending{background:#fff3e0;color:var(--warn)}
+  .pill.disabled{background:#fdecea;color:var(--bad)}
+  button{font:inherit;font-size:12.5px;border:1px solid var(--line);background:#fff;border-radius:7px;padding:4px 10px;cursor:pointer;margin:2px 4px 2px 0}
+  button:hover{filter:brightness(.96)}
+  .note{font-size:12.5px;color:var(--muted);margin:12px 0}
+  #pwRow{display:none;margin-top:14px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+  #pwRow input{border:1px solid var(--line);border-radius:7px;padding:7px 10px;font:inherit;width:260px}
+  #msg{margin-top:12px;font-size:13.5px;color:var(--bad)}
+</style>
+</head>
+<body>
+<header><h1>Users</h1><span style="opacity:.7;font-size:12.5px">Goal Setting to the Now</span><a href="/">&larr; back to the app</a></header>
+<main>
+  <div class="note" id="signupNote"></div>
+  <table>
+    <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Status</th><th>Last sign-in</th><th>Goals updated</th><th></th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <div id="pwRow">
+    <b id="pwWho"></b> — new password (min 10 chars):
+    <input id="pwVal" type="text">
+    <button id="pwGo">Set password</button>
+    <button id="pwNo">Cancel</button>
+  </div>
+  <div id="msg"></div>
+  <p class="note">Each account's goals are private — administrators manage accounts here but do not see anyone's goal content.
+  Disabling an account signs it out immediately; its data is kept. You cannot disable or demote yourself.</p>
+</main>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+let me = null, pwTarget = null;
+const fmt = iso => iso ? iso.slice(5,7)+"-"+iso.slice(8,10)+"-"+iso.slice(0,4) : "—";
+
+async function api(path, body){
+  const r = await fetch(path, body ? { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify(body) } : undefined);
+  if (r.status === 401){ location.href = "/login.html"; throw new Error("signed out"); }
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || ("HTTP " + r.status));
+  return j;
+}
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+async function loadUsers(){
+  $("#msg").textContent = "";
+  try{
+    me = (await api("/api/me")).user;
+    if (me.role !== "admin"){ document.body.innerHTML = "<p style='padding:40px'>Administrators only.</p>"; return; }
+    const j = await api("/api/users");
+    $("#signupNote").textContent = j.openSignup
+      ? "Sign-up is open: anyone who can reach this server's address can create an account. To require approval instead, set \"openSignup\": false in config.json and restart."
+      : "Sign-up requires approval: new accounts appear here as pending until you enable them.";
+    $("#rows").innerHTML = j.users.map(u => {
+      const self = u.id === me.id;
+      return "<tr><td>"+esc(u.display_name)+(self?" <i>(you)</i>":"")+"</td><td>"+esc(u.username)+"</td>"
+        + "<td>"+u.role+"</td><td><span class='pill "+u.status+"'>"+u.status+"</span></td>"
+        + "<td>"+fmt(u.last_login)+"</td><td>"+fmt(u.doc_updated)+(u.doc_bytes?" ("+Math.round(u.doc_bytes/1024)+" KB)":"")+"</td>"
+        + "<td>"
+        + (u.status==="active" && !self ? "<button data-a='disable' data-id='"+u.id+"'>Disable</button>" : "")
+        + (u.status!=="active" ? "<button data-a='enable' data-id='"+u.id+"'>"+(u.status==="pending"?"Approve":"Enable")+"</button>" : "")
+        + (!self ? "<button data-a='role' data-id='"+u.id+"' data-role='"+(u.role==="admin"?"user":"admin")+"'>"+(u.role==="admin"?"Make user":"Make admin")+"</button>" : "")
+        + "<button data-a='pw' data-id='"+u.id+"' data-name='"+esc(u.username)+"'>Reset password</button>"
+        + "</td></tr>";
+    }).join("");
+    document.querySelectorAll("[data-a]").forEach(b => b.onclick = () => act(b));
+  }catch(e){ $("#msg").textContent = e.message; }
+}
+async function act(b){
+  const a = b.dataset.a, id = Number(b.dataset.id);
+  try{
+    if (a === "pw"){ pwTarget = id; $("#pwWho").textContent = b.dataset.name; $("#pwVal").value = ""; $("#pwRow").style.display = "block"; $("#pwVal").focus(); return; }
+    if (a === "role"){ await api("/api/admin/user", { id, action:"role", role: b.dataset.role }); }
+    else { await api("/api/admin/user", { id, action: a }); }
+    loadUsers();
+  }catch(e){ $("#msg").textContent = e.message; }
+}
+$("#pwGo").onclick = async () => {
+  try{
+    await api("/api/admin/user", { id: pwTarget, action:"resetpw", password: $("#pwVal").value });
+    $("#pwRow").style.display = "none"; $("#msg").textContent = "";
+    loadUsers();
+  }catch(e){ $("#msg").textContent = e.message; }
+};
+$("#pwNo").onclick = () => { $("#pwRow").style.display = "none"; };
+loadUsers();
+</script>
+</body>
+</html>
