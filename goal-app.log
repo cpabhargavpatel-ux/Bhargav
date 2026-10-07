@@ -1,5 +1,0 @@
-Goal Setting to the Now — server
-  On this PC:      http://localhost:8484
-  On the network:  http://<this-pc-name>:8484   (needs the firewall rule — see SETUP.md)
-  Database:        C:\Users\bpatel9\GoalSettingData\goals.db
-  Sign-up:         open — anyone who can reach this address
