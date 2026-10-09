@@ -625,7 +625,8 @@ const VIEWS = [
   { key:"f411", label:"4-1-1" },
   { key:"blocks", label:"Time Blocking" },
   { key:"challenge", label:"66-Day Challenge" },
-  { key:"list", label:"Success List" }
+  { key:"list", label:"Success List" },
+  { key:"french", label:"French IPA" }
 ];
 
 function render(){
@@ -681,6 +682,13 @@ function renderTabs(){
 function renderMain(){
   const dom = activeDomain();
   const main = $("#main");
+  if (state.view === "french"){   // separate module: its own page, shown in a frame
+    main.innerHTML = '<div style="grid-column:1/-1"><p class="statline" style="margin:4px 0 8px">French IPA Trainer &mdash; a separate module. '
+      + '<a href="french-ipa.html" target="_blank" rel="noopener">Open full page &#8599;</a></p>'
+      + '<iframe src="french-ipa.html" title="French IPA Trainer" allow="autoplay" '
+      + 'style="width:100%;height:calc(100vh - 220px);min-height:520px;border:1px solid var(--line,#ddd);border-radius:10px;background:#fff"></iframe></div>';
+    return;
+  }
   if (!dom){ main.innerHTML = '<p class="empty-note">No goal line. Use + to create one.</p>'; return; }
 
   if (state.view === "map"){ renderMap(main, dom, MAP_CFG); return; }
