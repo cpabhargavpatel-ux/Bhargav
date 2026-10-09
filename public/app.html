@@ -82,6 +82,17 @@
     color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:3px 10px;font-size:12px}
   .mantra .copy:hover{background:rgba(255,255,255,.22)}
 
+  /* ---------- quote bar ---------- */
+  #quoteBar{background:linear-gradient(90deg,#0d2446,#17406e);color:#ffd9a0;padding:7px 22px;
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:14.5px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 3px 10px rgba(8,22,40,.25)}
+  #quoteBar .qa{color:#9fb4cc;font-size:12.5px;font-style:normal;flex:none}
+  #quoteBar button{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;
+    border-radius:6px;font-size:11.5px;padding:2px 9px;cursor:pointer;flex:none;font-style:normal;font-family:"Segoe UI",system-ui,sans-serif}
+  #quoteBar button:hover{background:rgba(255,255,255,.2)}
+  #quoteBar #quoteSmaller{margin-left:auto}
+
   /* ---------- storage warning ---------- */
   #storeWarn{display:none;background:#7a1f1f;color:#fff;font-size:13px;padding:7px 22px}
   #storeWarn.on{display:block}
@@ -174,7 +185,11 @@
   .wz-foot button:hover{filter:brightness(.97)}
 
   /* ---------- view switcher ---------- */
-  .views{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  /* second header row: the tab pills and the action buttons share ONE line
+     (wrapping only when the window is too narrow) */
+  .hd-row2{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px}
+  .hd-row2 .hd-actions{margin-left:auto}
+  .views{display:flex;gap:6px;flex-wrap:wrap;flex:1 1 auto}
   .views button{background:rgba(255,255,255,.10);color:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.22);
     border-radius:20px;padding:4px 14px;font-size:12.5px}
   .views button.on{border:none;color:#fff;font-weight:600;
@@ -297,7 +312,7 @@
 
   /* ---------- print ---------- */
   @media print{
-    header .hd-actions, header .views, header .tabs button.add, aside, .btn-done, .card .meta button, .rail{display:none !important}
+    header .hd-actions, header .views, header .tabs button.add, aside, .btn-done, .card .meta button, .rail, #quoteBar{display:none !important}
     header{position:static;background:#fff;color:#000;box-shadow:none;border-bottom:2px solid #000}
     .hd-top h1, .hd-top h1 .one{background:none;-webkit-text-fill-color:#000;color:#000;text-shadow:none;animation:none}
     .tabs button{color:#000}
@@ -316,6 +331,9 @@
 <header>
   <div class="hd-top">
     <h1>What is the <b class="one">ONE Thing</b> I can do such that by doing it, everything else will be easier or unnecessary?</h1>
+  </div>
+  <div class="hd-row2">
+    <div class="views" id="views"></div>
     <div class="hd-actions">
       <button class="primary" id="btnWizard" title="Guided pass from the someday goal down to right now">&#9654; Work backward</button>
       <button id="btnExport">Export</button>
@@ -323,10 +341,17 @@
       <button id="btnPrint">Print</button>
     </div>
   </div>
-  <div class="views" id="views"></div>
   <div class="tabs" id="tabs"></div>
 </header>
 <div id="storeWarn">&#9888; This browser is not letting the app save. Your entries live only in this window &mdash; use <b>Export</b> to keep them.</div>
+<div id="quoteBar" hidden>
+  <span class="q" id="quoteText"></span>
+  <span class="qa" id="quoteAuthor"></span>
+  <button id="quoteSmaller" title="Smaller quote text">A&#8722;</button>
+  <button id="quoteBigger" title="Bigger quote text">A+</button>
+  <button id="quoteNext" title="Show another quote">&#8635; next</button>
+  <button id="quoteEdit" title="Edit the quote list — one per line">&#9998; edit</button>
+</div>
 
 <main id="main"></main>
 
@@ -367,6 +392,18 @@
   </div>
 </dialog>
 
+<dialog id="quoteDlg">
+  <div class="wz-head"><h2>Quotes</h2></div>
+  <div class="nm-body">
+    <h3>One quote per line. Put the author after an em dash (&mdash;) if you like.</h3>
+    <textarea id="quoteList" class="ctl" rows="9" style="width:100%;resize:vertical"></textarea>
+  </div>
+  <div class="wz-foot">
+    <button id="qCancel">Cancel</button>
+    <div class="grp"><button id="qSave" class="primary">Save quotes</button></div>
+  </div>
+</dialog>
+
 <dialog id="confirmDlg">
   <div class="wz-head"><h2 id="cfTitle">Confirm</h2></div>
   <div class="nm-body"><p id="cfMsg" style="margin:0;font-size:14px;line-height:1.6"></p></div>
@@ -396,6 +433,17 @@
 /* ================= data ================= */
 
 const STORE_KEY = "goal-to-now-v1";
+
+/* starter quotes — his to edit in the app (quote bar → ✎ edit) */
+const ONE_THING_QUOTE = "What is the ONE Thing I can do such that by doing it, everything else will be easier or unnecessary? — Gary Keller";
+const DEFAULT_QUOTES = [
+  ONE_THING_QUOTE,
+  "Success is sequential, not simultaneous. — Gary Keller",
+  "Things which matter most must never be at the mercy of things which matter least. — Goethe",
+  "Well begun is half done. — Aristotle",
+  "You may delay, but time will not. — Benjamin Franklin",
+  "It is not that we have a short time to live, but that we waste a lot of it. — Seneca"
+];
 
 const LEVELS = [
   { key:"someday", label:"Someday goal",
@@ -472,9 +520,15 @@ function withDefaults(s){
   if (!Array.isArray(s.hows)) s.hows = [];   // how-how plans: same tree, means instead of causes; may link back to a why
   if (!Array.isArray(s.whats)) s.whats = []; // what-what breakdowns: same tree, parts instead of causes
   if (!Array.isArray(s.fish)) s.fish = [];   // fishbone diagrams: problem + category bones + causes
+  if (!Array.isArray(s.quotes) || !s.quotes.length) s.quotes = DEFAULT_QUOTES.slice();
+  if (typeof s.quoteSeen !== "number") s.quoteSeen = 0;   // opens counter: each open shows the next quote
+  if (typeof s.quoteSize !== "number") s.quoteSize = 15;  // quote bar font size, px
+  // one-time (v11): the focusing question joins an already-saved quote list
+  if ((s.version || 0) < 11 && !s.quotes.some(q => String(q).includes("easier or unnecessary")))
+    s.quotes.unshift(ONE_THING_QUOTE);
   if (!s.view) s.view = "chain";
   for (const d of s.domains) ensureDomainTools(d);
-  s.version = 9;
+  s.version = 11;
   return s;
 }
 function load(){
@@ -774,6 +828,11 @@ function renderMain(){
     + '<p>Reset <b>today</b> and <b>right now</b> every day; review the week weekly and the month monthly. The amber chips tell you when a level is due.</p>'
     + '<p class="statline">Last Weekly Hour: '+(state.reviews.length ? '<b>'+fmtDate(state.reviews[0].ts.slice(0,10))+'</b>' : 'never — the &#128337; button up top runs it')+'</p>'
     + '<p style="margin-top:10px"><button id="btnArchive" style="background:none;border:none;color:var(--focus);text-decoration:underline;padding:0;font-size:12.5px">Archive this goal line</button></p>'
+    + (state.domains.some(d=>d.archived)
+        ? '<p class="statline">Archived goal lines: '
+          + state.domains.filter(d=>d.archived).map(d=>'<button class="mini" data-domrestore="'+d.id+'" title="Restore this goal line">&#8617; '+esc(d.name)+'</button>').join(' ')
+          + '</p>'
+        : '')
     + '</div>'
     + '<div class="panel"><h2>History &mdash; '+esc(dom.name)+'</h2>'
     + renderHistory(dom)
@@ -801,6 +860,10 @@ function renderMain(){
   });
   main.querySelectorAll("button[data-done]").forEach(b=>{
     b.onclick = ()=> markDone(dom, b.dataset.done);
+  });
+  main.querySelectorAll("[data-domrestore]").forEach(b=> b.onclick = ()=>{
+    const d = state.domains.find(x=>x.id===b.dataset.domrestore);
+    if (d){ d.archived = false; state.activeDomain = d.id; save(); render(); }
   });
   const arch = $("#btnArchive");
   if (arch) arch.onclick = ()=>{
@@ -934,6 +997,7 @@ const WHAT_CFG = {
 };
 let bmCfg = MAP_CFG;
 let bmJumpTo = null;   // item id to scroll to after a cross-tab jump
+let archViewOpen = false;   // the "Archived (n)" list, folded by default
 
 function bmNewNode(){
   return { id:"n"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36),
@@ -1014,6 +1078,17 @@ function renderMap(main, dom, cfg){
       + '<button class="btn" data-bmdelitem="'+m.id+'" style="color:var(--now)">Delete</button></p>'
       + '</div>';
   }
+  const closedItems = bmCfg.coll().filter(m=>m.closed);
+  if (closedItems.length){
+    html += '<div class="tool-card" style="margin-bottom:16px;border-style:dashed;background-image:none;box-shadow:none">'
+      + '<button class="mini" id="bmArchToggle">'+(archViewOpen?'Hide':'Show')+' archived ('+closedItems.length+')</button>'
+      + (archViewOpen ? closedItems.map(m=>'<div class="sl-item"><span style="color:var(--muted)">'+esc(m.outcome||"(untitled)")+'</span>'
+          + '<span style="margin-left:auto;display:flex;gap:12px">'
+          + '<button class="mini" data-bmrestore="'+m.id+'">&#8617; Restore</button>'
+          + '<button class="mini del" data-bmharddel="'+m.id+'">Delete</button>'
+          + '</span></div>').join("") : '')
+      + '</div>';
+  }
   html += '</section>';
   main.innerHTML = html;
 
@@ -1050,6 +1125,17 @@ function renderMap(main, dom, cfg){
       ()=>{ const coll = bmCfg.coll(); const i = coll.findIndex(x=>x.id===b.dataset.bmdelitem);
         if (i >= 0){ coll.splice(i, 1); save(); render(); } });
   });
+  const bmAt = $("#bmArchToggle");
+  if (bmAt) bmAt.onclick = ()=>{ archViewOpen = !archViewOpen; render(); };
+  main.querySelectorAll("[data-bmrestore]").forEach(b=> b.onclick = ()=>{
+    const m = bmCfg.coll().find(x=>x.id===b.dataset.bmrestore);
+    if (m){ m.closed = false; save(); render(); }
+  });
+  main.querySelectorAll("[data-bmharddel]").forEach(b=> b.onclick = ()=>
+    askConfirm("Delete "+bmCfg.noun,
+      "PERMANENTLY delete this archived "+bmCfg.noun+"? This cannot be undone.",
+      ()=>{ const coll = bmCfg.coll(); const i = coll.findIndex(x=>x.id===b.dataset.bmharddel);
+        if (i >= 0){ coll.splice(i, 1); save(); render(); } }));
   const mapOf = id => bmCfg.coll().find(m => bmFind(m.nodes, id));
   main.querySelectorAll("[data-bmtext]").forEach(el=>{
     el.addEventListener("change", ()=>{
@@ -1525,8 +1611,30 @@ function renderFish(main, dom){
           + '</div>' : '')
       + '</div>';
   }
+  const closedFish = state.fish.filter(x=>x.closed);
+  if (closedFish.length){
+    html += '<div class="tool-card" style="margin-bottom:16px;border-style:dashed;background-image:none;box-shadow:none">'
+      + '<button class="mini" id="fbArchToggle">'+(archViewOpen?'Hide':'Show')+' archived ('+closedFish.length+')</button>'
+      + (archViewOpen ? closedFish.map(f=>'<div class="sl-item"><span style="color:var(--muted)">'+esc(f.problem||"(untitled)")+'</span>'
+          + '<span style="margin-left:auto;display:flex;gap:12px">'
+          + '<button class="mini" data-fbrestore="'+f.id+'">&#8617; Restore</button>'
+          + '<button class="mini del" data-fbharddel="'+f.id+'">Delete</button>'
+          + '</span></div>').join("") : '')
+      + '</div>';
+  }
   html += '</section>';
   main.innerHTML = html;
+
+  const fbAt = $("#fbArchToggle");
+  if (fbAt) fbAt.onclick = ()=>{ archViewOpen = !archViewOpen; render(); };
+  main.querySelectorAll("[data-fbrestore]").forEach(b=> b.onclick = ()=>{
+    const f = state.fish.find(x=>x.id===b.dataset.fbrestore);
+    if (f){ f.closed = false; save(); render(); }
+  });
+  main.querySelectorAll("[data-fbharddel]").forEach(b=> b.onclick = ()=>
+    askConfirm("Delete diagram", "PERMANENTLY delete this archived fishbone? This cannot be undone.",
+      ()=>{ const i = state.fish.findIndex(x=>x.id===b.dataset.fbharddel);
+        if (i >= 0){ state.fish.splice(i, 1); save(); render(); } }));
 
   const fishOf = id => state.fish.find(x=>!x.closed && (x.id===id || x.cats.some(ct=>ct.id===id) || fbFindCause(x, id)));
   $("#fbNew").onclick = ()=> askName("New fishbone — the problem", "", p=>{
@@ -2049,17 +2157,66 @@ $("#fileImport").addEventListener("change", e=>{
 });
 $("#btnPrint").onclick = ()=> window.print();
 
+/* ================= quotes ================= */
+/* Each open of the APP shows the next quote in the list (the open counter is
+   saved with his data, so it needs nothing from the server). While the app
+   stays open, the quote also rotates on its own every 4 minutes, and ↻ next
+   flips it on demand. ✎ edit holds the whole list, one per line. */
+let quoteIx = 0, quoteTimer = null;
+function showQuote(){
+  const list = state.quotes && state.quotes.length ? state.quotes : DEFAULT_QUOTES;
+  const raw = String(list[((quoteIx % list.length) + list.length) % list.length]);
+  const cut = raw.split(/\s+—\s+|\s+--\s+/);
+  $("#quoteText").textContent = "“" + (cut[0] || raw).trim() + "”";
+  $("#quoteAuthor").textContent = cut[1] ? "— " + cut[1].trim() : "";
+  const px = state.quoteSize || 15;
+  $("#quoteText").style.fontSize = px + "px";
+  $("#quoteAuthor").style.fontSize = Math.max(11, Math.round(px * 0.85)) + "px";
+  $("#quoteBar").hidden = false;
+}
+function bumpQuoteSize(d){
+  state.quoteSize = Math.min(28, Math.max(12, (state.quoteSize || 15) + d));
+  save();
+  showQuote();
+}
+$("#quoteSmaller").onclick = ()=> bumpQuoteSize(-1.5);
+$("#quoteBigger").onclick = ()=> bumpQuoteSize(1.5);
+function initQuotes(){
+  state.quoteSeen = (state.quoteSeen || 0) + 1;
+  quoteIx = state.quoteSeen;
+  save();
+  showQuote();
+  clearInterval(quoteTimer);
+  quoteTimer = setInterval(()=>{ quoteIx++; showQuote(); }, 4 * 60 * 1000);
+}
+$("#quoteNext").onclick = ()=>{ quoteIx++; showQuote(); };
+$("#quoteEdit").onclick = ()=>{
+  $("#quoteList").value = (state.quotes || DEFAULT_QUOTES).join("\n");
+  $("#quoteDlg").showModal();
+};
+$("#qCancel").onclick = ()=> $("#quoteDlg").close();
+$("#qSave").onclick = ()=>{
+  const lines = $("#quoteList").value.split("\n").map(x=>x.trim()).filter(Boolean);
+  if (lines.length) state.quotes = lines;
+  $("#quoteDlg").close();
+  quoteIx = 0;
+  showQuote();
+  save();
+};
+
 /* ================= boot ================= */
 if (window.GTN_REMOTE){
   $("#main").innerHTML = '<p class="empty-note" style="padding:24px">Loading your goals from the server…</p>';
   window.GTN_REMOTE.init().then(remote=>{
     if (remote) state = withDefaults(remote);
     render();
+    initQuotes();
   }).catch(()=>{
     $("#main").innerHTML = '<p class="empty-note" style="padding:24px">Could not reach the server. Refresh to try again.</p>';
   });
 } else {
   render();
+  initQuotes();
 }
 </script>
 </body>
