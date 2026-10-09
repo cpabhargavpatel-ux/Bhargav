@@ -157,6 +157,23 @@ function currentUser(req) {
    the copy on disk stays identical to the desktop file. It goes into <head>,
    BEFORE the app's own script, because the app checks window.GTN_REMOTE at
    boot. */
+/* Top-level module tabs (Goal Setting | French IPA), added at serve time so the pages themselves stay untouched. */
+const MODULE_CSS = `<style>
+#modtabs{display:flex;gap:4px;padding:6px 14px 0;background:#10182b;font:600 14px system-ui,-apple-system,"Segoe UI",sans-serif}
+#modtabs a{padding:8px 18px;border-radius:8px 8px 0 0;color:#c9d2ea;text-decoration:none;background:#1b2542}
+#modtabs a.on{background:#fff;color:#10182b;cursor:default}
+#modtabs a:not(.on):hover{background:#27345c;color:#fff}
+@media print{#modtabs{display:none}}
+</style>`;
+const moduleBar = active => MODULE_CSS + `<nav id="modtabs">`
+  + `<a href="/"${active === "goal" ? ' class="on"' : ""}>Goal Setting</a>`
+  + `<a href="/french-ipa.html"${active === "french" ? ' class="on"' : ""}>French IPA</a></nav>\n`;
+function withModuleBar(html, active) {
+  const m = /<body[^>]*>/i.exec(html);
+  return m ? html.slice(0, m.index + m[0].length) + "\n" + moduleBar(active) + html.slice(m.index + m[0].length)
+           : moduleBar(active) + html;
+}
+
 const SHIM_TAG = `<script src="/server-shim.js"></script>\n`;
 function serveApp(res) {
   const f = join(PUBLIC, "app.html");
@@ -164,6 +181,7 @@ function serveApp(res) {
   let html = readFileSync(f, "utf8");
   const i = html.indexOf("</head>");
   html = i >= 0 ? html.slice(0, i) + SHIM_TAG + html.slice(i) : SHIM_TAG + html;
+  html = withModuleBar(html, "goal");
   const b = Buffer.from(html);
   res.writeHead(200, { "content-type": MIME[".html"], "content-length": b.length, "cache-control": "no-store" });
   res.end(b);
@@ -189,7 +207,8 @@ const server = createServer(async (req, res) => {
       const file = join(PUBLIC, rel);
       if (!file.startsWith(PUBLIC + sep) || !existsSync(file) || statSync(file).isDirectory()) { res.writeHead(404).end("Not found"); return; }
       if (rel !== "login.html" && rel !== "server-shim.js" && rel !== "french-ipa.html" && !u) { res.writeHead(302, { location: "/login.html" }); res.end(); return; }
-      const b = readFileSync(file);
+      let b = readFileSync(file);
+      if (rel === "french-ipa.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "french"));
       res.writeHead(200, { "content-type": MIME[extname(file)] || "application/octet-stream", "cache-control": "no-store" });
       res.end(b); return;
     }
