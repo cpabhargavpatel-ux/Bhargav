@@ -188,7 +188,7 @@ const server = createServer(async (req, res) => {
       const rel = p.replace(/^\/+/, "");
       const file = join(PUBLIC, rel);
       if (!file.startsWith(PUBLIC + sep) || !existsSync(file) || statSync(file).isDirectory()) { res.writeHead(404).end("Not found"); return; }
-      if (rel !== "login.html" && rel !== "server-shim.js" && !u) { res.writeHead(302, { location: "/login.html" }); res.end(); return; }
+      if (rel !== "login.html" && rel !== "server-shim.js" && rel !== "french-ipa.html" && !u) { res.writeHead(302, { location: "/login.html" }); res.end(); return; }
       const b = readFileSync(file);
       res.writeHead(200, { "content-type": MIME[extname(file)] || "application/octet-stream", "cache-control": "no-store" });
       res.end(b); return;
