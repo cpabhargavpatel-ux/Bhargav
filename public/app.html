@@ -625,8 +625,7 @@ const VIEWS = [
   { key:"f411", label:"4-1-1" },
   { key:"blocks", label:"Time Blocking" },
   { key:"challenge", label:"66-Day Challenge" },
-  { key:"list", label:"Success List" },
-  { key:"french", label:"French IPA" }
+  { key:"list", label:"Success List" }
 ];
 
 function render(){
@@ -667,12 +666,18 @@ function renderTabs(){
   for (const d of state.domains.filter(d=>!d.archived)){
     const b = document.createElement("button");
     b.textContent = d.name;
-    if (d.id === activeDomain()?.id) b.classList.add("on");
-    b.onclick = () => { state.activeDomain = d.id; save(); render(); };
+    if (d.id === activeDomain()?.id && state.view !== "french") b.classList.add("on");
+    b.onclick = () => { state.activeDomain = d.id; if (state.view === "french") state.view = "chain"; save(); render(); };
     b.ondblclick = () => renameDomain(d);
     b.title = "Double-click to rename";
     el.appendChild(b);
   }
+  const fr = document.createElement("button");   // separate module, shown as its own tab
+  fr.textContent = "French IPA";
+  if (state.view === "french") fr.classList.add("on");
+  fr.title = "French IPA Trainer";
+  fr.onclick = () => { state.view = "french"; save(); render(); };
+  el.appendChild(fr);
   const add = document.createElement("button");
   add.className = "add"; add.textContent = "+"; add.title = "New goal line (e.g. Work, Health, Family)";
   add.onclick = addDomain;
