@@ -73,19 +73,19 @@
     display: flex;
     align-items: center;
     gap: 18px;
-    width: 20.6rem;
+    width: 19rem;
     max-width: 100%;
   }
   .current-phoneme {
     font-family: var(--serif);
-    font-size: 3.2rem;
-    line-height: 1;
-    min-width: 92px;
+    font-size: 2.6rem;
+    line-height: 1.05;
+    min-width: 76px;
     text-align: center;
     color: var(--blue);
     background: var(--blue-tint);
     border-radius: 10px;
-    padding: 14px 10px;
+    padding: 8px 10px;
     flex-shrink: 0;
     transition: transform 0.12s ease;
   }
@@ -219,7 +219,7 @@
   .chip .word { font-family: var(--serif); font-style: italic; font-size: 0.98rem; color: var(--ink); }
   .chip .word .hit { color: var(--blue); font-style: normal; font-weight: 700; }
 
-  .current-phoneme.longsym { font-size: 1.35rem; line-height: 1.2; padding: 18px 8px; word-break: break-all; }
+  .current-phoneme.longsym { font-size: 1.2rem; line-height: 1.2; padding: 10px 8px; word-break: break-all; }
 
   /* ---------- Vocabulary ---------- */
   .vocab-sec { margin-top: 40px; }
@@ -258,7 +258,7 @@
   .credits { color: var(--gray); font-size: 0.82rem; margin-top: 20px; max-width: 60ch; }
 
   @media (max-width: 480px) {
-    .current-phoneme { font-size: 2.4rem; min-width: 74px; padding: 12px 8px; }
+    .current-phoneme { font-size: 2.2rem; min-width: 64px; padding: 8px 8px; }
     .current-word { font-size: 1.2rem; }
   }
   @media (prefers-reduced-motion: reduce) {
