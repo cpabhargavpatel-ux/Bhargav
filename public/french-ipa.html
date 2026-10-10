@@ -53,14 +53,22 @@
     background: var(--paper);
     border-bottom: 1px solid var(--rule);
     padding: 12px 0 10px;
-    /* compact: sound tile on the left, controls beside it (instead of stacked underneath) */
+    /* compact: sound tile + voice on one row, all controls on the next */
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    column-gap: 26px;
+    grid-template-areas: "info voice" "controls controls" "warn warn";
+    column-gap: 20px;
+    row-gap: 10px;
     align-items: center;
   }
-  .player > .voice-row, .player > .warn { grid-column: 1 / -1; }
-  @media (max-width: 1400px) { .player { display: block; } .player .controls { margin-top: 10px; } }
+  .player > .player-row { grid-area: info; }
+  .player > .voice-row  { grid-area: voice; justify-self: end; margin-top: 0; }
+  .player > .controls   { grid-area: controls; }
+  .player > .warn       { grid-area: warn; margin-top: 0; }
+  @media (max-width: 700px) {
+    .player { grid-template-columns: minmax(0, 1fr); grid-template-areas: "info" "voice" "controls" "warn"; }
+    .player > .voice-row { justify-self: start; }
+  }
   .player-row {
     display: flex;
     align-items: center;
@@ -98,7 +106,7 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .controls { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-top: 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-top: 0; }
   button.play {
     font-family: var(--sans);
     font-size: 0.95rem;
@@ -125,7 +133,7 @@
     font-family: var(--sans);
     font-size: 0.85rem;
     font-weight: 600;
-    padding: 9px 14px;
+    padding: 9px 12px;
     border: none;
     background: transparent;
     color: var(--gray);
@@ -136,7 +144,7 @@
 
   .slider-group { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--ink); }
   .slider-group label { color: var(--gray); }
-  .slider-group input[type="range"] { width: 74px; }
+  .slider-group input[type="range"] { width: 60px; }
   .slider-group output { font-variant-numeric: tabular-nums; min-width: 2.7em; font-weight: 600; }
 
   .voice-row { margin-top: 6px; font-size: 0.88rem; color: var(--gray); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -266,6 +274,7 @@
   .main > .vocab-sec { order: 3; }
   @media (min-width: 1100px) {
     .layout { display: grid; grid-template-columns: minmax(0, 1fr) 27.5rem; gap: 32px; align-items: start; }
+    @media (max-width: 1450px) { .layout { grid-template-columns: minmax(0, 1fr) 21rem; gap: 24px; } }
     .main { display: block; }
     .side { position: sticky; top: 52px; max-height: calc(100vh - 64px); overflow-y: auto; padding: 6px 4px 20px 0; }
     .side .sp-sec:first-child { margin-top: 18px; }
@@ -298,6 +307,8 @@
     padding: 10px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); color: var(--ink); }
   .sp-row { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-top: 10px; }
   .sp-row .slider-group { margin: 0; }
+  .sp-sec button.play { padding: 8px 14px; font-size: 0.9rem; }
+  .sp-row { gap: 8px 10px; }
   button.play.rec { background: #C62828; }
   button.play.rec:hover { background: #A71F1F; }
   button.play.rec.on { animation: sp-pulse 1s infinite; }
