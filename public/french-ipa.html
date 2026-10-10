@@ -51,12 +51,21 @@
     z-index: 10;
     background: var(--paper);
     border-bottom: 1px solid var(--rule);
-    padding: 18px 0 16px;
+    padding: 12px 0 10px;
+    /* compact: sound tile on the left, controls beside it (instead of stacked underneath) */
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 26px;
+    align-items: center;
   }
+  .player > .voice-row, .player > .warn { grid-column: 1 / -1; }
+  @media (max-width: 1400px) { .player { display: block; } .player .controls { margin-top: 10px; } }
   .player-row {
     display: flex;
     align-items: center;
     gap: 18px;
+    width: 330px;
+    max-width: 100%;
   }
   .current-phoneme {
     font-family: var(--serif);
@@ -88,7 +97,7 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .controls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-top: 14px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-top: 0; }
   button.play {
     font-family: var(--sans);
     font-size: 0.95rem;
@@ -126,10 +135,10 @@
 
   .slider-group { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--ink); }
   .slider-group label { color: var(--gray); }
-  .slider-group input[type="range"] { width: 130px; }
-  .slider-group output { font-variant-numeric: tabular-nums; min-width: 3.2em; font-weight: 600; }
+  .slider-group input[type="range"] { width: 74px; }
+  .slider-group output { font-variant-numeric: tabular-nums; min-width: 2.7em; font-weight: 600; }
 
-  .voice-row { margin-top: 10px; font-size: 0.88rem; color: var(--gray); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .voice-row { margin-top: 6px; font-size: 0.88rem; color: var(--gray); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .voice-row select {
     font-family: var(--sans);
     font-size: 0.8rem;
@@ -140,10 +149,10 @@
     color: var(--ink);
     max-width: 260px;
   }
-  .warn { color: #B4331F; font-size: 0.88rem; margin-top: 8px; display: none; }
+  .warn { color: #B4331F; font-size: 0.84rem; margin-top: 4px; display: none; }
 
   /* ---------- Phoneme sections ---------- */
-  section { margin-top: 34px; }
+  section { margin-top: 26px; }
   section h2 {
     font-family: var(--serif);
     font-size: 1.25rem;
@@ -284,7 +293,8 @@
   button.play.rec:hover { background: #A71F1F; }
   button.play.rec.on { animation: sp-pulse 1s infinite; }
   @keyframes sp-pulse { 50% { opacity: 0.55; } }
-  .sp-status { color: var(--blue); font-size: 0.85rem; min-height: 1.2em; margin-top: 8px; }
+  .sp-status { color: var(--blue); font-size: 0.85rem; min-height: 1.2em; margin-top: 6px; }
+  .sp-status:empty { min-height: 0; margin: 0; }
   .sp-mine { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--rule); }
   .sp-mine audio { width: 100%; margin-top: 6px; }
   .sp-score { margin-top: 12px; padding: 12px; border-radius: 8px; background: var(--blue-tint); }
@@ -296,6 +306,7 @@
   .sp-rounds { margin-top: 10px; font-size: 0.9rem; font-variant-numeric: tabular-nums; color: var(--ink); }
   .sp-rounds b { color: var(--blue); }
   .sp-chk { display: block; margin-top: 8px; font-size: 0.85rem; color: var(--gray); }
+  details.sp-note summary { cursor: pointer; color: var(--blue); }
   .sp-note { color: var(--gray); font-size: 0.84rem; margin-top: 10px; }
 </style>
 </head>
@@ -372,7 +383,7 @@
       </div>
     </div>
     <p class="sp-status" id="spStatus"></p>
-    <p class="sp-note" style="margin-top:0">Uses the Voice and Speed set in the player above.</p>
+    <p class="sp-note" style="margin:2px 0 0">Uses the Voice and Speed set in the player above.</p>
 
     <div class="sp-mine">
       <div class="sp-row" style="margin-top:0">
@@ -385,7 +396,6 @@
         </div>
         <span class="sp-status" id="spRecStatus" style="margin:0"></span>
       </div>
-      <p class="sp-note" style="margin-top:6px">Practice loop: it says the sentence <b>Repeats</b> times (set above); after each time it records you for the Record time, then shows your score. <b>■ Stop</b> ends it.</p>
       <div class="sp-rounds" id="spRounds" hidden></div>
       <label class="sp-chk"><input type="checkbox" id="spAudioLoop"> Loop my recording when I play it back</label>
       <audio id="spAudio" controls hidden></audio>
@@ -394,7 +404,11 @@
         <div class="sp-words" id="spWords"></div>
         <div class="sp-heard" id="spHeard"></div>
       </div>
-      <p class="sp-note">Your latest recording of each sentence is saved in this browser only (see My sentences below) — it isn’t uploaded anywhere by this app. The pronunciation check uses your browser’s speech recognition — Chrome or Edge — which sends the audio to the browser maker’s service to turn it into text, so it needs internet and is only approximate. In other browsers you still get the recording to listen back to. The microphone only works on <b>localhost</b> (or https).</p>
+      <details class="sp-note">
+        <summary>How it works</summary>
+        <p style="margin-top:6px"><b>Practice loop:</b> it says the sentence <b>Repeats</b> times (set above); after each time it records you for the Record time, then shows your score. <b>■ Stop</b> ends it.</p>
+        <p style="margin-top:6px">Your latest recording of each sentence is saved in this browser only (see My sentences) — it isn’t uploaded anywhere by this app. The pronunciation check uses your browser’s speech recognition — Chrome or Edge — which sends the audio to the browser maker’s service to turn it into text, so it needs internet and is only approximate. In other browsers you still get the recording to listen back to. The microphone only works on <b>localhost</b> (or https).</p>
+      </details>
     </div>
   </section>
 
