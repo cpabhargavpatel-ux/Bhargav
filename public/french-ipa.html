@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>French IPA Trainer</title>
+<script>try{var p=parseInt(localStorage.getItem("fr-fontsize"));if(p>=80&&p<=180)document.documentElement.style.fontSize=p+"%"}catch(e){}</script>
 <link rel="preload" href="/fonts/gentium-book-plus-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/gentium-book-plus-400-italic.woff2" as="font" type="font/woff2" crossorigin>
 <style>
@@ -64,7 +65,7 @@
     display: flex;
     align-items: center;
     gap: 18px;
-    width: 330px;
+    width: 20.6rem;
     max-width: 100%;
   }
   .current-phoneme {
@@ -264,7 +265,7 @@
   .main > #sections { order: 2; }
   .main > .vocab-sec { order: 3; }
   @media (min-width: 1100px) {
-    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 32px; align-items: start; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 27.5rem; gap: 32px; align-items: start; }
     .main { display: block; }
     .side { position: sticky; top: 52px; max-height: calc(100vh - 64px); overflow-y: auto; padding: 6px 4px 20px 0; }
     .side .sp-sec:first-child { margin-top: 18px; }
@@ -281,6 +282,14 @@
   .sv-b button:disabled { opacity: 0.4; cursor: default; }
   .sv-b button.del { border-color: var(--rule); color: var(--gray); margin-left: auto; }
   .sv-empty { color: var(--gray); font-size: 0.9rem; }
+  /* ---------- Text size control (lives in the top tab bar) ---------- */
+  #fontctl { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; align-self: center; font: 600 12px system-ui, sans-serif; color: #9fb0d6; }
+  #fontctl + #modbuild { margin-left: 14px !important; }
+  #fontctl button { font: inherit; font-size: 13px; line-height: 1; padding: 5px 9px; border: 0; border-radius: 6px; background: #1b2542; color: #c9d2ea; cursor: pointer; }
+  #fontctl button:hover:not(:disabled) { background: #27345c; color: #fff; }
+  #fontctl button:disabled { opacity: 0.35; cursor: default; }
+  #fontctl #fsPct { min-width: 3.6em; background: transparent; font-variant-numeric: tabular-nums; }
+  #fontctl.floating { position: fixed; top: 6px; right: 10px; z-index: 1000; background: #10182b; padding: 4px 6px; border-radius: 8px; }
   /* ---------- Sentence practice ---------- */
   .sp-sec { margin: 22px 0 6px; padding: 16px; border: 1px solid var(--rule); border-radius: 10px; background: #fff; }
   .sp-sec h2 { font-family: var(--serif); font-size: 1.15rem; margin-bottom: 4px; }
@@ -1277,6 +1286,27 @@ select(DATA[1].items[7], null);
   };
 })();
 
+
+/* ---------- Text size control ---------- */
+(function(){
+  const KEY = "fr-fontsize", MIN = 80, MAX = 180, STEP = 10;
+  let pct = 100;
+  try { const v = parseInt(localStorage.getItem(KEY), 10); if (v >= MIN && v <= MAX) pct = v; } catch (e) {}
+  const ctl = document.createElement("span"); ctl.id = "fontctl"; ctl.title = "Text size for this page";
+  const mk = (txt, title, fn) => { const b = document.createElement("button"); b.type = "button"; b.textContent = txt; b.title = title; b.onclick = fn; ctl.appendChild(b); return b; };
+  const dec = mk("A−", "Smaller text", () => set(pct - STEP));
+  const lab = mk("100%", "Reset to 100%", () => set(100)); lab.id = "fsPct";
+  const inc = mk("A+", "Bigger text", () => set(pct + STEP));
+  function set(v) {
+    pct = Math.max(MIN, Math.min(MAX, v));
+    document.documentElement.style.fontSize = pct + "%";
+    lab.textContent = pct + "%"; dec.disabled = pct <= MIN; inc.disabled = pct >= MAX;
+    try { localStorage.setItem(KEY, String(pct)); } catch (e) {}
+  }
+  const bar = document.getElementById("modtabs"), build = document.getElementById("modbuild");
+  if (bar) bar.insertBefore(ctl, build || null); else { ctl.classList.add("floating"); document.body.appendChild(ctl); }
+  set(pct);
+})();
 </script>
 </body>
 </html>
