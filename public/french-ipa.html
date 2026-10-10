@@ -241,16 +241,28 @@
     .current-phoneme { transition: none; }
     .current-phoneme.speaking { transform: none; }
   }
-  /* ---------- Google Translate panel ---------- */
-  .tr-sec { margin: 22px 0 6px; padding: 16px; border: 1px solid var(--rule); border-radius: 10px; background: #fff; }
-  .tr-sec h2 { font-family: var(--serif); font-size: 1.15rem; margin-bottom: 10px; }
-  .tr-sec textarea { width: 100%; min-height: 76px; resize: vertical; font: inherit; font-size: 1rem; padding: 10px;
-    border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); color: var(--ink); }
-  .tr-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 10px; }
-  .tr-row select { font: inherit; padding: 8px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
-  .tr-note { color: var(--gray); font-size: 0.8rem; margin-top: 8px; }
-  a.tr-link { color: var(--blue); font-size: 0.8rem; margin-left: 8px; text-decoration: none; font-style: normal; font-family: var(--sans); }
-  a.tr-link:hover { text-decoration: underline; }
+  /* ---------- Sentence practice ---------- */
+  .sp-sec { margin: 22px 0 6px; padding: 16px; border: 1px solid var(--rule); border-radius: 10px; background: #fff; }
+  .sp-sec h2 { font-family: var(--serif); font-size: 1.15rem; margin-bottom: 4px; }
+  .sp-sub { color: var(--gray); font-size: 0.85rem; margin-bottom: 10px; }
+  .sp-sec textarea { width: 100%; min-height: 76px; resize: vertical; font: inherit; font-family: var(--serif); font-size: 1.2rem;
+    padding: 10px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); color: var(--ink); }
+  .sp-row { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-top: 10px; }
+  .sp-row .slider-group { margin: 0; }
+  button.play.rec { background: #C62828; }
+  button.play.rec:hover { background: #A71F1F; }
+  button.play.rec.on { animation: sp-pulse 1s infinite; }
+  @keyframes sp-pulse { 50% { opacity: 0.55; } }
+  .sp-status { color: var(--blue); font-size: 0.85rem; min-height: 1.2em; margin-top: 8px; }
+  .sp-mine { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--rule); }
+  .sp-mine audio { width: 100%; margin-top: 6px; }
+  .sp-score { margin-top: 12px; padding: 12px; border-radius: 8px; background: var(--blue-tint); }
+  .sp-score .big { font-family: var(--serif); font-size: 1.4rem; font-weight: 700; }
+  .sp-words { font-family: var(--serif); font-size: 1.25rem; margin-top: 6px; line-height: 1.8; }
+  .sp-words .ok { color: #1B7F3B; }
+  .sp-words .miss { color: #C62828; text-decoration: underline wavy; }
+  .sp-heard { color: var(--gray); font-size: 0.85rem; margin-top: 6px; }
+  .sp-note { color: var(--gray); font-size: 0.78rem; margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -299,18 +311,41 @@
     <div class="warn" id="warn">No French voice found on this device — playback will use the default voice, which may sound wrong. On iPhone: Settings → Accessibility → Spoken Content → Voices → French.</div>
   </div>
 
-  <section class="tr-sec" id="trSec">
-    <h2>Google Translate</h2>
-    <textarea id="trText" placeholder="Type or paste a word or sentence…" aria-label="Text to translate"></textarea>
-    <div class="tr-row">
-      <select id="trDir" aria-label="Direction">
-        <option value="en|fr">English → French</option>
-        <option value="fr|en">French → English</option>
-      </select>
-      <button class="play" id="trGo">Translate in Google Translate</button>
-      <button class="play loop" id="trSwap" title="Swap direction">⇄ Swap</button>
+  <section class="sp-sec" id="spSec">
+    <h2>Sentence practice</h2>
+    <p class="sp-sub">Type or paste a French sentence. Hear it spoken (repeated as often as you like), then record yourself and check your pronunciation.</p>
+    <textarea id="spText" lang="fr" placeholder="Où est la gare, s’il vous plaît ?" aria-label="French sentence"></textarea>
+    <div class="sp-row">
+      <button class="play" id="spSay">▶ Say it</button>
+      <button class="play loop" id="spLoop">Loop</button>
+      <button class="play loop" id="spStop" disabled>■ Stop</button>
+      <div class="slider-group">
+        <label for="spReps">Repeats</label>
+        <input type="range" id="spReps" min="1" max="10" step="1" value="3">
+        <output id="spRepsOut" for="spReps">3×</output>
+      </div>
+      <div class="slider-group">
+        <label for="spGap">Pause</label>
+        <input type="range" id="spGap" min="0" max="8" step="0.5" value="3">
+        <output id="spGapOut" for="spGap">3 s</output>
+      </div>
     </div>
-    <p class="tr-note">Opens Google Translate in a new tab with your text filled in. Tip: the word shown in the player above also has its own “translate” link.</p>
+    <p class="sp-status" id="spStatus"></p>
+    <p class="sp-note" style="margin-top:0">Uses the Voice and Speed set in the player above.</p>
+
+    <div class="sp-mine">
+      <div class="sp-row" style="margin-top:0">
+        <button class="play rec" id="spRec">● Record my voice</button>
+        <span class="sp-status" id="spRecStatus" style="margin:0"></span>
+      </div>
+      <audio id="spAudio" controls hidden></audio>
+      <div class="sp-score" id="spScore" hidden>
+        <div class="big" id="spScoreBig"></div>
+        <div class="sp-words" id="spWords"></div>
+        <div class="sp-heard" id="spHeard"></div>
+      </div>
+      <p class="sp-note">Your recording stays in this page (it isn’t saved). The pronunciation check uses your browser’s speech recognition — Chrome or Edge — which sends the audio to the browser maker’s service to turn it into text, so it needs internet and is only approximate. In other browsers you still get the recording to listen back to. The microphone only works on <b>localhost</b> (or https).</p>
+    </div>
   </section>
 
   <div id="sections"></div>
@@ -932,29 +967,126 @@ vRender(true);
 /* Default selection: /y/ — the classic hard-for-anglophones sound */
 select(DATA[1].items[7], null);
 
-/* ---------- Google Translate ---------- */
+/* ---------- Sentence practice: speak + repeat, record, check ---------- */
 (function(){
-  const gt = (sl, tl, text) => "https://translate.google.com/?sl=" + sl + "&tl=" + tl
-    + "&text=" + encodeURIComponent(text) + "&op=translate";
-  const txt = document.getElementById("trText"), dir = document.getElementById("trDir");
-  const open = (sl, tl, t) => { if (t.trim()) window.open(gt(sl, tl, t.trim()), "_blank", "noopener"); };
-  document.getElementById("trGo").onclick = () => { const [sl, tl] = dir.value.split("|"); open(sl, tl, txt.value); };
-  txt.addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) document.getElementById("trGo").click(); });
-  document.getElementById("trSwap").onclick = () => { dir.value = dir.value === "en|fr" ? "fr|en" : "en|fr"; };
-  // "translate" link next to the word shown in the player
-  const big = document.getElementById("bigWord");
-  const link = document.createElement("a");
-  link.className = "tr-link"; link.textContent = "translate ↗"; link.target = "_blank"; link.rel = "noopener";
-  link.title = "Open this word in Google Translate"; link.hidden = true;
-  big.parentNode.insertBefore(link, big.nextSibling);
-  const sync = () => {
-    const w = big.textContent.trim();
-    link.hidden = !w;
-    if (w) link.href = gt("fr", "en", w);
-  };
-  new MutationObserver(sync).observe(big, { childList: true, subtree: true, characterData: true });
-  sync();
+  const $ = id => document.getElementById(id);
+  const txt = $("spText"), reps = $("spReps"), gp = $("spGap"), st = $("spStatus");
+  const sayB = $("spSay"), loopB = $("spLoop"), stopB = $("spStop");
+  try { txt.value = localStorage.getItem("fr-sentence") || ""; } catch (e) {}
+  txt.addEventListener("input", () => { try { localStorage.setItem("fr-sentence", txt.value); } catch (e) {} });
+  reps.addEventListener("input", () => { $("spRepsOut").textContent = reps.value + "×"; });
+  gp.addEventListener("input", () => { $("spGapOut").textContent = gp.value + " s"; });
+
+  /* --- speak with repetition --- */
+  let tok = 0;
+  function setBusy(b) { sayB.disabled = loopB.disabled = b; stopB.disabled = !b; }
+  async function run(forever) {
+    const text = txt.value.trim();
+    if (!text) { st.textContent = "Type a sentence first."; txt.focus(); return; }
+    const my = ++tok, total = forever ? Infinity : parseInt(reps.value, 10), gapMs = parseFloat(gp.value) * 1000;
+    speechSynthesis.cancel();
+    setBusy(true);
+    for (let n = 1; n <= total; n++) {
+      st.textContent = forever ? "Playing… (loop)" : (total > 1 ? "Playing " + n + " of " + total + "…" : "Playing…");
+      await speakOnce(text);
+      if (my !== tok) return;
+      if ((forever || n < total) && gapMs > 0) {
+        st.textContent = "Your turn — say it";
+        await wait(gapMs);
+        if (my !== tok) return;
+      }
+    }
+    st.textContent = ""; setBusy(false);
+  }
+  sayB.onclick = () => run(false);
+  loopB.onclick = () => run(true);
+  stopB.onclick = () => { tok++; speechSynthesis.cancel(); st.textContent = ""; setBusy(false); };
+
+  /* --- record my voice --- */
+  const recB = $("spRec"), recSt = $("spRecStatus"), audio = $("spAudio");
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let stream = null, mr = null, chunks = [], sr = null, heard = "", recording = false, srErr = "";
+
+  const norm = t => t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[’']/g, " ")
+    .split(/[^a-z0-9]+/).filter(Boolean);
+
+  function score(targetText, heardText) {
+    const T = targetText.split(/\s+/).filter(Boolean);              // words as typed, for display
+    const Tn = T.map(w => norm(w).join(" ")), H = norm(heardText);
+    // flatten target into normalized tokens, remembering which displayed word each belongs to
+    const toks = []; T.forEach((w, i) => norm(w).forEach(x => toks.push({ x, i })));
+    const m = toks.length, n = H.length;
+    const L = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+    for (let i = m - 1; i >= 0; i--) for (let j = n - 1; j >= 0; j--)
+      L[i][j] = toks[i].x === H[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+    const hit = new Array(m).fill(false);
+    for (let i = 0, j = 0; i < m && j < n;) {
+      if (toks[i].x === H[j]) { hit[i] = true; i++; j++; }
+      else if (L[i + 1][j] >= L[i][j + 1]) i++; else j++;
+    }
+    const okWord = new Array(T.length).fill(true);
+    toks.forEach((t, k) => { if (!hit[k]) okWord[t.i] = false; });
+    const matched = hit.filter(Boolean).length;
+    return { pct: m ? Math.round(100 * matched / m) : 0, words: T, okWord };
+  }
+
+  function showScore() {
+    const target = txt.value.trim(), box = $("spScore");
+    if (!target) { box.hidden = true; return; }
+    if (!SR) { box.hidden = true; recSt.textContent = "Recorded. (This browser can’t check pronunciation — use Chrome or Edge for that.)"; return; }
+    box.hidden = false;
+    if (!heard.trim()) {
+      $("spScoreBig").textContent = "Couldn’t hear anything to check";
+      $("spWords").textContent = "";
+      $("spHeard").textContent = srErr ? "(" + srErr + ")" : "Try again a little louder and closer to the microphone.";
+      return;
+    }
+    const r = score(target, heard);
+    $("spScoreBig").textContent = r.pct + "% — " + (r.pct >= 90 ? "excellent" : r.pct >= 70 ? "good, retry the red words" : "keep practising");
+    const w = $("spWords"); w.textContent = "";
+    r.words.forEach((word, i) => {
+      const sp = document.createElement("span"); sp.className = r.okWord[i] ? "ok" : "miss"; sp.textContent = word;
+      w.appendChild(sp); w.appendChild(document.createTextNode(" "));
+    });
+    $("spHeard").textContent = "Heard: “" + heard.trim() + "”";
+  }
+
+  async function startRec() {
+    speechSynthesis.cancel(); tok++; setBusy(false); st.textContent = "";
+    if (!window.isSecureContext || !navigator.mediaDevices || !window.MediaRecorder) {
+      recSt.textContent = "Recording needs the page opened at http://localhost:… (or https), in a recent Chrome/Edge/Firefox."; return;
+    }
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+    catch (e) { recSt.textContent = "Microphone blocked — allow it in the browser’s address bar, then try again."; return; }
+    chunks = []; heard = ""; srErr = "";
+    mr = new MediaRecorder(stream);
+    mr.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+    mr.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      if (audio.src) URL.revokeObjectURL(audio.src);
+      audio.src = URL.createObjectURL(new Blob(chunks, { type: mr.mimeType || "audio/webm" }));
+      audio.hidden = false;
+      if (!SR) showScore();
+    };
+    mr.start();
+    if (SR) {
+      sr = new SR(); sr.lang = "fr-FR"; sr.continuous = true; sr.interimResults = false; sr.maxAlternatives = 1;
+      sr.onresult = e => { for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) heard += " " + e.results[i][0].transcript; };
+      sr.onerror = e => { srErr = e.error === "not-allowed" ? "speech check blocked" : e.error === "network" ? "no internet for the speech check" : e.error; };
+      sr.onend = () => { if (!recording) showScore(); };
+      try { sr.start(); } catch (e) {}
+    }
+    recording = true; recB.classList.add("on"); recB.textContent = "■ Stop recording";
+    recSt.textContent = "Recording — say the sentence…"; $("spScore").hidden = true;
+  }
+  function stopRec() {
+    recording = false; recB.classList.remove("on"); recB.textContent = "● Record my voice"; recSt.textContent = "";
+    try { mr.stop(); } catch (e) {}
+    if (sr) { try { sr.stop(); } catch (e) {} }
+  }
+  recB.onclick = () => recording ? stopRec() : startRec();
 })();
+
 </script>
 </body>
 </html>
