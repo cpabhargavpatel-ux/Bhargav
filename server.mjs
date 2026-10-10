@@ -157,7 +157,7 @@ function currentUser(req) {
    the copy on disk stays identical to the desktop file. It goes into <head>,
    BEFORE the app's own script, because the app checks window.GTN_REMOTE at
    boot. */
-/* Top-level module tabs (Goal Setting | French IPA), added at serve time so the pages themselves stay untouched. */
+/* Top-level module tabs (Goal Setting | French | English), added at serve time so the pages themselves stay untouched. */
 const MODULE_CSS = `<style>
 #modtabs{position:sticky;top:0;z-index:1000;display:flex;gap:4px;align-items:flex-end;height:40px;box-sizing:border-box;padding:4px 14px 0;background:#10182b;font:600 14px/20px system-ui,-apple-system,"Segoe UI",sans-serif}
 #modtabs a{padding:8px 18px;border-radius:8px 8px 0 0;color:#c9d2ea;text-decoration:none;background:#1b2542}
@@ -168,7 +168,8 @@ const MODULE_CSS = `<style>
 </style>`;
 const moduleBar = active => MODULE_CSS + (active === "goal" ? "<style>header{top:40px !important}@media print{header{top:0 !important}}</style>" : "") + `<nav id="modtabs">`
   + `<a href="/"${active === "goal" ? ' class="on"' : ""}>Goal Setting</a>`
-  + `<a href="/french-ipa.html"${active === "french" ? ' class="on"' : ""}>French</a><span id="modbuild">build 10-10-s</span></nav>\n<script src="/timer.js"></script>\n`;
+  + `<a href="/french-ipa.html"${active === "french" ? ' class="on"' : ""}>French</a>`
+  + `<a href="/english.html"${active === "english" ? ' class="on"' : ""}>English</a><span id="modbuild">build 10-10-t</span></nav>\n<script src="/timer.js"></script>\n`;
 function withModuleBar(html, active) {
   const m = /<body[^>]*>/i.exec(html);
   return m ? html.slice(0, m.index + m[0].length) + "\n" + moduleBar(active) + html.slice(m.index + m[0].length)
@@ -208,9 +209,10 @@ const server = createServer(async (req, res) => {
       const file = join(PUBLIC, rel);
       if (!file.startsWith(PUBLIC + sep) || !existsSync(file) || statSync(file).isDirectory()) { res.writeHead(404).end("Not found"); return; }
       const isFont = rel.startsWith("fonts/") && extname(file) === ".woff2";   // public, cacheable
-      if (rel !== "login.html" && rel !== "server-shim.js" && rel !== "french-ipa.html" && rel !== "timer.js" && !isFont && !u) { res.writeHead(302, { location: "/login.html" }); res.end(); return; }
+      if (rel !== "login.html" && rel !== "server-shim.js" && rel !== "french-ipa.html" && rel !== "english.html" && rel !== "timer.js" && !isFont && !u) { res.writeHead(302, { location: "/login.html" }); res.end(); return; }
       let b = readFileSync(file);
       if (rel === "french-ipa.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "french"));
+      if (rel === "english.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "english"));
       res.writeHead(200, { "content-type": MIME[extname(file)] || "application/octet-stream", "cache-control": isFont ? "public, max-age=31536000, immutable" : "no-store" });
       res.end(b); return;
     }

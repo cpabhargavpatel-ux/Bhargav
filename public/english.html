@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English</title>
+<script>try{var p=parseInt(localStorage.getItem("en-fontsize"));if(p>=80&&p<=180)document.documentElement.style.fontSize=p+"%"}catch(e){}</script>
+<link rel="preload" href="/fonts/gentium-book-plus-400.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  @font-face { font-family: "Gentium Book Plus"; font-style: normal; font-weight: 400; font-display: swap; src: url(/fonts/gentium-book-plus-400.woff2) format("woff2"); }
+  @font-face { font-family: "Gentium Book Plus"; font-style: normal; font-weight: 700; font-display: swap; src: url(/fonts/gentium-book-plus-700.woff2) format("woff2"); }
+  @font-face { font-family: "Gentium Book Plus"; font-style: italic; font-weight: 400; font-display: swap; src: url(/fonts/gentium-book-plus-400-italic.woff2) format("woff2"); }
+  :root {
+    --paper: #FBFBF8; --ink: #17181C; --blue: #2240E8; --blue-tint: #E8ECFE; --gray: #6b6d75; --rule: #E3E2DC;
+    --serif: "Gentium Book Plus", "Charis SIL", "Doulos SIL", Cambria, Georgia, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--sans); line-height: 1.5; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  .wrap { max-width: 1480px; margin: 0 auto; padding: 0 28px 80px; }
+
+  /* ---------- toolbar (sticks under the tab bar) ---------- */
+  .bar { position: sticky; top: 40px; z-index: 10; background: var(--paper); border-bottom: 1px solid var(--rule); padding: 12px 0 10px; }
+  .bar-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+  .bar-row + .bar-row { margin-top: 8px; }
+  h1 { font-family: var(--serif); font-size: 1.5rem; margin-right: 6px; }
+  h1 small { font-family: var(--sans); font-size: 0.85rem; font-weight: 400; color: var(--gray); margin-left: 6px; }
+  input[type="search"], .bar select { font: inherit; font-size: 0.92rem; padding: 7px 10px; border: 1px solid var(--rule); border-radius: 8px; background: #fff; color: var(--ink); }
+  input[type="search"] { width: min(320px, 100%); }
+  .chips { display: inline-flex; gap: 6px; }
+  .chip { font: inherit; font-size: 0.88rem; font-weight: 600; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--rule); background: #fff; color: var(--gray); cursor: pointer; }
+  .chip.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+  button.play { font: inherit; font-size: 0.92rem; font-weight: 600; color: var(--paper); background: var(--blue); border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer; }
+  button.play:hover { background: #1B34C4; }
+  button.play:disabled { background: #85878E; cursor: default; }
+  button.play.alt { background: #fff; color: var(--blue); border: 1px solid var(--blue); }
+  button.play.alt:hover { background: var(--blue-tint); }
+  button.play.stop { background: #C62828; }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .slider { display: inline-flex; align-items: center; gap: 6px; font-size: 0.88rem; color: var(--gray); }
+  .slider input { width: 84px; } .slider output { min-width: 2.6em; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .legend { color: var(--gray); font-size: 0.85rem; }
+  .legend b { font-weight: 700; } .legend .h { color: #C62828; } .legend .u { color: #B07B00; }
+  .status { color: var(--blue); font-size: 0.88rem; min-height: 1.2em; }
+  .warn { color: #B4331F; font-size: 0.85rem; display: none; }
+
+  /* ---------- idiom cards ---------- */
+  .list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr)); gap: 14px; margin-top: 16px; }
+  .card { background: #fff; border: 1px solid var(--rule); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+  .card.playing { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); }
+  .card.h1 { border-left: 5px solid #e9c77a; } .card.h2 { border-left: 5px solid #f0a56b; } .card.h3 { border-left: 5px solid #e57373; }
+  .top { display: flex; align-items: center; gap: 8px; }
+  .top input { flex: 1; min-width: 0; font-family: var(--serif); font-size: 1.3rem; font-weight: 700; border: 1px solid transparent; border-radius: 6px; padding: 2px 6px; background: transparent; color: var(--ink); }
+  .field label { display: block; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gray); padding-left: 6px; }
+  .card input:hover, .card input:focus, .card textarea:hover, .card textarea:focus { border-color: #cfd3dc; background: #fff; }
+  .card textarea { width: 100%; resize: none; overflow: hidden; border: 1px solid transparent; border-radius: 6px; padding: 3px 6px; font: inherit; font-family: var(--serif); font-size: 1.08rem; line-height: 1.4; background: transparent; color: var(--ink); }
+  .card textarea.ex { font-style: italic; color: #34363d; }
+  .mk { font: 700 0.9rem/1 var(--sans); border: 1px solid var(--rule); background: #fff; border-radius: 8px; padding: 6px 8px; cursor: pointer; color: #9aa3b2; min-width: 2.7em; letter-spacing: -1px; }
+  .mk:hover { background: var(--blue-tint); }
+  .mk.hard[data-l="1"] { color: #A56A00; background: #fff1cc; border-color: #e9c77a; }
+  .mk.hard[data-l="2"] { color: #C25A0E; background: #ffe0c8; border-color: #f0a56b; }
+  .mk.hard[data-l="3"] { color: #fff; background: #C62828; border-color: #C62828; }
+  .mk.use[data-l="1"] { color: #8a6a00; background: #fff8dd; border-color: #ecd68a; }
+  .mk.use[data-l="2"] { color: #8a6a00; background: #ffeeb0; border-color: #e6c85a; }
+  .mk.use[data-l="3"] { color: #5c4300; background: #ffd966; border-color: #e0b000; }
+  .ico { font: inherit; font-size: 0.95rem; border: none; background: transparent; cursor: pointer; color: var(--blue); padding: 4px 6px; border-radius: 6px; }
+  .ico:hover { background: var(--blue-tint); } .ico.del { color: #9aa3b2; } .ico.del:hover { color: #C62828; background: #fdecea; }
+  .edited { font-size: 0.72rem; color: #B07B00; margin-left: 2px; }
+  .empty { margin-top: 40px; text-align: center; color: var(--gray); }
+  .empty p { margin: 8px 0; }
+  .empty .row { display: flex; gap: 10px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+  dialog { border: none; border-radius: 12px; padding: 18px; width: min(680px, 94vw); box-shadow: 0 20px 60px rgba(8,22,40,.4); }
+  dialog::backdrop { background: rgba(8,22,40,.45); }
+  dialog h2 { font-family: var(--serif); font-size: 1.2rem; margin-bottom: 6px; }
+  dialog p { color: var(--gray); font-size: 0.88rem; margin-bottom: 8px; }
+  dialog textarea { width: 100%; min-height: 220px; font: 0.9rem/1.4 ui-monospace, Consolas, monospace; padding: 10px; border: 1px solid var(--rule); border-radius: 8px; }
+  dialog .row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
+  .note { color: var(--gray); font-size: 0.82rem; margin-top: 24px; }
+
+  /* ---------- text size control (lives in the top tab bar) ---------- */
+  #fontctl { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; align-self: center; font: 600 12px system-ui, sans-serif; color: #9fb0d6; }
+  #fontctl + #modbuild { margin-left: 14px !important; }
+  #fontctl button { font: inherit; font-size: 13px; line-height: 1; padding: 5px 9px; border: 0; border-radius: 6px; background: #1b2542; color: #c9d2ea; cursor: pointer; }
+  #fontctl button:hover:not(:disabled) { background: #27345c; color: #fff; }
+  #fontctl button:disabled { opacity: 0.35; cursor: default; }
+  #fontctl #fsPct { min-width: 3.6em; background: transparent; font-variant-numeric: tabular-nums; }
+  #fontctl.floating { position: fixed; top: 6px; right: 10px; z-index: 1000; background: #10182b; padding: 4px 6px; border-radius: 8px; }
+  @media (max-width: 700px) { .wrap { padding: 0 14px 60px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <div class="bar-row">
+      <h1>Idioms <small id="count"></small></h1>
+      <input type="search" id="q" placeholder="Search idiom, meaning or example…" autocomplete="off" aria-label="Search">
+      <span class="chips" role="group" aria-label="Filter">
+        <button class="chip on" data-f="all">All</button>
+        <button class="chip" data-f="hard">&#8635; Hard</button>
+        <button class="chip" data-f="common">&#9733; Used often</button>
+      </span>
+      <select id="sort" aria-label="Sort">
+        <option value="added">Order added</option>
+        <option value="az">A &ndash; Z</option>
+        <option value="hard">Hardest first</option>
+        <option value="use">Most used first</option>
+      </select>
+      <button class="play alt" id="add">+ Add idiom</button>
+      <button class="play alt" id="imp">Import / export</button>
+    </div>
+    <div class="bar-row">
+      <button class="play" id="practise">&#8635; Practise hard idioms</button>
+      <button class="play stop" id="stop" hidden>&#9632; Stop</button>
+      <label class="slider">Say <select id="mode"><option value="both">idiom + example</option><option value="idiom">idiom only</option><option value="all">idiom + meaning + example</option></select></label>
+      <label class="slider">Speed <input type="range" id="rate" min="0.5" max="1.3" step="0.05" value="0.9"><output id="rateOut">0.9&times;</output></label>
+      <label class="slider">Voice <select id="voice"></select></label>
+      <span class="status" id="status"></span>
+      <span class="warn" id="warn">No English voice found on this device &mdash; playback will use the default voice.</span>
+    </div>
+    <div class="bar-row"><span class="legend"><b class="h">&#8635;</b> = hard for me (click to raise: weak, weaker, weakest &mdash; the weakest are repeated most) &nbsp;&middot;&nbsp; <b class="u">&#9733;</b> = how often I think people use it (1&ndash;3 stars). Click the idiom, meaning or example to edit it.</span></div>
+  </div>
+
+  <div class="list" id="list"></div>
+  <div class="empty" id="empty" hidden></div>
+  <p class="note">Everything here is saved in this browser only. Use <b>Import / export</b> to back it up or move it.</p>
+</div>
+
+<dialog id="dlg">
+  <h2>Import / export</h2>
+  <p><b>Import:</b> paste idioms, one per line, as <code>idiom | meaning | example</code> (a tab, &mdash; or - also works as the separator), or paste a JSON backup. Idioms already in your list are skipped.</p>
+  <textarea id="paste" placeholder="Break the ice | to start a conversation and make people relax | He told a joke to break the ice."></textarea>
+  <div class="row">
+    <button class="play alt" id="expJson">Export backup (.json)</button>
+    <button class="play alt" id="expCsv">Export CSV</button>
+    <button class="play alt" id="close">Close</button>
+    <button class="play" id="doImport">Import</button>
+  </div>
+  <p id="impMsg" style="margin:10px 0 0"></p>
+</dialog>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const KEY = "en-idioms";
+const MARK = ["↻", "↻", "↻↻", "↻↻↻"], STAR = ["☆", "★", "★★", "★★★"];
+const HARD_NAME = ["not marked", "hard", "harder", "hardest — repeated most"], USE_NAME = ["not rated", "rarely used", "sometimes used", "used a lot"];
+
+/* A few very common idioms to start from (written for this app; not copied from any website). Load them from the empty screen. */
+const STARTER = [
+["Break the ice","to say or do something that makes people feel relaxed at the start of a meeting or conversation","He told a funny story to break the ice at the meeting."],
+["Piece of cake","something that is very easy to do","The test was a piece of cake."],
+["Under the weather","feeling a little ill","I'm feeling under the weather, so I'll stay home today."],
+["Hit the nail on the head","to say or do exactly the right thing; to describe the problem exactly","You hit the nail on the head when you said we need more time."],
+["Once in a blue moon","very rarely","We only eat out once in a blue moon."],
+["Spill the beans","to reveal a secret","Who spilled the beans about the surprise party?"],
+["Cost an arm and a leg","to be very expensive","Living downtown costs an arm and a leg."],
+["Let the cat out of the bag","to reveal a secret by accident","She let the cat out of the bag about their engagement."],
+["Bite the bullet","to do something unpleasant because it can't be avoided","I decided to bite the bullet and call the dentist."],
+["Beat around the bush","to avoid saying what you really mean, usually because it is uncomfortable","Stop beating around the bush and tell me what happened."],
+["Call it a day","to stop working for the day","We've done enough; let's call it a day."],
+["Cut corners","to do something the cheapest or easiest way, often with poorer results","The builders cut corners and the roof leaks."],
+["Get out of hand","to become difficult to control","The party got out of hand and the neighbours complained."],
+["Hang in there","to keep trying and not give up when things are hard","Hang in there — the exams will be over soon."],
+["In hot water","in trouble","He's in hot water with his boss for missing the deadline."],
+["Kill two birds with one stone","to achieve two things with a single action","I'll walk to the bank and kill two birds with one stone by mailing the letter."],
+["On the ball","quick to understand and react; alert","Our new assistant is really on the ball."],
+["Pull someone's leg","to joke with someone by telling them something untrue","Relax, I'm just pulling your leg."],
+["The last straw","the final problem that makes a situation impossible to accept","When he forgot my birthday again, that was the last straw."],
+["Throw in the towel","to give up","After three failed attempts, she threw in the towel."],
+["A blessing in disguise","something that seems bad at first but turns out to be good","Losing that job was a blessing in disguise; I found a better one."],
+["Add insult to injury","to make a bad situation even worse","The flight was late, and to add insult to injury they lost my bag."],
+["Back to square one","back at the beginning after an attempt has failed","The deal fell through, so we're back to square one."],
+["Barking up the wrong tree","looking for something in the wrong place; following the wrong idea","If you think I took it, you're barking up the wrong tree."],
+["Burn the midnight oil","to work late into the night","She burned the midnight oil to finish the report."],
+["Cut to the chase","to get to the main point without wasting time","Let's cut to the chase: can you start on Monday?"],
+["Get cold feet","to become nervous and want to back out of something you planned","He got cold feet a week before the wedding."],
+["Go the extra mile","to make more effort than people expect","Our server went the extra mile to make the evening special."],
+["Jump on the bandwagon","to join something because it has become popular","Everyone jumped on the bandwagon when the new app became a hit."],
+["Keep an eye on","to watch carefully","Could you keep an eye on my bag for a minute?"],
+["Miss the boat","to lose an opportunity by being too slow","I waited too long to apply and missed the boat."],
+["No pain, no gain","you have to work hard or suffer a little to get good results","I'm sore after the gym, but no pain, no gain."],
+["On the same page","having the same understanding or agreeing about something","Before we start, let's make sure we're all on the same page."],
+["Play it by ear","to decide what to do as things happen, without a fixed plan","I don't know what time we'll leave; let's play it by ear."],
+["Rain on someone's parade","to spoil someone's plans or happiness","I hate to rain on your parade, but the event is cancelled."],
+["See eye to eye","to agree with someone","We don't always see eye to eye, but we respect each other."],
+["Take it with a grain of salt","to not completely believe what you hear","Take his stories with a grain of salt."],
+["The ball is in your court","it is your turn to take the next step or make a decision","I've sent my offer, so the ball is in your court."],
+["Time flies","time passes very quickly","Time flies when you're having fun."],
+["Touch base","to contact someone briefly","Let's touch base on Friday to see how things are going."],
+["Under the radar","not noticed by many people","The small company stayed under the radar for years."],
+["Think outside the box","to think in a new or creative way","We need to think outside the box to solve this."],
+["Water under the bridge","past problems that no longer matter","Our argument is water under the bridge now."],
+["Your guess is as good as mine","I don't know either","\"When will they arrive?\" \"Your guess is as good as mine.\""],
+["Bite off more than you can chew","to take on more than you can manage","I bit off more than I could chew with three jobs."],
+["Break a leg","good luck (often said to performers)","Break a leg at your audition tonight!"],
+["Face the music","to accept the unpleasant results of what you have done","He broke the window and had to face the music."],
+["Give someone the cold shoulder","to ignore someone on purpose","She's been giving me the cold shoulder since our argument."],
+["Out of the blue","suddenly and unexpectedly","He called me out of the blue after ten years."],
+["Let sleeping dogs lie","to leave a situation alone so it doesn't cause new trouble","I won't bring up the old dispute; let sleeping dogs lie."]
+];
+
+let items = [], filter = "all", playing = false, playToken = 0;
+try { items = JSON.parse(localStorage.getItem(KEY) || "[]") || []; } catch (e) { items = []; }
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const norm = s => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+function save() { try { localStorage.setItem(KEY, JSON.stringify(items)); } catch (e) { $("status").textContent = "Couldn't save in this browser (private window?)."; } }
+function mk(idiom, meaning, example, extra) {
+  return Object.assign({ id: uid(), idiom, meaning: meaning || "", example: example || "", hard: 0, use: 0, added: Date.now(), orig: null }, extra || {});
+}
+
+/* ---------- list ---------- */
+function visible() {
+  const q = norm($("q").value);
+  let list = items.filter(it => {
+    if (filter === "hard" && !it.hard) return false;
+    if (filter === "common" && it.use < 2) return false;
+    return !q || norm(it.idiom + " " + it.meaning + " " + it.example).includes(q);
+  });
+  const s = $("sort").value;
+  if (s === "az") list.sort((a, b) => a.idiom.localeCompare(b.idiom));
+  else if (s === "hard") list.sort((a, b) => b.hard - a.hard || a.added - b.added);
+  else if (s === "use") list.sort((a, b) => b.use - a.use || a.added - b.added);
+  else list.sort((a, b) => a.added - b.added);
+  return list;
+}
+function grow(t) { t.style.height = "auto"; t.style.height = (t.scrollHeight + 2) + "px"; }
+function paint(card, it) {
+  for (let i = 1; i <= 3; i++) card.classList.toggle("h" + i, it.hard === i);
+  const h = card.querySelector(".mk.hard"), u = card.querySelector(".mk.use");
+  h.dataset.l = it.hard; h.textContent = MARK[it.hard]; h.title = "Hard for me: " + HARD_NAME[it.hard] + " — click to change";
+  u.dataset.l = it.use; u.textContent = STAR[it.use]; u.title = "How often people use it (my guess): " + USE_NAME[it.use] + " — click to change";
+  const ed = card.querySelector(".edited");
+  const changed = it.orig && (it.orig.meaning !== it.meaning || it.orig.example !== it.example);
+  ed.hidden = !changed;
+  card.querySelector(".restore").hidden = !changed;
+}
+function build(it) {
+  const c = document.createElement("div"); c.className = "card"; c.dataset.id = it.id;
+  c.innerHTML =
+    '<div class="top"><input class="idi" aria-label="Idiom" placeholder="Idiom"><span class="edited" hidden>edited</span>' +
+    '<button class="mk hard" type="button"></button><button class="mk use" type="button"></button>' +
+    '<button class="ico say" type="button" title="Listen">&#9654;</button>' +
+    '<button class="ico restore" type="button" title="Restore the original meaning and example" hidden>&#8634;</button>' +
+    '<button class="ico del" type="button" title="Delete this idiom">&#10005;</button></div>' +
+    '<div class="field"><label>Meaning</label><textarea class="mean" rows="1" placeholder="What it means…"></textarea></div>' +
+    '<div class="field"><label>Example</label><textarea class="ex" rows="1" placeholder="A sentence that uses it…"></textarea></div>';
+  c.querySelector(".idi").value = it.idiom; c.querySelector(".mean").value = it.meaning; c.querySelector(".ex").value = it.example;
+  const edit = (sel, field) => { const el = c.querySelector(sel);
+    el.addEventListener("input", () => { if (el.tagName === "TEXTAREA") grow(el); });
+    el.addEventListener("change", () => { it[field] = el.value.trim(); save(); paint(c, it); }); };
+  edit(".idi", "idiom"); edit(".mean", "meaning"); edit(".ex", "example");
+  c.querySelector(".mk.hard").onclick = () => { it.hard = (it.hard + 1) % 4; save(); paint(c, it); };
+  c.querySelector(".mk.use").onclick = () => { it.use = (it.use + 1) % 4; save(); paint(c, it); };
+  c.querySelector(".say").onclick = () => { stopPlay(); speakIdiom(it, $("mode").value); };
+  c.querySelector(".restore").onclick = () => { if (!it.orig) return; it.meaning = it.orig.meaning; it.example = it.orig.example;
+    c.querySelector(".mean").value = it.meaning; c.querySelector(".ex").value = it.example; save(); paint(c, it); c.querySelectorAll("textarea").forEach(grow); };
+  c.querySelector(".del").onclick = () => { if (!confirm("Delete “" + (it.idiom || "this idiom") + "”?")) return; items = items.filter(x => x.id !== it.id); save(); render(); };
+  paint(c, it);
+  return c;
+}
+function render() {
+  const list = visible(), box = $("list"); box.textContent = "";
+  list.forEach(it => box.appendChild(build(it)));
+  box.querySelectorAll("textarea").forEach(grow);
+  const hard = items.filter(i => i.hard).length;
+  $("count").textContent = items.length ? list.length + (list.length !== items.length ? " of " + items.length : "") + (hard ? " · " + hard + " marked hard" : "") : "";
+  $("practise").disabled = !hard;
+  const e = $("empty");
+  if (!items.length) {
+    e.hidden = false;
+    e.innerHTML = '<p style="font-size:1.1rem"><b>No idioms yet.</b></p><p>Add your own, paste a list, or start from 50 very common ones.</p>' +
+      '<div class="row"><button class="play" id="loadStarter">Load 50 common idioms</button><button class="play alt" id="e2">Import a list</button><button class="play alt" id="e3">+ Add idiom</button></div>';
+    $("loadStarter").onclick = loadStarter; $("e2").onclick = () => openDlg(); $("e3").onclick = addIdiom;
+  } else if (!list.length) { e.hidden = false; e.innerHTML = "<p>Nothing matches. Clear the search or change the filter.</p>"; }
+  else e.hidden = true;
+}
+function loadStarter() {
+  const have = new Set(items.map(i => norm(i.idiom))); let n = 0;
+  STARTER.forEach(s => { if (!have.has(norm(s[0]))) { items.push(mk(s[0], s[1], s[2], { orig: { meaning: s[1], example: s[2] }, added: Date.now() + n })); n++; } });
+  save(); render();
+}
+function addIdiom() {
+  const it = mk("", "", "", { added: Date.now() }); items.push(it);
+  $("q").value = ""; filter = "all"; document.querySelectorAll(".chip").forEach(c => c.classList.toggle("on", c.dataset.f === "all"));
+  $("sort").value = "added"; save(); render();
+  const card = document.querySelector('.card[data-id="' + it.id + '"]'); if (card) { card.scrollIntoView({ block: "center" }); card.querySelector(".idi").focus(); }
+}
+
+/* ---------- speech ---------- */
+let voices = [], enVoices = [];
+function loadVoices() {
+  voices = speechSynthesis.getVoices(); enVoices = voices.filter(v => v.lang.toLowerCase().startsWith("en"));
+  const sel = $("voice"); sel.textContent = "";
+  if (!enVoices.length) { $("warn").style.display = "inline"; const o = document.createElement("option"); o.textContent = "Default voice"; sel.appendChild(o); return; }
+  $("warn").style.display = "none";
+  enVoices.forEach((v, i) => { const o = document.createElement("option"); o.value = i; o.textContent = v.name + " (" + v.lang + ")"; sel.appendChild(o); });
+  const pref = enVoices.findIndex(v => /en-us/i.test(v.lang)); if (pref >= 0) sel.value = pref;
+}
+if ("speechSynthesis" in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+$("rate").addEventListener("input", () => { $("rateOut").textContent = $("rate").value + "×"; });
+function say(text) {
+  return new Promise(res => {
+    if (!("speechSynthesis" in window) || !text) return res();
+    const u = new SpeechSynthesisUtterance(text); u.lang = "en-US"; u.rate = parseFloat($("rate").value);
+    const v = enVoices[parseInt($("voice").value, 10)]; if (v) u.voice = v;
+    u.onend = u.onerror = () => res(); speechSynthesis.speak(u);
+  });
+}
+const wait = ms => new Promise(r => setTimeout(r, ms));
+async function speakIdiom(it, mode, token) {
+  const alive = () => token === undefined || token === playToken;
+  await say(it.idiom); if (!alive()) return;
+  if (mode === "idiom") return;
+  await wait(500); if (!alive()) return;
+  if (mode === "all" && it.meaning) { await say("It means: " + it.meaning); if (!alive()) return; await wait(500); if (!alive()) return; }
+  await say(it.example);
+}
+function stopPlay() {
+  playing = false; playToken++; if ("speechSynthesis" in window) speechSynthesis.cancel();
+  $("practise").hidden = false; $("stop").hidden = true; $("status").textContent = "";
+  document.querySelectorAll(".card.playing").forEach(c => c.classList.remove("playing"));
+}
+async function practise() {          // hardest idioms are repeated most: 3 marks = 3 times per round, 2 = twice, 1 = once
+  const hard = items.filter(i => i.hard); if (!hard.length) return;
+  stopPlay(); playing = true; const my = ++playToken;
+  $("practise").hidden = true; $("stop").hidden = false;
+  const plan = []; for (let r = 1; r <= 3; r++) hard.filter(i => i.hard >= r).sort((a, b) => b.hard - a.hard).forEach(i => plan.push(i));
+  const mode = $("mode").value;
+  while (playing && my === playToken) {
+    for (let k = 0; k < plan.length; k++) {
+      if (!playing || my !== playToken) return;
+      const it = plan[k];
+      $("status").textContent = "Practising " + (k + 1) + " of " + plan.length + ": " + it.idiom;
+      document.querySelectorAll(".card.playing").forEach(c => c.classList.remove("playing"));
+      const card = document.querySelector('.card[data-id="' + it.id + '"]'); if (card) { card.classList.add("playing"); card.scrollIntoView({ block: "center", behavior: "smooth" }); }
+      await speakIdiom(it, mode, my); if (my !== playToken) return;
+      await wait(1500);
+    }
+  }
+}
+$("practise").onclick = practise; $("stop").onclick = stopPlay;
+
+/* ---------- import / export ---------- */
+function parseLines(text) {
+  const out = [];
+  text.split(/\r?\n/).forEach(raw => {
+    let line = raw.replace(/^\s*(?:\d+[.)]|[-•*])\s+/, "").trim(); if (!line) return;
+    let parts;
+    if (line.includes("\t")) parts = line.split("\t");
+    else if (line.includes(" | ")) parts = line.split(" | ");
+    else if (/\s[—–]\s/.test(line)) parts = line.split(/\s[—–]\s/);
+    else if (/\s-\s/.test(line)) parts = line.split(/\s-\s/);
+    else if (line.includes(": ")) { const i = line.indexOf(": "); parts = [line.slice(0, i), line.slice(i + 2)]; }
+    else parts = [line];
+    parts = parts.map(p => p.trim());
+    let [idiom, meaning = "", example = ""] = parts;
+    if (parts.length > 3) example = parts.slice(2).join(" - ");
+    const m = meaning.match(/^(.*?)\s*(?:examples?|e\.g\.)\s*[:\-]\s*(.*)$/i);          // "meaning. Example: ..." in one cell
+    if (m && !example) { meaning = m[1].replace(/[.;,]\s*$/, ""); example = m[2]; }
+    if (idiom) out.push({ idiom: idiom.replace(/^["“]|["”]$/g, ""), meaning, example });
+  });
+  return out;
+}
+function importText(text) {
+  text = text.trim(); if (!text) return { added: 0, skipped: 0 };
+  let rows;
+  if (text[0] === "[") { try { rows = JSON.parse(text); } catch (e) { rows = null; } }
+  if (!Array.isArray(rows)) rows = parseLines(text);
+  const have = new Set(items.map(i => norm(i.idiom))); let added = 0, skipped = 0;
+  rows.forEach((r, n) => {
+    const idiom = String(r.idiom || "").trim(); if (!idiom || have.has(norm(idiom))) { skipped++; return; }
+    have.add(norm(idiom));
+    items.push(mk(idiom, r.meaning, r.example, { hard: Math.max(0, Math.min(3, +r.hard || 0)), use: Math.max(0, Math.min(3, +r.use || 0)), added: Date.now() + n }));
+    added++;
+  });
+  save(); render(); return { added, skipped };
+}
+function openDlg() { $("impMsg").textContent = ""; $("dlg").showModal(); }
+function download(name, type, data) { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+$("imp").onclick = openDlg; $("close").onclick = () => $("dlg").close();
+$("doImport").onclick = () => { const r = importText($("paste").value); $("impMsg").textContent = "Added " + r.added + (r.skipped ? ", skipped " + r.skipped + " (already there or empty)" : "") + "."; if (r.added) $("paste").value = ""; };
+$("expJson").onclick = () => download("english-idioms-" + new Date().toISOString().slice(0, 10) + ".json", "application/json", JSON.stringify(items.map(i => ({ idiom: i.idiom, meaning: i.meaning, example: i.example, hard: i.hard, use: i.use })), null, 2));
+$("expCsv").onclick = () => { const q = s => '"' + String(s || "").replace(/"/g, '""') + '"';
+  download("english-idioms.csv", "text/csv", ["idiom,meaning,example,hard,used_often"].concat(items.map(i => [q(i.idiom), q(i.meaning), q(i.example), i.hard, i.use].join(","))).join("\r\n")); };
+
+/* ---------- controls ---------- */
+$("q").addEventListener("input", render); $("sort").addEventListener("change", render); $("add").onclick = addIdiom;
+document.querySelectorAll(".chip").forEach(c => c.onclick = () => { filter = c.dataset.f; document.querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x === c)); render(); });
+addEventListener("resize", () => document.querySelectorAll(".card textarea").forEach(grow));
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => document.querySelectorAll(".card textarea").forEach(grow));
+new MutationObserver(() => document.querySelectorAll(".card textarea").forEach(grow)).observe(document.documentElement, { attributes: true, attributeFilter: ["style"] });
+render();
+
+/* ---------- text size control (in the top tab bar) ---------- */
+(function () {
+  const KEYF = "en-fontsize", MIN = 80, MAX = 180, STEP = 10; let pct = 100;
+  try { const v = parseInt(localStorage.getItem(KEYF), 10); if (v >= MIN && v <= MAX) pct = v; } catch (e) {}
+  const ctl = document.createElement("span"); ctl.id = "fontctl"; ctl.title = "Text size for this page";
+  const b = (t, title, fn) => { const x = document.createElement("button"); x.type = "button"; x.textContent = t; x.title = title; x.onclick = fn; ctl.appendChild(x); return x; };
+  const dec = b("A−", "Smaller text", () => set(pct - STEP)), lab = b("100%", "Reset to 100%", () => set(100)), inc = b("A+", "Bigger text", () => set(pct + STEP));
+  lab.id = "fsPct";
+  function set(v) { pct = Math.max(MIN, Math.min(MAX, v)); document.documentElement.style.fontSize = pct + "%"; lab.textContent = pct + "%"; dec.disabled = pct <= MIN; inc.disabled = pct >= MAX; try { localStorage.setItem(KEYF, String(pct)); } catch (e) {} }
+  const bar = document.getElementById("modtabs"), build = document.getElementById("modbuild");
+  if (bar) bar.insertBefore(ctl, build || null); else { ctl.classList.add("floating"); document.body.appendChild(ctl); }
+  set(pct);
+})();
+</script>
+</body>
+</html>
