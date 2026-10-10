@@ -91,7 +91,22 @@
   #quoteBar button{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;
     border-radius:6px;font-size:11.5px;padding:2px 9px;cursor:pointer;flex:none;font-style:normal;font-family:"Segoe UI",system-ui,sans-serif}
   #quoteBar button:hover{background:rgba(255,255,255,.2)}
-  #quoteBar #quoteSmaller{margin-left:auto}
+  #quoteBar select{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;
+    border-radius:6px;font-size:11.5px;padding:2px 6px;cursor:pointer;
+    font-style:normal;font-family:"Segoe UI",system-ui,sans-serif}
+  #quoteBar select option{color:#1c2733;background:#fff}
+  /* ONE gear button; hovering it (or focusing it) drops down the full panel */
+  #quoteCtl{margin-left:auto;position:relative;flex:none}
+  #quoteGear{font-size:14px;padding:2px 11px}
+  #quoteMenu{display:none;position:absolute;right:0;top:100%;padding-top:6px;z-index:40}
+  #quoteCtl:hover #quoteMenu, #quoteCtl:focus-within #quoteMenu{display:block}
+  .qm-panel{display:grid;grid-template-columns:auto auto auto;gap:6px;
+    background:linear-gradient(160deg,#143a66,#0d2748);border:1px solid rgba(255,255,255,.28);
+    border-radius:10px;padding:10px;box-shadow:0 12px 30px rgba(8,22,40,.5), inset 0 1px 0 rgba(255,255,255,.12)}
+  .qm-panel button{width:100%;box-sizing:border-box;margin:0}
+  .qm-panel select{box-sizing:border-box;margin:0}
+  .qm-panel #quotePick{width:200px}
+  .qm-panel #quoteMins{width:200px}
 
   /* ---------- storage warning ---------- */
   #storeWarn{display:none;background:#7a1f1f;color:#fff;font-size:13px;padding:7px 22px}
@@ -196,16 +211,10 @@
     box-shadow:0 3px 7px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.28)}
   /* each tab wears its own color when active */
   .views button:nth-child(1).on{background:linear-gradient(160deg,#e0a52e,#b47a12);color:#1c1405}
-  .views button:nth-child(2).on{background:linear-gradient(160deg,#e08a76,#c05f4e)}
-  .views button:nth-child(3).on{background:linear-gradient(160deg,#c04b59,#8c2433)}
-  .views button:nth-child(4).on{background:linear-gradient(160deg,#27955a,#135c33)}
+  .views button:nth-child(2).on{background:linear-gradient(160deg,#c04b59,#8c2433)}
+  .views button:nth-child(3).on{background:linear-gradient(160deg,#6b7b8b,#44525f)}
+  .views button:nth-child(4).on{background:linear-gradient(160deg,#1c9148,#0f5f2d)}
   .views button:nth-child(5).on{background:linear-gradient(160deg,#8a6cba,#5d4584)}
-  .views button:nth-child(6).on{background:linear-gradient(160deg,#3a80c7,#1f4f86)}
-  .views button:nth-child(7).on{background:linear-gradient(160deg,#b56a0a,#7e4600)}
-  .views button:nth-child(8).on{background:linear-gradient(160deg,#148aa8,#0a5568)}
-  .views button:nth-child(9).on{background:linear-gradient(160deg,#6b7b8b,#44525f)}
-  .views button:nth-child(10).on{background:linear-gradient(160deg,#1c9148,#0f5f2d)}
-  .views button:nth-child(11).on{background:linear-gradient(160deg,#d3511a,#9a3109)}
   .views button:not(.on):hover{background:rgba(255,255,255,.2)}
 
   /* ---------- tool views ---------- */
@@ -250,6 +259,21 @@
   .sl-one{background:var(--brand);color:#f4ede0;border-radius:10px;padding:16px 18px;margin-top:12px}
   .sl-one .t{font-family:Georgia,serif;font-size:18px;line-height:1.5}
   .sl-one .acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+
+  /* ---------- tools sub-tabs + scoreboard ---------- */
+  .tool-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .tool-pills button{background:linear-gradient(180deg,#fff,#edf1f6);border:1px solid var(--line);
+    border-radius:18px;padding:5px 14px;font-size:12.5px;cursor:pointer;box-shadow:0 1px 2px rgba(16,32,48,.12)}
+  .tool-pills button.on{background:linear-gradient(160deg,#8a6cba,#5d4584);border-color:#5d4584;color:#fff;font-weight:600}
+  .sc-big{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--brand)}
+  .scorebar{height:14px;background:#e4eaf0;border-radius:7px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(16,32,48,.18);margin:6px 0 2px}
+  .scorebar i{display:block;height:100%;border-radius:7px;background:linear-gradient(90deg,#2f8f5b,#1e7a46)}
+  .scorebar.miss i{background:linear-gradient(90deg,#d08a2a,#a05a00)}
+  .lead-row{border-top:1px solid var(--line);padding:10px 0}
+  .lead-row:first-of-type{border-top:none}
+  .cm-badge{font-size:11px;font-weight:700;border-radius:12px;padding:2px 8px;flex:none}
+  .cm-badge.ok{background:var(--good-soft);color:var(--good)}
+  .cm-badge.no{background:#fdecea;color:#8c2f0d}
 
   /* ---------- GPS + 4-1-1 ---------- */
   .gps-goal{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px}
@@ -347,10 +371,23 @@
 <div id="quoteBar" hidden>
   <span class="q" id="quoteText"></span>
   <span class="qa" id="quoteAuthor"></span>
-  <button id="quoteSmaller" title="Smaller quote text">A&#8722;</button>
-  <button id="quoteBigger" title="Bigger quote text">A+</button>
-  <button id="quoteNext" title="Show another quote">&#8635; next</button>
-  <button id="quoteEdit" title="Edit the quote list — one per line">&#9998; edit</button>
+  <span id="quoteCtl">
+    <button id="quoteGear" title="Quote options — hover to open">&#9881;</button>
+    <span id="quoteMenu"><span class="qm-panel">
+      <select id="quotePick" title="Show a specific quote"></select>
+      <button id="quoteSmaller" title="Smaller quote text">A&#8722;</button>
+      <button id="quoteNext" title="Show another quote">&#8635; next</button>
+      <select id="quoteMins" title="How long each quote stays before the next one">
+        <option value="1">1 min</option><option value="2">2 min</option>
+        <option value="4">4 min</option><option value="5">5 min</option>
+        <option value="10">10 min</option><option value="15">15 min</option>
+        <option value="30">30 min</option><option value="60">1 hour</option>
+        <option value="0">stay</option>
+      </select>
+      <button id="quoteBigger" title="Bigger quote text">A+</button>
+      <button id="quoteEdit" title="Edit the quote list — one per line">&#9998; edit</button>
+    </span></span>
+  </span>
 </div>
 
 <main id="main"></main>
@@ -506,6 +543,8 @@ function ensureDomainTools(d){
     while (p.strategies.length < 5) p.strategies.push({ text:"", done:false });
   }
   if (!d.f411) d.f411 = { annual:"", months:{} };
+  if (!d.lag) d.lag = { name:"", from:"", to:"", by:"", log:{} };   // the lag measure: from X to Y by when; log = iso date -> value
+  if (!Array.isArray(d.leads)) d.leads = [];                        // lead measures: {id,name,unit,target,log:{iso:count}}
   return d;
 }
 /* v2 adds the book's other planning tools; older stores are upgraded in place */
@@ -523,12 +562,18 @@ function withDefaults(s){
   if (!Array.isArray(s.quotes) || !s.quotes.length) s.quotes = DEFAULT_QUOTES.slice();
   if (typeof s.quoteSeen !== "number") s.quoteSeen = 0;   // opens counter: each open shows the next quote
   if (typeof s.quoteSize !== "number") s.quoteSize = 15;  // quote bar font size, px
+  if (typeof s.quoteMins !== "number") s.quoteMins = 4;   // minutes a quote stays; 0 = pinned
+  if (!("quotePin" in s)) s.quotePin = null;              // index of a pinned quote
   // one-time (v11): the focusing question joins an already-saved quote list
   if ((s.version || 0) < 11 && !s.quotes.some(q => String(q).includes("easier or unnecessary")))
     s.quotes.unshift(ONE_THING_QUOTE);
+  if (!Array.isArray(s.commits)) s.commits = [];  // weekly commitments: {id,ts,weekStart,domainId,text,done:null|true|false}
   if (!s.view) s.view = "chain";
+  if (!s.toolView) s.toolView = "map";
+  // the analyses moved under the Tools tab — remap a saved view from before
+  if (["map","why","how","what","fish","list","gps","f411"].includes(s.view)){ s.toolView = s.view; s.view = "tools"; }
   for (const d of s.domains) ensureDomainTools(d);
-  s.version = 11;
+  s.version = 13;
   return s;
 }
 function load(){
@@ -668,19 +713,19 @@ function sentencePlain(dom){
     .join(" ");
 }
 
+/* the top level is the execution flow; the thinking tools live under Tools */
 const VIEWS = [
   { key:"chain", label:"Goal Chain" },
-  { key:"map", label:"Backward Map" },
-  { key:"why", label:"Why-Why" },
-  { key:"how", label:"How-How" },
-  { key:"what", label:"What-What" },
-  { key:"fish", label:"Fishbone" },
-  { key:"gps", label:"GPS 1-3-5" },
-  { key:"f411", label:"4-1-1" },
+  { key:"score", label:"Scoreboard" },
   { key:"blocks", label:"Time Blocking" },
   { key:"challenge", label:"66-Day Challenge" },
-  { key:"list", label:"Success List" }
+  { key:"tools", label:"Tools" }
 ];
+const TOOL_KEYS = ["map","why","how","what","fish","list","gps","f411"];
+function goView(v){
+  if (TOOL_KEYS.includes(v)){ state.view = "tools"; state.toolView = v; }
+  else state.view = v;
+}
 
 function render(){
   renderViews();
@@ -737,16 +782,10 @@ function renderMain(){
   const main = $("#main");
   if (!dom){ main.innerHTML = '<p class="empty-note">No goal line. Use + to create one.</p>'; return; }
 
-  if (state.view === "map"){ renderMap(main, dom, MAP_CFG); return; }
-  if (state.view === "why"){ renderMap(main, dom, WHY_CFG); return; }
-  if (state.view === "how"){ renderMap(main, dom, HOW_CFG); return; }
-  if (state.view === "what"){ renderMap(main, dom, WHAT_CFG); return; }
-  if (state.view === "fish"){ renderFish(main, dom); return; }
-  if (state.view === "gps"){ renderGPS(main, dom); return; }
-  if (state.view === "f411"){ render411(main, dom); return; }
+  if (state.view === "score"){ renderScore(main, dom); return; }
+  if (state.view === "tools"){ renderTools(main, dom); return; }
   if (state.view === "blocks"){ renderBlocks(main, dom); return; }
   if (state.view === "challenge"){ renderChallenge(main, dom); return; }
-  if (state.view === "list"){ renderList(main, dom); return; }
 
   const day = dom.levels.day, now = dom.levels.now;
   const dayDone = doneTodayFor(dom,"day"), nowDone = doneTodayFor(dom,"now");
@@ -827,10 +866,12 @@ function renderMain(){
     + '<p>The test at every level: <i>&ldquo;&hellip;such that by doing it everything else will be easier or unnecessary?&rdquo;</i></p>'
     + '<p>Reset <b>today</b> and <b>right now</b> every day; review the week weekly and the month monthly. The amber chips tell you when a level is due.</p>'
     + '<p class="statline">Last Weekly Hour: '+(state.reviews.length ? '<b>'+fmtDate(state.reviews[0].ts.slice(0,10))+'</b>' : 'never — the &#128337; button up top runs it')+'</p>'
-    + '<p style="margin-top:10px"><button id="btnArchive" style="background:none;border:none;color:var(--focus);text-decoration:underline;padding:0;font-size:12.5px">Archive this goal line</button></p>'
+    + '<p style="margin-top:10px"><button id="btnArchive" style="background:none;border:none;color:var(--focus);text-decoration:underline;padding:0;font-size:12.5px">Archive this goal line</button>'
+    + ' &middot; <button id="btnDelDom" style="background:none;border:none;color:var(--now);text-decoration:underline;padding:0;font-size:12.5px">Delete this goal line</button></p>'
     + (state.domains.some(d=>d.archived)
         ? '<p class="statline">Archived goal lines: '
-          + state.domains.filter(d=>d.archived).map(d=>'<button class="mini" data-domrestore="'+d.id+'" title="Restore this goal line">&#8617; '+esc(d.name)+'</button>').join(' ')
+          + state.domains.filter(d=>d.archived).map(d=>'<button class="mini" data-domrestore="'+d.id+'" title="Restore this goal line">&#8617; '+esc(d.name)+'</button>'
+            + '<button class="mini del" data-domharddel="'+d.id+'" title="Delete permanently">&#10005;</button>').join(' ')
           + '</p>'
         : '')
     + '</div>'
@@ -865,6 +906,27 @@ function renderMain(){
     const d = state.domains.find(x=>x.id===b.dataset.domrestore);
     if (d){ d.archived = false; state.activeDomain = d.id; save(); render(); }
   });
+  const delDomain = id => {
+    const d = state.domains.find(x=>x.id===id); if (!d) return;
+    askConfirm("Delete goal line",
+      'PERMANENTLY delete "'+d.name+'" — its whole chain, history, GPS, 4-1-1, lead measures, commitments and linked challenges? This cannot be undone — Archive keeps everything instead.',
+      ()=>{
+        state.domains.splice(state.domains.indexOf(d), 1);
+        state.history = state.history.filter(h=>h.domainId !== d.id);
+        state.commits = state.commits.filter(c=>c.domainId !== d.id);
+        state.challenges = state.challenges.filter(c=>c.domainId !== d.id);
+        if (!state.domains.some(x=>!x.archived)){
+          const nd = newDomain("My ONE Thing");
+          state.domains.push(nd);
+        }
+        if (!activeDomain() || state.activeDomain === d.id)
+          state.activeDomain = state.domains.find(x=>!x.archived).id;
+        save(); render();
+      });
+  };
+  const delDom = $("#btnDelDom");
+  if (delDom) delDom.onclick = ()=> delDomain(dom.id);
+  main.querySelectorAll("[data-domharddel]").forEach(b=> b.onclick = ()=> delDomain(b.dataset.domharddel));
   const arch = $("#btnArchive");
   if (arch) arch.onclick = ()=>{
     askConfirm("Archive goal line",
@@ -998,6 +1060,7 @@ const WHAT_CFG = {
 let bmCfg = MAP_CFG;
 let bmJumpTo = null;   // item id to scroll to after a cross-tab jump
 let archViewOpen = false;   // the "Archived (n)" list, folded by default
+let scArchOpen = false, scHistOpen = false;   // scoreboard: archived leads / settled commitments
 
 function bmNewNode(){
   return { id:"n"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36),
@@ -1250,7 +1313,7 @@ function renderMap(main, dom, cfg){
         from: { itemId: m.id, nodeId: node.id, problem: m.outcome, cause: node.text } };
       state.hows.unshift(h);
       node.howRef = h.id;
-      state.view = "how";
+      goView("how");
       bmJumpTo = h.id;
       save(); render();
     };
@@ -1259,14 +1322,14 @@ function renderMap(main, dom, cfg){
     b.onclick = ()=>{
       const m = mapOf(b.dataset.bmgotohow); if (!m) return;
       const node = bmFind(m.nodes, b.dataset.bmgotohow).node;
-      state.view = "how";
+      goView("how");
       bmJumpTo = node.howRef;
       save(); render();
     };
   });
   main.querySelectorAll("[data-bmgotowhy]").forEach(b=>{
     b.onclick = ()=>{
-      state.view = "why";
+      goView("why");
       bmJumpTo = b.dataset.bmgotowhy;
       save(); render();
     };
@@ -1708,13 +1771,13 @@ function renderFish(main, dom){
     const w = { id:fbId("m"), outcome: r.cause.text, created:todayISO(), closed:false, nodes:[] };
     state.whys.unshift(w);
     r.cause.whyRef = w.id;
-    state.view = "why";
+    goView("why");
     bmJumpTo = w.id;
     save(); render();
   });
   main.querySelectorAll("[data-fbgotowhy]").forEach(b=> b.onclick = ()=>{
     const f = fishOf(b.dataset.fbgotowhy); if (!f) return;
-    state.view = "why";
+    goView("why");
     bmJumpTo = fbFindCause(f, b.dataset.fbgotowhy).cause.whyRef;
     save(); render();
   });
@@ -1739,6 +1802,204 @@ function renderFish(main, dom){
   main.querySelectorAll("[data-fbdelf]").forEach(b=> b.onclick = ()=>
     askConfirm("Delete diagram", "PERMANENTLY delete this fishbone and all its causes? This cannot be undone — use Archive instead if you might want it back.",
       ()=>{ const i = state.fish.findIndex(x=>x.id===b.dataset.fbdelf); if (i >= 0){ state.fish.splice(i, 1); save(); render(); } }));
+}
+
+/* ================= tools tab (the thinking tools, one roof) ============ */
+
+const TOOL_TABS = [
+  { key:"map", label:"Backward Map", render:(h,d)=>renderMap(h,d,MAP_CFG) },
+  { key:"why", label:"Why-Why", render:(h,d)=>renderMap(h,d,WHY_CFG) },
+  { key:"how", label:"How-How", render:(h,d)=>renderMap(h,d,HOW_CFG) },
+  { key:"what", label:"What-What", render:(h,d)=>renderMap(h,d,WHAT_CFG) },
+  { key:"fish", label:"Fishbone", render:(h,d)=>renderFish(h,d) },
+  { key:"list", label:"Success List", render:(h,d)=>renderList(h,d) },
+  { key:"gps", label:"GPS 1-3-5", render:(h,d)=>renderGPS(h,d) },
+  { key:"f411", label:"4-1-1", render:(h,d)=>render411(h,d) }
+];
+function renderTools(main, dom){
+  main.innerHTML = '<section class="wide"><div class="tool-pills">'
+    + TOOL_TABS.map(t=>'<button'+(state.toolView===t.key?' class="on"':'')+' data-tool="'+t.key+'">'+t.label+'</button>').join("")
+    + '</div><div id="toolHost"></div></section>';
+  main.querySelectorAll("[data-tool]").forEach(b=> b.onclick = ()=>{ state.toolView = b.dataset.tool; save(); render(); });
+  const t = TOOL_TABS.find(x=>x.key===state.toolView) || TOOL_TABS[0];
+  t.render($("#toolHost"), dom);
+}
+
+/* ================= scoreboard (4DX: lag, leads, commitments) =========== */
+
+function weekStartOf(iso){
+  const d = new Date(iso+"T12:00");
+  const day = (d.getDay()+6)%7;
+  d.setDate(d.getDate()-day);
+  return d.toISOString().slice(0,10);
+}
+function weekSum(log, ws){
+  let n = 0;
+  for (const k in log) if (k >= ws && k <= addDaysISO(ws, 6)) n += (+log[k] || 0);
+  return n;
+}
+function commitsFor(dom){
+  return state.commits.filter(c=>c.domainId===dom.id);
+}
+
+function renderScore(main, dom){
+  ensureDomainTools(dom);
+  const ws = weekStartISO(), today = todayISO();
+  const lag = dom.lag;
+  const lagDates = Object.keys(lag.log).sort();
+  const lastDate = lagDates[lagDates.length-1];
+  const cur = lastDate !== undefined ? lag.log[lastDate] : "";
+  const f = parseFloat(lag.from), t = parseFloat(lag.to), c = parseFloat(cur);
+  const pct = (isFinite(f) && isFinite(t) && isFinite(c) && t !== f)
+    ? Math.max(0, Math.min(100, Math.round(((c - f) / (t - f)) * 100))) : null;
+
+  let html = '<section class="wide">'
+
+  /* --- the lag: from X to Y by when --- */
+    + '<div class="tool-card" style="margin-bottom:16px"><h2>The goal &mdash; from X to Y by when</h2>'
+    + '<p class="why">The lag measure: the result you want. You can&rsquo;t act on it directly &mdash; that&rsquo;s what the lead measures below are for.</p>'
+    + '<div class="gps-goal">'
+    + '<input type="text" class="ctl" id="lagName" value="'+esc(lag.name)+'" placeholder="What is measured (e.g. close finished by workday…)" style="flex:2;min-width:200px">'
+    + '<input type="text" class="ctl" id="lagFrom" value="'+esc(lag.from)+'" placeholder="from" style="width:90px">'
+    + '<input type="text" class="ctl" id="lagTo" value="'+esc(lag.to)+'" placeholder="to" style="width:90px">'
+    + '<input type="text" class="ctl" id="lagBy" value="'+esc(lag.by)+'" placeholder="by (mm-dd-yyyy)" style="width:130px">'
+    + '</div>'
+    + '<div class="gps-goal" style="margin-top:10px;align-items:center">'
+    + '<span class="sc-big">'+(cur !== "" ? esc(String(cur)) : "&mdash;")+'</span>'
+    + '<span class="statline" style="margin:0">latest'+(lastDate ? " ("+fmtDate(lastDate)+")" : "")
+    + (pct !== null ? ' &middot; <b>'+pct+'%</b> of the way from '+esc(lag.from)+' to '+esc(lag.to) : '')+'</span>'
+    + '<input type="text" class="ctl" id="lagCur" placeholder="today&rsquo;s value" style="width:110px;margin-left:auto">'
+    + '<button class="btn" id="lagLog">Log</button>'
+    + (lastDate ? '<button class="mini del" id="lagUndo" title="Remove the latest logged value">&#10005; undo latest</button>' : '')
+    + '</div>'
+    + (pct !== null ? '<div class="scorebar'+(pct<100?'':' ')+'"><i style="width:'+pct+'%"></i></div>' : '')
+    + '</div>'
+
+  /* --- lead measures --- */
+    + '<div class="tool-card" style="margin-bottom:16px"><h2>Lead measures &mdash; move these this week</h2>'
+    + '<p class="why">Predictive and influenceable: the few behaviors that drive the goal. Count them as you do them; the bar is this week against the weekly target.</p>';
+  for (const ld of dom.leads.filter(l=>!l.archived)){
+    const n = weekSum(ld.log, ws);
+    const tgt = +ld.target || 1;
+    const p = Math.min(100, Math.round(n / tgt * 100));
+    const hist = [3,2,1].map(k=>weekSum(ld.log, addDaysISO(ws, -7*k))).join(" · ");
+    html += '<div class="lead-row">'
+      + '<div class="gps-goal" style="align-items:center">'
+      + '<input type="text" class="ctl" data-ldname="'+ld.id+'" value="'+esc(ld.name)+'" style="flex:2;min-width:160px">'
+      + '<span class="sc-big" style="font-size:22px">'+n+'<span style="font-size:13px;color:var(--muted);font-weight:400"> / '+tgt+' '+esc(ld.unit||"")+' this week</span></span>'
+      + '<button class="btn good" data-ldplus="'+ld.id+'" style="margin-left:auto">+1</button>'
+      + '<button class="btn" data-ldminus="'+ld.id+'">&#8722;1</button>'
+      + '</div>'
+      + '<div class="scorebar'+(n>=tgt?'':' miss')+'"><i style="width:'+p+'%"></i></div>'
+      + '<div class="statline">target <input type="text" class="ctl" data-ldtarget="'+ld.id+'" value="'+tgt+'" style="width:52px;padding:2px 6px"> per week'
+      + ' &middot; unit <input type="text" class="ctl" data-ldunit="'+ld.id+'" value="'+esc(ld.unit||"")+'" style="width:90px;padding:2px 6px" placeholder="e.g. accounts">'
+      + ' &middot; previous weeks: '+hist
+      + ' <button class="mini" data-ldarch="'+ld.id+'" style="margin-left:8px" title="Hide it, keep its counts">&#8681; archive</button>'
+      + ' <button class="mini del" data-lddel="'+ld.id+'" title="Delete permanently">&#10005; delete</button></div>'
+      + '</div>';
+  }
+  const protWeek = Object.keys(dom === activeDomain() ? state.blocks.protectedLog : {}).filter(k=>k>=ws && k<=addDaysISO(ws,6)).length;
+  html += '<div class="lead-row"><div class="gps-goal" style="align-items:center">'
+    + '<span style="flex:2;min-width:160px;color:var(--muted)">ONE Thing block protected (auto, from Time Blocking)</span>'
+    + '<span class="sc-big" style="font-size:22px">'+protWeek+'<span style="font-size:13px;color:var(--muted);font-weight:400"> / 5 days this week</span></span>'
+    + '</div><div class="scorebar'+(protWeek>=5?'':' miss')+'"><i style="width:'+Math.min(100, protWeek/5*100)+'%"></i></div></div>'
+    + '<p style="margin:12px 0 0"><button class="btn brand" id="ldNew">+ Add lead measure</button>'
+    + (dom.leads.some(l=>l.archived)
+        ? ' <button class="mini" id="ldArchToggle" style="margin-left:10px">'+(scArchOpen?'Hide':'Show')+' archived ('+dom.leads.filter(l=>l.archived).length+')</button>'
+        : '')
+    + '</p>'
+    + (scArchOpen ? dom.leads.filter(l=>l.archived).map(l=>'<div class="sl-item"><span style="color:var(--muted)">'+esc(l.name)+'</span>'
+        + '<span style="margin-left:auto;display:flex;gap:12px">'
+        + '<button class="mini" data-ldrestore="'+l.id+'">&#8617; Restore</button>'
+        + '<button class="mini del" data-ldharddel="'+l.id+'">Delete</button>'
+        + '</span></div>').join("") : '')
+    + '</div>'
+
+  /* --- commitments --- */
+    + '<div class="tool-card"><h2>Commitments &mdash; said and done</h2>'
+    + '<p class="why">One or two specific acts per week that move the lead measures. Set them in the Weekly Hour (or here); next week starts by settling them.</p>';
+  const mine = commitsFor(dom);
+  const thisWeek = mine.filter(x=>x.weekStart === ws);
+  const carried = mine.filter(x=>x.weekStart < ws && x.done === null);
+  const row = x => '<div class="sl-item"><span'+(x.done===false?' style="color:#8c2f0d"':'')+'>'+esc(x.text)+'</span>'
+    + '<span style="margin-left:auto;display:flex;gap:8px;align-items:center">'
+    + '<span class="statline" style="margin:0">'+fmtDate(x.weekStart)+'</span>'
+    + (x.done === null
+        ? '<button class="mini" data-cmdone="'+x.id+'">&#10003; done</button><button class="mini del" data-cmmiss="'+x.id+'">&#10007; missed</button>'
+        : (x.done ? '<span class="cm-badge ok">DONE</span>' : '<span class="cm-badge no">MISSED</span>'))
+    + '<button class="mini del" data-cmdel="'+x.id+'" title="Delete this commitment">&#10005;</button>'
+    + '</span></div>';
+  html += thisWeek.length ? thisWeek.map(row).join("") : '<p class="empty-note">Nothing committed for this week yet.</p>';
+  if (carried.length) html += '<div class="bm-req-lbl" style="color:var(--warn);margin-top:10px">Unsettled from earlier weeks</div>' + carried.map(row).join("");
+  const settled = mine.filter(x=>x.done !== null).sort((a,b)=>b.weekStart.localeCompare(a.weekStart)).slice(0, 40);
+  html += '<p style="margin:12px 0 0"><button class="btn" id="cmNew">+ Add commitment</button>'
+    + (settled.length ? ' <button class="mini" id="cmHist" style="margin-left:10px">'+(scHistOpen?'Hide':'Show')+' settled ('+settled.length+')</button>' : '')
+    + '</p>'
+    + (scHistOpen ? settled.map(x=>'<div class="sl-item">'
+        + (x.done ? '<span class="cm-badge ok">DONE</span>' : '<span class="cm-badge no">MISSED</span>')
+        + '<span style="margin-left:8px">'+esc(x.text)+'</span>'
+        + '<span style="margin-left:auto;display:flex;gap:8px;align-items:center">'
+        + '<span class="statline" style="margin:0">'+fmtDate(x.weekStart)+'</span>'
+        + '<button class="mini" data-cmreopen="'+x.id+'" title="Reopen — settle it again">&#8617; reopen</button>'
+        + '<button class="mini del" data-cmdel="'+x.id+'">&#10005;</button>'
+        + '</span></div>').join("") : '')
+    + '</div>'
+    + '</section>';
+
+  main.innerHTML = html;
+
+  /* wire: lag */
+  const lw = (id, fld) => $(id).addEventListener("change", e=>{ lag[fld] = e.target.value.trim(); save(); render(); });
+  lw("#lagName","name"); lw("#lagFrom","from"); lw("#lagTo","to"); lw("#lagBy","by");
+  $("#lagLog").onclick = ()=>{
+    const v = $("#lagCur").value.trim();
+    if (v === "") return;
+    lag.log[today] = isFinite(parseFloat(v)) ? parseFloat(v) : v;
+    save(); render();
+  };
+  /* wire: leads */
+  const leadOf = id => dom.leads.find(l=>l.id===id);
+  main.querySelectorAll("[data-ldname]").forEach(el=> el.addEventListener("change", ()=>{ leadOf(el.dataset.ldname).name = el.value.trim(); save(); }));
+  main.querySelectorAll("[data-ldtarget]").forEach(el=> el.addEventListener("change", ()=>{ const n = parseFloat(el.value); if (isFinite(n) && n>0) leadOf(el.dataset.ldtarget).target = n; save(); render(); }));
+  main.querySelectorAll("[data-ldunit]").forEach(el=> el.addEventListener("change", ()=>{ leadOf(el.dataset.ldunit).unit = el.value.trim(); save(); }));
+  main.querySelectorAll("[data-ldplus]").forEach(b=> b.onclick = ()=>{ const l = leadOf(b.dataset.ldplus); l.log[today] = (+l.log[today]||0) + 1; save(); render(); });
+  main.querySelectorAll("[data-ldminus]").forEach(b=> b.onclick = ()=>{ const l = leadOf(b.dataset.ldminus); const v = (+l.log[today]||0) - 1; if (v > 0) l.log[today] = v; else delete l.log[today]; save(); render(); });
+  main.querySelectorAll("[data-lddel]").forEach(b=> b.onclick = ()=> askConfirm("Remove lead measure",
+    "Remove this lead measure and its counts?", ()=>{ dom.leads.splice(dom.leads.indexOf(leadOf(b.dataset.lddel)), 1); save(); render(); }));
+  $("#ldNew").onclick = ()=> askName("New lead measure — the behavior to count", "", nm=>
+    askName("Weekly target for: "+fbTr(nm, 40)+" (a number)", "5", tg=>{
+      dom.leads.push({ id:fbId("l"), name:nm, unit:"", target: isFinite(parseFloat(tg)) && parseFloat(tg)>0 ? parseFloat(tg) : 5, log:{} });
+      save(); render();
+    }));
+  /* wire: commitments */
+  const settle = (id, val) => { const x = state.commits.find(y=>y.id===id); if (x){ x.done = val; save(); render(); } };
+  main.querySelectorAll("[data-cmdone]").forEach(b=> b.onclick = ()=> settle(b.dataset.cmdone, true));
+  main.querySelectorAll("[data-cmmiss]").forEach(b=> b.onclick = ()=> settle(b.dataset.cmmiss, false));
+  $("#cmNew").onclick = ()=> askName("New commitment for this week", "", tx=>{
+    state.commits.unshift({ id:fbId("c"), ts:new Date().toISOString(), weekStart: ws, domainId: dom.id, text: tx, done: null });
+    save(); render();
+  });
+  /* lifecycle: archive/restore/delete leads, undo lag, delete/reopen commitments */
+  main.querySelectorAll("[data-ldarch]").forEach(b=> b.onclick = ()=>{ leadOf(b.dataset.ldarch).archived = true; save(); render(); });
+  main.querySelectorAll("[data-ldrestore]").forEach(b=> b.onclick = ()=>{ leadOf(b.dataset.ldrestore).archived = false; save(); render(); });
+  main.querySelectorAll("[data-ldharddel]").forEach(b=> b.onclick = ()=> askConfirm("Delete lead measure",
+    "PERMANENTLY delete this archived lead measure and its counts? This cannot be undone.",
+    ()=>{ const i = dom.leads.findIndex(l=>l.id===b.dataset.ldharddel); if (i>=0){ dom.leads.splice(i,1); save(); render(); } }));
+  const scA = $("#ldArchToggle");
+  if (scA) scA.onclick = ()=>{ scArchOpen = !scArchOpen; render(); };
+  const lu = $("#lagUndo");
+  if (lu) lu.onclick = ()=> askConfirm("Undo latest value",
+    "Remove the latest logged value ("+String(cur)+" on "+fmtDate(lastDate)+")?",
+    ()=>{ delete lag.log[lastDate]; save(); render(); });
+  main.querySelectorAll("[data-cmdel]").forEach(b=> b.onclick = ()=> askConfirm("Delete commitment",
+    "PERMANENTLY delete this commitment? This cannot be undone.",
+    ()=>{ const i = state.commits.findIndex(c=>c.id===b.dataset.cmdel); if (i>=0){ state.commits.splice(i,1); save(); render(); } }));
+  main.querySelectorAll("[data-cmreopen]").forEach(b=> b.onclick = ()=>{
+    const c = state.commits.find(x=>x.id===b.dataset.cmreopen);
+    if (c){ c.done = null; save(); render(); }
+  });
+  const scH = $("#cmHist");
+  if (scH) scH.onclick = ()=>{ scHistOpen = !scHistOpen; render(); };
 }
 
 /* ================= time blocking ================= */
@@ -1947,14 +2208,14 @@ function renderList(main, dom){
 /* ================= weekly planning hour ================= */
 
 const wk = $("#wk");
-const WK_STEPS = 5;
+const WK_STEPS = 7;
 let wkIx = 0, wkVals = null;
 
 function openWeeklyHour(){
   const dom = activeDomain(); if (!dom) return;
   wkIx = 0;
   wkVals = { month: dom.levels.month.text, week: dom.levels.week.text,
-    blocked:false, thieves:{ no:"", chaos:"", health:"", env:"" } };
+    blocked:false, thieves:{ no:"", chaos:"", health:"", env:"" }, c1:"", c2:"" };
   wkPaint();
   wk.showModal();
 }
@@ -1964,25 +2225,45 @@ function wkPaint(){
   const body = $("#wkBody");
   $("#wkStep").textContent = "Step "+(wkIx+1)+" of "+WK_STEPS;
   if (wkIx===0){
+    const open = state.commits.filter(c=>c.domainId===dom.id && c.done===null && c.weekStart < weekStartISO());
+    body.innerHTML = '<div class="wk-lbl">Settle last week &mdash; said and done?</div>'
+      + (open.length
+          ? open.map(c=>'<div class="sl-item"><span>'+esc(c.text)+'</span>'
+              + '<span style="margin-left:auto;display:flex;gap:8px"><span class="statline" style="margin:0">'+fmtDate(c.weekStart)+'</span>'
+              + '<button class="mini" data-wkc="'+c.id+'" data-v="1">&#10003; done</button>'
+              + '<button class="mini del" data-wkc="'+c.id+'" data-v="0">&#10007; missed</button></span></div>').join("")
+          : '<p class="empty-note">No open commitments from earlier weeks.</p>')
+      + '<p class="statline">Honesty here is the whole mechanism &mdash; a miss marked is worth more than a miss hidden.</p>';
+    body.querySelectorAll("[data-wkc]").forEach(b=> b.onclick = ()=>{
+      const c = state.commits.find(x=>x.id===b.dataset.wkc);
+      if (c){ c.done = b.dataset.v === "1"; save(); wkPaint(); }
+    });
+  } else if (wkIx===1){
     const parts = sentenceParts(dom);
     body.innerHTML = '<div class="wk-lbl">Connect &mdash; read your chain aloud</div>'
       + '<div class="wk-sentence">'+(parts.length
           ? parts.map(p=>'<b>'+esc(p.lead)+'</b> '+esc(p.text)).join(" ")
           : '<i>No chain yet &mdash; run &ldquo;Work backward&rdquo; on the Goal Chain first.</i>')+'</div>'
       + '<p class="statline">This is the point of the hour: today has to connect to all your tomorrows.</p>';
-  } else if (wkIx===1){
+  } else if (wkIx===2){
     body.innerHTML = '<div class="wk-lbl">Review the month</div>'
       + '<p class="wz-q" style="font-size:14.5px">Based on my one-year goal, what&rsquo;s the ONE Thing I can do this month?</p>'
       + '<textarea id="wkMonth">'+esc(wkVals.month)+'</textarea>';
-  } else if (wkIx===2){
+  } else if (wkIx===3){
     body.innerHTML = '<div class="wk-lbl">Set the week</div>'
       + '<p class="wz-q" style="font-size:14.5px">Based on my monthly goal, what&rsquo;s the ONE Thing I can do this week?</p>'
       + '<textarea id="wkWeek">'+esc(wkVals.week)+'</textarea>';
-  } else if (wkIx===3){
+  } else if (wkIx===4){
     body.innerHTML = '<div class="wk-lbl">Guard the block</div>'
       + '<p class="statline" style="margin:0 0 8px">Your ONE Thing block is <b>'+esc(state.blocks.oneThingStart)+'&ndash;'+esc(blockEnd())+'</b>; planning hour '
       + WEEKDAYS[state.blocks.planningDay]+' at '+esc(state.blocks.planningStart)+'. Adjust these on the Time Blocking view.</p>'
       + '<label class="chk"><input type="checkbox" id="wkBlocked"'+(wkVals.blocked?" checked":"")+'> My ONE Thing block is on the calendar for every workday this week, and my time off is blocked first.</label>';
+  } else if (wkIx===6){
+    body.innerHTML = '<div class="wk-lbl">Commit &mdash; said, to be done</div>'
+      + '<p class="wz-q" style="font-size:14.5px">What one or two specific things will I do this week to move the lead measures?</p>'
+      + '<input type="text" class="ctl" id="wkC1" value="'+esc(wkVals.c1)+'" placeholder="Commitment 1" style="width:100%;margin-bottom:8px">'
+      + '<input type="text" class="ctl" id="wkC2" value="'+esc(wkVals.c2)+'" placeholder="Commitment 2 (optional)" style="width:100%">'
+      + '<p class="statline">These land on the Scoreboard, and next week&rsquo;s hour opens by settling them.</p>';
   } else {
     const t = wkVals.thieves;
     body.innerHTML = '<div class="wk-lbl">Audit the four thieves</div>'
@@ -2000,12 +2281,17 @@ function wkPaint(){
 }
 
 function wkCollect(){
-  if (wkIx===1){ const el = $("#wkMonth"); if (el) wkVals.month = el.value; }
-  if (wkIx===2){ const el = $("#wkWeek"); if (el) wkVals.week = el.value; }
-  if (wkIx===3){ const el = $("#wkBlocked"); if (el) wkVals.blocked = el.checked; }
-  if (wkIx===4){
+  if (wkIx===2){ const el = $("#wkMonth"); if (el) wkVals.month = el.value; }
+  if (wkIx===3){ const el = $("#wkWeek"); if (el) wkVals.week = el.value; }
+  if (wkIx===4){ const el = $("#wkBlocked"); if (el) wkVals.blocked = el.checked; }
+  if (wkIx===5){
     wkVals.thieves = { no:$("#wkNo").value.trim(), chaos:$("#wkChaos").value.trim(),
       health:$("#wkHealth").value.trim(), env:$("#wkEnv").value.trim() };
+  }
+  if (wkIx===6){
+    const a = $("#wkC1"), b = $("#wkC2");
+    if (a) wkVals.c1 = a.value.trim();
+    if (b) wkVals.c2 = b.value.trim();
   }
 }
 $("#wkBack").onclick = ()=>{ wkCollect(); if (wkIx>0){ wkIx--; wkPaint(); } };
@@ -2017,6 +2303,9 @@ $("#wkNext").onclick = ()=>{
   setLevelText(dom, "week", wkVals.week);
   state.reviews.unshift({ ts:new Date().toISOString(), weekStart:weekStartISO(),
     domainId:dom.id, blocked:wkVals.blocked, thieves:wkVals.thieves });
+  for (const tx of [wkVals.c1, wkVals.c2]) if (tx)
+    state.commits.unshift({ id:fbId("c"), ts:new Date().toISOString(),
+      weekStart: weekStartISO(), domainId: dom.id, text: tx, done: null });
   // mirror into the 4-1-1 sheet — fills only rows that are still empty
   ensureDomainTools(dom);
   const ws = weekStartISO();
@@ -2058,8 +2347,9 @@ function askName(title, initial, cb){
 $("#nmOk").onclick = ()=>{
   const v = $("#nmInput").value.trim();
   nameDlg.close();
-  if (v && nameCb) nameCb(v);
+  const cb = nameCb;          // capture first: the callback may open askName again
   nameCb = null;
+  if (v && cb) cb(v);
 };
 $("#nmCancel").onclick = ()=>{ nameDlg.close(); nameCb = null; };
 $("#nmInput").addEventListener("keydown", e=>{ if (e.key==="Enter"){ e.preventDefault(); $("#nmOk").click(); } });
@@ -2181,15 +2471,51 @@ function bumpQuoteSize(d){
 }
 $("#quoteSmaller").onclick = ()=> bumpQuoteSize(-1.5);
 $("#quoteBigger").onclick = ()=> bumpQuoteSize(1.5);
-function initQuotes(){
-  state.quoteSeen = (state.quoteSeen || 0) + 1;
-  quoteIx = state.quoteSeen;
-  save();
-  showQuote();
-  clearInterval(quoteTimer);
-  quoteTimer = setInterval(()=>{ quoteIx++; showQuote(); }, 4 * 60 * 1000);
+function quoteLen(){ return (state.quotes && state.quotes.length) ? state.quotes.length : DEFAULT_QUOTES.length; }
+function curQuoteIx(){ return ((quoteIx % quoteLen()) + quoteLen()) % quoteLen(); }
+function rebuildQuotePick(){
+  const sel = $("#quotePick");
+  const list = state.quotes && state.quotes.length ? state.quotes : DEFAULT_QUOTES;
+  sel.innerHTML = list.map((q,i)=>'<option value="'+i+'">'+esc(fbTr(String(q).split(/\s+—\s+|\s+--\s+/)[0].trim(), 38))+'</option>').join("");
+  sel.value = String(curQuoteIx());
+  $("#quoteMins").value = String(state.quoteMins);
 }
-$("#quoteNext").onclick = ()=>{ quoteIx++; showQuote(); };
+function armQuoteTimer(){
+  clearInterval(quoteTimer);
+  if (state.quoteMins > 0)
+    quoteTimer = setInterval(()=>{ quoteIx++; showQuote(); rebuildQuotePick(); }, state.quoteMins * 60 * 1000);
+}
+function initQuotes(){
+  if (state.quoteMins === 0 && typeof state.quotePin === "number"){
+    quoteIx = state.quotePin;            // pinned: the chosen quote, every open
+  } else {
+    state.quoteSeen = (state.quoteSeen || 0) + 1;
+    quoteIx = state.quoteSeen;
+    save();
+  }
+  showQuote();
+  rebuildQuotePick();
+  armQuoteTimer();
+}
+$("#quotePick").addEventListener("change", ()=>{
+  quoteIx = parseInt($("#quotePick").value, 10) || 0;
+  if (state.quoteMins === 0){ state.quotePin = quoteIx; save(); }
+  showQuote();
+  armQuoteTimer();                        // the chosen quote gets its full time
+});
+$("#quoteMins").addEventListener("change", ()=>{
+  state.quoteMins = parseInt($("#quoteMins").value, 10) || 0;
+  state.quotePin = state.quoteMins === 0 ? curQuoteIx() : null;
+  save();
+  armQuoteTimer();
+});
+$("#quoteNext").onclick = ()=>{
+  quoteIx++;
+  if (state.quoteMins === 0){ state.quotePin = curQuoteIx(); save(); }
+  showQuote();
+  rebuildQuotePick();
+  armQuoteTimer();
+};
 $("#quoteEdit").onclick = ()=>{
   $("#quoteList").value = (state.quotes || DEFAULT_QUOTES).join("\n");
   $("#quoteDlg").showModal();
@@ -2200,7 +2526,10 @@ $("#qSave").onclick = ()=>{
   if (lines.length) state.quotes = lines;
   $("#quoteDlg").close();
   quoteIx = 0;
+  if (typeof state.quotePin === "number" && state.quotePin >= quoteLen()) state.quotePin = 0;
   showQuote();
+  rebuildQuotePick();
+  armQuoteTimer();
   save();
 };
 
