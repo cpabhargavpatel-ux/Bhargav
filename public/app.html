@@ -260,6 +260,30 @@
   .sl-one .t{font-family:Georgia,serif;font-size:18px;line-height:1.5}
   .sl-one .acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 
+  /* ---------- daily ratings (scoreboard) ---------- */
+  .rt-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 10px}
+  .rt-wk{font-size:19px;font-weight:700;color:var(--brand)}
+  .rt-grid{width:100%;border-collapse:separate;border-spacing:4px 5px}
+  .rt-grid th{font-size:11.5px;font-weight:600;color:var(--muted);text-align:center;padding:2px;white-space:nowrap}
+  .rt-grid th.rt-today{color:var(--brand)}
+  .rt-grid td.rt-name{text-align:left;font-size:13.5px;padding-right:8px;min-width:150px}
+  .rt-sel{width:100%;min-width:46px;height:34px;border:1px solid var(--line);border-radius:8px;text-align:center;text-align-last:center;
+    font-size:14px;font-weight:600;background:#fff;cursor:pointer;-webkit-appearance:none;appearance:none;padding:0}
+  .rt-sel:disabled{opacity:.35;cursor:default}
+  .rt-sel.today{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+  .r1{background:#f6cfc9}.r2{background:#fadcc0}.r3{background:#fbefb9}.r4{background:#d9edc2}.r5{background:#b4e1c2}
+  .rt-avg{font-weight:700;font-variant-numeric:tabular-nums;text-align:center;border-radius:8px;padding:7px 4px;min-width:58px;font-size:13.5px}
+  .rt-foot td{font-size:12.5px;color:var(--muted);text-align:center;padding-top:4px}
+  .rt-foot td.rt-name{text-align:left;font-weight:700;color:var(--ink,#1c2733)}
+  .rt-chips{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:13px;align-items:center}
+  .rt-chips label{display:inline-flex;gap:5px;align-items:center;cursor:pointer}
+  .rt-hist{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+  .rt-hist th{font-size:11.5px;color:var(--muted);font-weight:600;padding:4px 8px;text-align:center}
+  .rt-hist td{padding:5px 8px;text-align:center;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+  .rt-hist td.l,.rt-hist th.l{text-align:left}
+  .rt-hist tr.go{cursor:pointer}.rt-hist tr.go:hover td{background:#f3f6fa}
+  .rt-hist tr.on td{background:#eef3ff}
+  .rt-hist td.r1,.rt-hist td.r2,.rt-hist td.r3,.rt-hist td.r4,.rt-hist td.r5{font-weight:700}
   /* ---------- tools sub-tabs + scoreboard ---------- */
   .tool-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
   .tool-pills button{background:linear-gradient(180deg,#fff,#edf1f6);border:1px solid var(--line);
@@ -545,6 +569,8 @@ function ensureDomainTools(d){
   if (!d.f411) d.f411 = { annual:"", months:{} };
   if (!d.lag) d.lag = { name:"", from:"", to:"", by:"", log:{} };   // the lag measure: from X to Y by when; log = iso date -> value
   if (!Array.isArray(d.leads)) d.leads = [];                        // lead measures: {id,name,unit,target,log:{iso:count}}
+  if (typeof d.scStart !== "string") d.scStart = "";                // scoreboard: the date you started (week 1 = the Monday of that week)
+  for (const l of d.leads) if (!l.rate || typeof l.rate !== "object") l.rate = {};   // daily ratings 1-5: iso date -> rating
   return d;
 }
 /* v2 adds the book's other planning tools; older stores are upgraded in place */
@@ -1061,6 +1087,7 @@ let bmCfg = MAP_CFG;
 let bmJumpTo = null;   // item id to scroll to after a cross-tab jump
 let archViewOpen = false;   // the "Archived (n)" list, folded by default
 let scArchOpen = false, scHistOpen = false;   // scoreboard: archived leads / settled commitments
+let scWeekOff = 0, rtHistAll = false, rtFocusKey = null;   // daily ratings: week shown (0 = this week, -1 = last...), full history, field to re-focus
 
 function bmNewNode(){
   return { id:"n"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36),
@@ -1842,6 +1869,110 @@ function commitsFor(dom){
   return state.commits.filter(c=>c.domainId===dom.id);
 }
 
+/* ---- daily ratings: week numbers from your start date, a 1-5 rating per measure per day ---- */
+function rtMonday(iso){ const d = new Date(iso+"T12:00"); return addDaysISO(iso, -((d.getDay()+6)%7)); }
+function rtDays(a, b){ return Math.round((new Date(b+"T12:00") - new Date(a+"T12:00")) / 864e5); }
+function rtStartMonday(dom){
+  if (dom.scStart) return rtMonday(dom.scStart);
+  let min = null; const eat = log => { for (const k in log) if (!min || k < min) min = k; };
+  eat(dom.lag.log); for (const l of dom.leads){ eat(l.log); eat(l.rate); }
+  return min ? rtMonday(min) : weekStartISO();
+}
+const rtWeekNo = (dom, ws) => Math.floor(rtDays(rtStartMonday(dom), ws) / 7) + 1;
+const rtRated = dom => dom.leads.filter(l => !l.archived && l.rated !== false);
+function rtAvg(vals){ const v = vals.filter(x => x > 0); return v.length ? v.reduce((a,b) => a+b, 0) / v.length : null; }
+const rtCls = a => a == null ? "" : "r" + Math.max(1, Math.min(5, Math.round(a)));
+const rtFmt = a => a == null ? "&ndash;" : (Math.round(a*10)/10).toFixed(1);
+const rtShort = iso => iso.slice(5);                               // mm-dd
+const rtWeekVals = (ld, ws) => [0,1,2,3,4,5,6].map(i => +ld.rate[addDaysISO(ws, i)] || 0);
+
+function ratingsCard(dom){
+  const todayWs = weekStartISO(), today = todayISO(), startWs = rtStartMonday(dom);
+  if (scWeekOff > 0) scWeekOff = 0;
+  let ws = addDaysISO(todayWs, scWeekOff * 7);
+  if (ws < startWs){ ws = startWs; scWeekOff = -Math.round(rtDays(startWs, todayWs) / 7); }
+  const wn = rtWeekNo(dom, ws), days = [0,1,2,3,4,5,6].map(i => addDaysISO(ws, i));
+  const rated = rtRated(dom), DN = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  let h = '<div class="tool-card" id="rateCard" style="margin-bottom:16px"><h2>Daily ratings &mdash; rate each measure, every day</h2>'
+    + '<p class="why">Give each day a rating from 1 (poor) to 5 (excellent) on the measures you choose. Weeks are numbered from the day you started.</p>'
+    + '<div class="rt-top">'
+    + '<button class="mini" id="rtPrev"'+(ws <= startWs ? ' disabled' : '')+' title="Previous week">&#9664;</button>'
+    + '<span class="rt-wk">Week '+wn+'</span>'
+    + '<button class="mini" id="rtNext"'+(scWeekOff >= 0 ? ' disabled' : '')+' title="Next week">&#9654;</button>'
+    + '<span class="statline" style="margin:0">'+fmtDate(ws)+' &ndash; '+fmtDate(addDaysISO(ws,6))+(scWeekOff === 0 ? ' &middot; <b>this week</b>' : '')+'</span>'
+    + (scWeekOff !== 0 ? '<button class="mini" id="rtToday">This week</button>' : '')
+    + '<span class="statline" style="margin:0 0 0 auto">Started <input type="date" class="ctl" id="rtStart" value="'+startWs+'" style="width:140px;padding:2px 6px" title="Week 1 is the week of this date"></span>'
+    + '</div>';
+  if (!rated.length){
+    h += '<p class="empty-note">No measures to rate yet. Add a lead measure below (or tick one under &ldquo;Measures to rate&rdquo;).</p>';
+  } else {
+    h += '<table class="rt-grid"><thead><tr><th></th>'
+      + days.map((d,i) => '<th class="'+(d === today ? 'rt-today' : '')+'">'+DN[i]+'<br>'+rtShort(d)+'</th>').join('')
+      + '<th>Avg</th></tr></thead><tbody>';
+    for (const ld of rated){
+      const vals = rtWeekVals(ld, ws), av = rtAvg(vals);
+      h += '<tr><td class="rt-name">'+esc(ld.name)+'</td>'
+        + days.map((d,i) => {
+            const v = +ld.rate[d] || 0;
+            return '<td><select class="rt-sel'+(v ? ' r'+v : '')+(d === today ? ' today' : '')+'" data-ldr="'+ld.id+'" data-day="'+d+'"'+(d > today ? ' disabled' : '')+' aria-label="'+esc(ld.name)+' '+DN[i]+'">'
+              + '<option value=""></option>' + [1,2,3,4,5].map(n => '<option value="'+n+'"'+(v === n ? ' selected' : '')+'>'+n+'</option>').join('') + '</select></td>';
+          }).join('')
+        + '<td><div class="rt-avg '+rtCls(av)+'" title="'+vals.filter(x=>x>0).length+' of 7 days rated">'+rtFmt(av)+'</div></td></tr>';
+    }
+    const dayAv = days.map(d => rtAvg(rated.map(l => +l.rate[d] || 0)));
+    const all = []; for (const l of rated) all.push(...rtWeekVals(l, ws));
+    const wk = rtAvg(all);
+    h += '</tbody><tfoot><tr class="rt-foot"><td class="rt-name">Day / week score</td>'
+      + dayAv.map(a => '<td>'+rtFmt(a)+'</td>').join('')
+      + '<td><div class="rt-avg '+rtCls(wk)+'">'+rtFmt(wk)+'</div></td></tr></tfoot></table>';
+  }
+  /* which measures are rated */
+  const act = dom.leads.filter(l => !l.archived);
+  if (act.length) h += '<div class="rt-chips"><span class="statline" style="margin:0">Measures to rate:</span>'
+    + act.map(l => '<label><input type="checkbox" data-rtchip="'+l.id+'"'+(l.rated !== false ? ' checked' : '')+'> '+esc(l.name || "(unnamed)")+'</label>').join('') + '</div>';
+  /* history: one row per week since the start */
+  const nWeeks = Math.round(rtDays(startWs, todayWs) / 7) + 1;
+  if (rated.length && nWeeks > 0){
+    const list = []; for (let k = 0; k < nWeeks; k++) list.push(addDaysISO(todayWs, -7 * k));      // newest first
+    const shown = rtHistAll ? list : list.slice(0, 12);
+    h += '<h3 style="margin:16px 0 0;font-size:14px">Week by week</h3>'
+      + '<table class="rt-hist"><thead><tr><th class="l">Week</th><th class="l">Dates</th>'
+      + rated.map(l => '<th>'+esc(fbTr(l.name, 16))+'</th>').join('') + '<th>Overall</th></tr></thead><tbody>'
+      + shown.map(w => {
+          const all = [], cells = rated.map(l => { const v = rtWeekVals(l, w); all.push(...v); const a = rtAvg(v); return '<td class="'+rtCls(a)+'">'+rtFmt(a)+'</td>'; });
+          const o = rtAvg(all);
+          return '<tr class="go'+(w === ws ? ' on' : '')+'" data-rtgo="'+Math.round(rtDays(todayWs, w) / 7)+'"><td class="l"><b>Week '+rtWeekNo(dom, w)+'</b></td>'
+            + '<td class="l">'+rtShort(w)+' &ndash; '+rtShort(addDaysISO(w,6))+'</td>' + cells.join('') + '<td class="'+rtCls(o)+'">'+rtFmt(o)+'</td></tr>';
+        }).join('') + '</tbody></table>'
+      + (list.length > 12 ? '<p style="margin:8px 0 0"><button class="mini" id="rtHistToggle">'+(rtHistAll ? 'Show only the last 12 weeks' : 'Show all '+list.length+' weeks')+'</button></p>' : '');
+  }
+  return h + '</div>';
+}
+
+function wireRatings(main, dom){
+  const leadOf = id => dom.leads.find(l => l.id === id);
+  main.querySelectorAll("[data-ldr]").forEach(sel => sel.addEventListener("change", () => {
+    const ld = leadOf(sel.dataset.ldr), day = sel.dataset.day, v = parseInt(sel.value, 10);
+    if (!dom.scStart) dom.scStart = rtStartMonday(dom);          // the first rating fixes week 1
+    if (v >= 1 && v <= 5) ld.rate[day] = v; else delete ld.rate[day];
+    rtFocusKey = sel.dataset.ldr + "|" + day;
+    save(); render();
+  }));
+  main.querySelectorAll("[data-rtchip]").forEach(c => c.addEventListener("change", () => { leadOf(c.dataset.rtchip).rated = c.checked; save(); render(); }));
+  main.querySelectorAll("[data-rtgo]").forEach(r => r.onclick = () => { scWeekOff = parseInt(r.dataset.rtgo, 10) || 0; render(); });
+  const on = (id, fn) => { const el = main.querySelector(id); if (el) el.onclick = fn; };
+  on("#rtPrev", () => { scWeekOff--; render(); });
+  on("#rtNext", () => { scWeekOff = Math.min(0, scWeekOff + 1); render(); });
+  on("#rtToday", () => { scWeekOff = 0; render(); });
+  on("#rtHistToggle", () => { rtHistAll = !rtHistAll; render(); });
+  const st = main.querySelector("#rtStart");
+  if (st) st.addEventListener("change", () => { dom.scStart = st.value || ""; scWeekOff = Math.min(0, scWeekOff); save(); render(); });
+  if (rtFocusKey){
+    const [id, day] = rtFocusKey.split("|"); rtFocusKey = null;
+    const el = main.querySelector('[data-ldr="'+id+'"][data-day="'+day+'"]'); if (el) el.focus();
+  }
+}
+
 function renderScore(main, dom){
   ensureDomainTools(dom);
   const ws = weekStartISO(), today = todayISO();
@@ -1874,6 +2005,9 @@ function renderScore(main, dom){
     + '</div>'
     + (pct !== null ? '<div class="scorebar'+(pct<100?'':' ')+'"><i style="width:'+pct+'%"></i></div>' : '')
     + '</div>'
+
+  /* --- daily ratings (week numbers from your start date) --- */
+    + ratingsCard(dom)
 
   /* --- lead measures --- */
     + '<div class="tool-card" style="margin-bottom:16px"><h2>Lead measures &mdash; move these this week</h2>'
@@ -2000,6 +2134,7 @@ function renderScore(main, dom){
   });
   const scH = $("#cmHist");
   if (scH) scH.onclick = ()=>{ scHistOpen = !scHistOpen; render(); };
+  wireRatings(main, dom);
 }
 
 /* ================= time blocking ================= */
