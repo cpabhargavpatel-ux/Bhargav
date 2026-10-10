@@ -163,11 +163,12 @@ const MODULE_CSS = `<style>
 #modtabs a{padding:8px 18px;border-radius:8px 8px 0 0;color:#c9d2ea;text-decoration:none;background:#1b2542}
 #modtabs a.on{background:#fff;color:#10182b;cursor:default}
 #modtabs a:not(.on):hover{background:#27345c;color:#fff}
+#modbuild{margin-left:auto;align-self:center;color:#6f7fa8;font:500 11px system-ui,sans-serif}
 @media print{#modtabs{display:none}}
 </style>`;
 const moduleBar = active => MODULE_CSS + (active === "goal" ? "<style>header{top:40px !important}@media print{header{top:0 !important}}</style>" : "") + `<nav id="modtabs">`
   + `<a href="/"${active === "goal" ? ' class="on"' : ""}>Goal Setting</a>`
-  + `<a href="/french-ipa.html"${active === "french" ? ' class="on"' : ""}>French</a></nav>\n`;
+  + `<a href="/french-ipa.html"${active === "french" ? ' class="on"' : ""}>French</a><span id="modbuild">build 10-10-c</span></nav>\n`;
 function withModuleBar(html, active) {
   const m = /<body[^>]*>/i.exec(html);
   return m ? html.slice(0, m.index + m[0].length) + "\n" + moduleBar(active) + html.slice(m.index + m[0].length)
