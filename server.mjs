@@ -168,7 +168,7 @@ const MODULE_CSS = `<style>
 </style>`;
 const moduleBar = active => MODULE_CSS + (active === "goal" ? "<style>header{top:40px !important}@media print{header{top:0 !important}}</style>" : "") + `<nav id="modtabs">`
   + `<a href="/"${active === "goal" ? ' class="on"' : ""}>Goal Setting</a>`
-  + `<a href="/french-ipa.html"${active === "french" ? ' class="on"' : ""}>French</a><span id="modbuild">build 10-10-q</span></nav>\n`;
+  + `<a href="/french-ipa.html"${active === "french" ? ' class="on"' : ""}>French</a><span id="modbuild">build 10-10-r</span></nav>\n<script src="/timer.js"></script>\n`;
 function withModuleBar(html, active) {
   const m = /<body[^>]*>/i.exec(html);
   return m ? html.slice(0, m.index + m[0].length) + "\n" + moduleBar(active) + html.slice(m.index + m[0].length)
@@ -208,7 +208,7 @@ const server = createServer(async (req, res) => {
       const file = join(PUBLIC, rel);
       if (!file.startsWith(PUBLIC + sep) || !existsSync(file) || statSync(file).isDirectory()) { res.writeHead(404).end("Not found"); return; }
       const isFont = rel.startsWith("fonts/") && extname(file) === ".woff2";   // public, cacheable
-      if (rel !== "login.html" && rel !== "server-shim.js" && rel !== "french-ipa.html" && !isFont && !u) { res.writeHead(302, { location: "/login.html" }); res.end(); return; }
+      if (rel !== "login.html" && rel !== "server-shim.js" && rel !== "french-ipa.html" && rel !== "timer.js" && !isFont && !u) { res.writeHead(302, { location: "/login.html" }); res.end(); return; }
       let b = readFileSync(file);
       if (rel === "french-ipa.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "french"));
       res.writeHead(200, { "content-type": MIME[extname(file)] || "application/octet-stream", "cache-control": isFont ? "public, max-age=31536000, immutable" : "no-store" });
