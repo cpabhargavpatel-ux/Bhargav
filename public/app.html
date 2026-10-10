@@ -1891,22 +1891,24 @@ const rtWeekVals = (ld, ws) => [0,1,2,3,4,5,6].map(i => +ld.rate[addDaysISO(ws, 
 
 function ratingsCard(dom){
   const todayWs = weekStartISO(), today = todayISO(), startWs = rtStartMonday(dom);
+  const firstWs = startWs < todayWs ? startWs : todayWs;       // a start date in the future must not trap you: this week is always reachable
   if (scWeekOff > 0) scWeekOff = 0;
   let ws = addDaysISO(todayWs, scWeekOff * 7);
-  if (ws < startWs){ ws = startWs; scWeekOff = -Math.round(rtDays(startWs, todayWs) / 7); }
+  if (ws < firstWs){ ws = firstWs; scWeekOff = -Math.round(rtDays(firstWs, todayWs) / 7); }
   const wn = rtWeekNo(dom, ws), days = [0,1,2,3,4,5,6].map(i => addDaysISO(ws, i));
   const rated = rtRated(dom), DN = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
   const archived = dom.leads.filter(l => l.archived);
   let h = '<div class="tool-card" id="rateCard" style="margin-bottom:16px"><h2>Lead measures &mdash; rate each one, every day</h2>'
     + '<p class="why">The few behaviors that drive the goal. Give each day a rating from 1 (poor) to 10 (excellent). Weeks are numbered from the day you started.</p>'
     + '<div class="rt-top">'
-    + '<button class="mini" id="rtPrev"'+(ws <= startWs ? ' disabled' : '')+' title="Previous week">&#9664;</button>'
-    + '<span class="rt-wk">Week '+wn+'</span>'
+    + '<button class="mini" id="rtPrev"'+(ws <= firstWs ? ' disabled' : '')+' title="Previous week">&#9664;</button>'
+    + '<span class="rt-wk">'+(wn >= 1 ? 'Week '+wn : 'Before week 1')+'</span>'
     + '<button class="mini" id="rtNext"'+(scWeekOff >= 0 ? ' disabled' : '')+' title="Next week">&#9654;</button>'
     + '<span class="statline" style="margin:0">'+fmtDate(ws)+' &ndash; '+fmtDate(addDaysISO(ws,6))+(scWeekOff === 0 ? ' &middot; <b>this week</b>' : '')+'</span>'
     + (scWeekOff !== 0 ? '<button class="mini" id="rtToday">This week</button>' : '')
     + '<span class="statline" style="margin:0 0 0 auto">Started <input type="date" class="ctl" id="rtStart" value="'+startWs+'" style="width:140px;padding:2px 6px" title="Week 1 is the week of this date"></span>'
-    + '</div>';
+    + '</div>'
+    + (startWs > todayWs ? '<p class="statline" style="margin:0 0 8px">Your start date is in the future &mdash; <b>Week 1 begins '+fmtDate(startWs)+'</b>. You can rate days up to today; change &ldquo;Started&rdquo; to count from an earlier date.</p>' : '');
   if (!rated.length){
     h += '<p class="empty-note">No lead measures yet &mdash; add the first one below.</p>';
   } else {
@@ -1943,7 +1945,7 @@ function ratingsCard(dom){
         + '<button class="mini del" data-ldharddel="'+l.id+'">Delete</button></span></div>').join("") : '')
     + '<div class="statline" style="margin-top:10px">ONE Thing block protected this week (auto, from Time Blocking): <b>'+protWeek+' / 5 days</b></div>';
   /* history: one row per week since the start */
-  const nWeeks = Math.round(rtDays(startWs, todayWs) / 7) + 1;
+  const nWeeks = Math.round(rtDays(startWs, todayWs) / 7) + 1;      // <= 0 while the start date is still in the future
   if (rated.length && nWeeks > 0){
     const list = []; for (let k = 0; k < nWeeks; k++) list.push(addDaysISO(todayWs, -7 * k));      // newest first
     const shown = rtHistAll ? list : list.slice(0, 12);
