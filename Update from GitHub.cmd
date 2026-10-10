@@ -1,21 +1,36 @@
 @echo off
-rem Double-click: downloads the latest Goal Setting + French IPA files from GitHub into THIS folder.
+rem Double-click: downloads the latest Goal Setting + French files from GitHub into THIS folder,
+rem then restarts the server and opens the app.
 rem Your goals database and public\app.html are never touched. Old files are saved in "update-backup".
 setlocal
 set "APPDIR=%~dp0"
 cd /d "%APPDIR%"
 echo.
-echo   Stopping the server (if it is running)...
-if exist "Stop Goal Setting.vbs" wscript //nologo "Stop Goal Setting.vbs"
 powershell -NoProfile -ExecutionPolicy Bypass -Command "iex ((Get-Content -Raw -LiteralPath '%~f0') -split '#PSBEGIN')[-1]"
+if errorlevel 1 (
+  echo.
+  pause
+  exit /b 1
+)
 echo.
-pause
+echo   Starting the server...
+wscript //nologo "%APPDIR%Goal Setting.vbs"
 exit /b
 #PSBEGIN
 $ErrorActionPreference = 'Stop'
 $base = 'https://raw.githubusercontent.com/cpabhargavpatel-ux/Bhargav/claude/trusting-goldberg-zqrwem'
-$dir  = $env:APPDIR
-Set-Location -LiteralPath $dir
+Set-Location -LiteralPath $env:APPDIR
+
+# 1. stop any running Goal Setting server (only node processes running server.mjs)
+Write-Host '  Stopping the server (if it is running)...'
+try {
+  Get-CimInstance Win32_Process -Filter "Name='node.exe'" |
+    Where-Object { $_.CommandLine -like '*server.mjs*' } |
+    ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+} catch { }
+Start-Sleep -Milliseconds 800
+
+# 2. download the latest files (old ones are kept in update-backup)
 New-Item -ItemType Directory -Force -Path 'update-backup', 'public' | Out-Null
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $files = 'server.mjs', 'public/french-ipa.html', 'Goal Setting.vbs', 'Stop Goal Setting.vbs', 'French IPA.vbs'
@@ -36,5 +51,8 @@ foreach ($f in $files) {
     Write-Host ('  FAILED   ' + $f + '  (' + $_.Exception.Message + ')')
   }
 }
-if ($ok) { Write-Host "`n  Done. Now double-click your 'Goal Setting' shortcut, then press Ctrl+F5 in the browser." }
-else     { Write-Host "`n  Some files could not be downloaded. Check your internet connection and try again." }
+if (-not $ok) {
+  Write-Host "`n  Some files could not be downloaded. Check your internet connection and try again."
+  exit 1
+}
+Write-Host "`n  Update complete."
