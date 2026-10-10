@@ -15,6 +15,9 @@ if errorlevel 1 (
 echo.
 echo   Starting the server...
 wscript //nologo "%APPDIR%Goal Setting.vbs"
+echo.
+echo   (this window closes in 10 seconds)
+timeout /t 10 >nul
 exit /b
 #PSBEGIN
 $ErrorActionPreference = 'Stop'
