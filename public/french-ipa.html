@@ -303,7 +303,7 @@
   .sp-sec { margin: 22px 0 6px; padding: 16px; border: 1px solid var(--rule); border-radius: 10px; background: #fff; }
   .sp-sec h2 { font-family: var(--serif); font-size: 1.15rem; margin-bottom: 4px; }
   .sp-sub { color: var(--gray); font-size: 0.85rem; margin-bottom: 10px; }
-  .sp-sec textarea { width: 100%; min-height: 76px; resize: vertical; font: inherit; font-family: var(--serif); font-size: 1.2rem;
+  .sp-sec textarea { width: 100%; min-height: 76px; max-height: 50vh; resize: none; overflow: hidden; font: inherit; font-family: var(--serif); font-size: 1.2rem;
     padding: 10px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); color: var(--ink); }
   .sp-row { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-top: 10px; }
   .sp-row .slider-group { margin: 0; }
@@ -1056,7 +1056,18 @@ select(DATA[1].items[7], null);
   const txt = $("spText"), reps = $("spReps"), gp = $("spGap"), st = $("spStatus");
   const sayB = $("spSay"), loopB = $("spLoop"), stopB = $("spStop");
   try { txt.value = localStorage.getItem("fr-sentence") || ""; } catch (e) {}
-  txt.addEventListener("input", () => { try { localStorage.setItem("fr-sentence", txt.value); } catch (e) {} });
+  /* auto-expanding sentence box: grows with the text (up to half the window, then scrolls) */
+  function grow() {
+    txt.style.height = "auto";
+    const max = innerHeight * 0.5, want = txt.scrollHeight + (txt.offsetHeight - txt.clientHeight);
+    txt.style.height = Math.min(want, max) + "px";
+    txt.style.overflowY = want > max ? "auto" : "hidden";
+  }
+  txt.addEventListener("input", () => { grow(); try { localStorage.setItem("fr-sentence", txt.value); } catch (e) {} });
+  grow();
+  addEventListener("resize", grow);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(grow);
+  new MutationObserver(grow).observe(document.documentElement, { attributes: true, attributeFilter: ["style"] });   // text-size control
 
   /* --- saved sentences (this browser, IndexedDB): text + latest recording + scores --- */
   const keyOf = t => t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[’']/g, " ")
