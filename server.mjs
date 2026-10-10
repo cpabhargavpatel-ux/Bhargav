@@ -168,7 +168,7 @@ const MODULE_CSS = `<style>
 </style>`;
 const moduleBar = active => MODULE_CSS + (active === "goal" ? "<style>header{top:40px !important}@media print{header{top:0 !important}}</style>" : "") + `<nav id="modtabs">`
   + `<a href="/"${active === "goal" ? ' class="on"' : ""}>Goal Setting</a>`
-  + `<a href="/french-ipa.html"${active === "french" ? ' class="on"' : ""}>French</a><span id="modbuild">build 10-10-m</span></nav>\n`;
+  + `<a href="/french-ipa.html"${active === "french" ? ' class="on"' : ""}>French</a><span id="modbuild">build 10-10-n</span></nav>\n`;
 function withModuleBar(html, active) {
   const m = /<body[^>]*>/i.exec(html);
   return m ? html.slice(0, m.index + m[0].length) + "\n" + moduleBar(active) + html.slice(m.index + m[0].length)
