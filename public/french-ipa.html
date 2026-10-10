@@ -241,6 +241,16 @@
     .current-phoneme { transition: none; }
     .current-phoneme.speaking { transform: none; }
   }
+  /* ---------- Google Translate panel ---------- */
+  .tr-sec { margin: 22px 0 6px; padding: 16px; border: 1px solid var(--rule); border-radius: 10px; background: #fff; }
+  .tr-sec h2 { font-family: var(--serif); font-size: 1.15rem; margin-bottom: 10px; }
+  .tr-sec textarea { width: 100%; min-height: 76px; resize: vertical; font: inherit; font-size: 1rem; padding: 10px;
+    border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); color: var(--ink); }
+  .tr-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 10px; }
+  .tr-row select { font: inherit; padding: 8px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
+  .tr-note { color: var(--gray); font-size: 0.8rem; margin-top: 8px; }
+  a.tr-link { color: var(--blue); font-size: 0.8rem; margin-left: 8px; text-decoration: none; font-style: normal; font-family: var(--sans); }
+  a.tr-link:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -288,6 +298,20 @@
     </div>
     <div class="warn" id="warn">No French voice found on this device — playback will use the default voice, which may sound wrong. On iPhone: Settings → Accessibility → Spoken Content → Voices → French.</div>
   </div>
+
+  <section class="tr-sec" id="trSec">
+    <h2>Google Translate</h2>
+    <textarea id="trText" placeholder="Type or paste a word or sentence…" aria-label="Text to translate"></textarea>
+    <div class="tr-row">
+      <select id="trDir" aria-label="Direction">
+        <option value="en|fr">English → French</option>
+        <option value="fr|en">French → English</option>
+      </select>
+      <button class="play" id="trGo">Translate in Google Translate</button>
+      <button class="play loop" id="trSwap" title="Swap direction">⇄ Swap</button>
+    </div>
+    <p class="tr-note">Opens Google Translate in a new tab with your text filled in. Tip: the word shown in the player above also has its own “translate” link.</p>
+  </section>
 
   <div id="sections"></div>
 
@@ -907,6 +931,30 @@ vRender(true);
 
 /* Default selection: /y/ — the classic hard-for-anglophones sound */
 select(DATA[1].items[7], null);
+
+/* ---------- Google Translate ---------- */
+(function(){
+  const gt = (sl, tl, text) => "https://translate.google.com/?sl=" + sl + "&tl=" + tl
+    + "&text=" + encodeURIComponent(text) + "&op=translate";
+  const txt = document.getElementById("trText"), dir = document.getElementById("trDir");
+  const open = (sl, tl, t) => { if (t.trim()) window.open(gt(sl, tl, t.trim()), "_blank", "noopener"); };
+  document.getElementById("trGo").onclick = () => { const [sl, tl] = dir.value.split("|"); open(sl, tl, txt.value); };
+  txt.addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) document.getElementById("trGo").click(); });
+  document.getElementById("trSwap").onclick = () => { dir.value = dir.value === "en|fr" ? "fr|en" : "en|fr"; };
+  // "translate" link next to the word shown in the player
+  const big = document.getElementById("bigWord");
+  const link = document.createElement("a");
+  link.className = "tr-link"; link.textContent = "translate ↗"; link.target = "_blank"; link.rel = "noopener";
+  link.title = "Open this word in Google Translate"; link.hidden = true;
+  big.parentNode.insertBefore(link, big.nextSibling);
+  const sync = () => {
+    const w = big.textContent.trim();
+    link.hidden = !w;
+    if (w) link.href = gt("fr", "en", w);
+  };
+  new MutationObserver(sync).observe(big, { childList: true, subtree: true, characterData: true });
+  sync();
+})();
 </script>
 </body>
 </html>
