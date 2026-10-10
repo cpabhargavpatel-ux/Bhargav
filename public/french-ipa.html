@@ -4,9 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>French IPA Trainer</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Gentium+Book+Plus:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="preload" href="/fonts/gentium-book-plus-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/gentium-book-plus-400-italic.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+  /* Gentium Book Plus (SIL OFL), self-hosted and trimmed to Latin + IPA: ~160 KB instead of ~1.8 MB, no Google request, works offline */
+  @font-face { font-family: "Gentium Book Plus"; font-style: normal; font-weight: 400; font-display: swap; src: url(/fonts/gentium-book-plus-400.woff2) format("woff2"); }
+  @font-face { font-family: "Gentium Book Plus"; font-style: normal; font-weight: 700; font-display: swap; src: url(/fonts/gentium-book-plus-700.woff2) format("woff2"); }
+  @font-face { font-family: "Gentium Book Plus"; font-style: italic; font-weight: 400; font-display: swap; src: url(/fonts/gentium-book-plus-400-italic.woff2) format("woff2"); }
   :root {
     --paper: #FBFBF8;
     --ink: #17181C;
@@ -14,8 +18,8 @@
     --blue-tint: #E8ECFE;
     --gray: #85878E;
     --rule: #E3E2DC;
-    --serif: "Gentium Book Plus", Georgia, serif;
-    --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+    --serif: "Gentium Book Plus", "Charis SIL", "Doulos SIL", Cambria, Georgia, serif;   /* fallbacks that also draw IPA */
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { -webkit-text-size-adjust: 100%; }
@@ -25,6 +29,8 @@
     font-family: var(--sans);
     accent-color: var(--blue);
     line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
   .wrap { max-width: 1480px; margin: 0 auto; padding: 0 28px 80px; }
 
@@ -73,7 +79,7 @@
     font-style: italic;
   }
   .current-word .hit { color: var(--blue); font-style: normal; font-weight: 700; }
-  .current-hint { color: var(--gray); font-size: 0.85rem; margin-top: 2px; }
+  .current-hint { color: var(--gray); font-size: 0.92rem; margin-top: 2px; }
   .status {
     font-size: 0.8rem;
     color: var(--blue);
@@ -118,12 +124,12 @@
   .mode-toggle button.active { background: var(--blue); color: var(--paper); }
   .mode-toggle button:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
 
-  .slider-group { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--ink); }
+  .slider-group { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--ink); }
   .slider-group label { color: var(--gray); }
   .slider-group input[type="range"] { width: 130px; }
   .slider-group output { font-variant-numeric: tabular-nums; min-width: 3.2em; font-weight: 600; }
 
-  .voice-row { margin-top: 10px; font-size: 0.8rem; color: var(--gray); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .voice-row { margin-top: 10px; font-size: 0.88rem; color: var(--gray); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .voice-row select {
     font-family: var(--sans);
     font-size: 0.8rem;
@@ -134,7 +140,7 @@
     color: var(--ink);
     max-width: 260px;
   }
-  .warn { color: #B4331F; font-size: 0.82rem; margin-top: 8px; display: none; }
+  .warn { color: #B4331F; font-size: 0.88rem; margin-top: 8px; display: none; }
 
   /* ---------- Phoneme sections ---------- */
   section { margin-top: 34px; }
@@ -226,12 +232,12 @@
     align-items: baseline;
   }
   .vrow:hover { background: var(--blue-tint); }
-  .vrow .rank { color: var(--gray); font-size: 0.78rem; font-variant-numeric: tabular-nums; grid-row: span 2; }
+  .vrow .rank { color: var(--gray); font-size: 0.85rem; font-variant-numeric: tabular-nums; grid-row: span 2; }
   .vrow .vw { font-family: var(--serif); font-size: 1.15rem; }
   .vrow .vipa { color: var(--blue); font-family: var(--serif); margin-left: 10px; font-size: 0.95rem; }
   .vrow .vm { color: var(--gray); font-size: 0.88rem; grid-column: 2; }
   .vmore { margin-top: 14px; }
-  .credits { color: var(--gray); font-size: 0.75rem; margin-top: 20px; max-width: 60ch; }
+  .credits { color: var(--gray); font-size: 0.82rem; margin-top: 20px; max-width: 60ch; }
 
   @media (max-width: 480px) {
     .current-phoneme { font-size: 2.4rem; min-width: 74px; padding: 12px 8px; }
@@ -258,7 +264,7 @@
   .sv { padding: 10px 0; border-top: 1px solid var(--rule); }
   .sv:first-child { border-top: none; }
   .sv-t { font-family: var(--serif); font-size: 1.1rem; }
-  .sv-m { color: var(--gray); font-size: 0.78rem; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .sv-m { color: var(--gray); font-size: 0.84rem; margin-top: 2px; font-variant-numeric: tabular-nums; }
   .sv-b { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   .sv-b button { font: inherit; font-size: 0.8rem; padding: 4px 10px; border-radius: 6px; cursor: pointer;
     border: 1px solid var(--blue); color: var(--blue); background: #fff; }
@@ -290,7 +296,7 @@
   .sp-rounds { margin-top: 10px; font-size: 0.9rem; font-variant-numeric: tabular-nums; color: var(--ink); }
   .sp-rounds b { color: var(--blue); }
   .sp-chk { display: block; margin-top: 8px; font-size: 0.85rem; color: var(--gray); }
-  .sp-note { color: var(--gray); font-size: 0.78rem; margin-top: 10px; }
+  .sp-note { color: var(--gray); font-size: 0.84rem; margin-top: 10px; }
 </style>
 </head>
 <body>

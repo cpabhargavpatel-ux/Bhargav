@@ -1,0 +1,8 @@
+server.mjs
+public/french-ipa.html
+public/fonts/gentium-book-plus-400.woff2
+public/fonts/gentium-book-plus-400-italic.woff2
+public/fonts/gentium-book-plus-700.woff2
+Goal Setting.vbs
+Stop Goal Setting.vbs
+French IPA.vbs

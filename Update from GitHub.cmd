@@ -31,9 +31,14 @@ try {
 Start-Sleep -Milliseconds 800
 
 # 2. download the latest files (old ones are kept in update-backup)
-New-Item -ItemType Directory -Force -Path 'update-backup', 'public' | Out-Null
+New-Item -ItemType Directory -Force -Path 'update-backup', 'public', 'public\fonts' | Out-Null
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-$files = 'server.mjs', 'public/french-ipa.html', 'Goal Setting.vbs', 'Stop Goal Setting.vbs', 'French IPA.vbs'
+# the list of files to update lives on GitHub (update-files.txt), so it can grow without changing this updater
+$files = @()
+try {
+  $files = (Invoke-WebRequest -UseBasicParsing -Uri ($base + '/update-files.txt')).Content -split "`r?`n" |
+    ForEach-Object { $_.Trim() } | Where-Object { $_ }
+} catch { Write-Host ('  FAILED   update-files.txt  (' + $_.Exception.Message + ')'); exit 1 }
 $ok = $true
 Write-Host '  Downloading the latest files...'
 foreach ($f in $files) {
