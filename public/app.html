@@ -1891,24 +1891,23 @@ const rtWeekVals = (ld, ws) => [0,1,2,3,4,5,6].map(i => +ld.rate[addDaysISO(ws, 
 
 function ratingsCard(dom){
   const todayWs = weekStartISO(), today = todayISO(), startWs = rtStartMonday(dom);
-  const firstWs = startWs < todayWs ? startWs : todayWs;       // a start date in the future must not trap you: this week is always reachable
-  if (scWeekOff > 0) scWeekOff = 0;
-  let ws = addDaysISO(todayWs, scWeekOff * 7);
-  if (ws < firstWs){ ws = firstWs; scWeekOff = -Math.round(rtDays(firstWs, todayWs) / 7); }
+  const RT_BACK = 520, RT_FWD = 52;                             // you can page through any week: 10 years back, a year ahead
+  scWeekOff = Math.max(-RT_BACK, Math.min(RT_FWD, scWeekOff));
+  const ws = addDaysISO(todayWs, scWeekOff * 7);
   const wn = rtWeekNo(dom, ws), days = [0,1,2,3,4,5,6].map(i => addDaysISO(ws, i));
   const rated = rtRated(dom), DN = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
   const archived = dom.leads.filter(l => l.archived);
   let h = '<div class="tool-card" id="rateCard" style="margin-bottom:16px"><h2>Lead measures &mdash; rate each one, every day</h2>'
     + '<p class="why">The few behaviors that drive the goal. Give each day a rating from 1 (poor) to 10 (excellent). Weeks are numbered from the day you started.</p>'
     + '<div class="rt-top">'
-    + '<button class="mini" id="rtPrev"'+(ws <= firstWs ? ' disabled' : '')+' title="Previous week">&#9664;</button>'
+    + '<button class="mini" id="rtPrev"'+(scWeekOff <= -RT_BACK ? ' disabled' : '')+' title="Previous week">&#9664;</button>'
     + '<span class="rt-wk">'+(wn >= 1 ? 'Week '+wn : 'Before week 1')+'</span>'
-    + '<button class="mini" id="rtNext"'+(scWeekOff >= 0 ? ' disabled' : '')+' title="Next week">&#9654;</button>'
-    + '<span class="statline" style="margin:0">'+fmtDate(ws)+' &ndash; '+fmtDate(addDaysISO(ws,6))+(scWeekOff === 0 ? ' &middot; <b>this week</b>' : '')+'</span>'
+    + '<button class="mini" id="rtNext"'+(scWeekOff >= RT_FWD ? ' disabled' : '')+' title="Next week">&#9654;</button>'
+    + '<span class="statline" style="margin:0">'+fmtDate(ws)+' &ndash; '+fmtDate(addDaysISO(ws,6))+(scWeekOff === 0 ? ' &middot; <b>this week</b>' : scWeekOff > 0 ? ' &middot; in '+scWeekOff+' week'+(scWeekOff > 1 ? 's' : '') : '')+'</span>'
     + (scWeekOff !== 0 ? '<button class="mini" id="rtToday">This week</button>' : '')
     + '<span class="statline" style="margin:0 0 0 auto">Started <input type="date" class="ctl" id="rtStart" value="'+startWs+'" style="width:140px;padding:2px 6px" title="Week 1 is the week of this date"></span>'
     + '</div>'
-    + (startWs > todayWs ? '<p class="statline" style="margin:0 0 8px">Your start date is in the future &mdash; <b>Week 1 begins '+fmtDate(startWs)+'</b>. You can rate days up to today; change &ldquo;Started&rdquo; to count from an earlier date.</p>' : '');
+    + (startWs > todayWs ? '<p class="statline" style="margin:0 0 8px">Your start date is in the future &mdash; <b>Week 1 begins '+fmtDate(startWs)+'</b>. Use the arrows to look ahead, or change &ldquo;Started&rdquo; to count from an earlier date.</p>' : '');
   if (!rated.length){
     h += '<p class="empty-note">No lead measures yet &mdash; add the first one below.</p>';
   } else {
@@ -1975,11 +1974,11 @@ function wireRatings(main, dom){
   main.querySelectorAll("[data-rtgo]").forEach(r => r.onclick = () => { scWeekOff = parseInt(r.dataset.rtgo, 10) || 0; render(); });
   const on = (id, fn) => { const el = main.querySelector(id); if (el) el.onclick = fn; };
   on("#rtPrev", () => { scWeekOff--; render(); });
-  on("#rtNext", () => { scWeekOff = Math.min(0, scWeekOff + 1); render(); });
+  on("#rtNext", () => { scWeekOff = Math.min(52, scWeekOff + 1); render(); });
   on("#rtToday", () => { scWeekOff = 0; render(); });
   on("#rtHistToggle", () => { rtHistAll = !rtHistAll; render(); });
   const st = main.querySelector("#rtStart");
-  if (st) st.addEventListener("change", () => { dom.scStart = st.value || ""; scWeekOff = Math.min(0, scWeekOff); save(); render(); });
+  if (st) st.addEventListener("change", () => { dom.scStart = st.value || ""; scWeekOff = 0; save(); render(); });
   if (rtFocusKey){
     const [id, day] = rtFocusKey.split("|"); rtFocusKey = null;
     const el = main.querySelector('[data-ldr="'+id+'"][data-day="'+day+'"]'); if (el) el.focus();
