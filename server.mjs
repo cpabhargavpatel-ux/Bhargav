@@ -159,13 +159,13 @@ function currentUser(req) {
    boot. */
 /* Top-level module tabs (Goal Setting | French IPA), added at serve time so the pages themselves stay untouched. */
 const MODULE_CSS = `<style>
-#modtabs{display:flex;gap:4px;padding:6px 14px 0;background:#10182b;font:600 14px system-ui,-apple-system,"Segoe UI",sans-serif}
+#modtabs{position:sticky;top:0;z-index:1000;display:flex;gap:4px;align-items:flex-end;height:40px;box-sizing:border-box;padding:4px 14px 0;background:#10182b;font:600 14px/20px system-ui,-apple-system,"Segoe UI",sans-serif}
 #modtabs a{padding:8px 18px;border-radius:8px 8px 0 0;color:#c9d2ea;text-decoration:none;background:#1b2542}
 #modtabs a.on{background:#fff;color:#10182b;cursor:default}
 #modtabs a:not(.on):hover{background:#27345c;color:#fff}
 @media print{#modtabs{display:none}}
 </style>`;
-const moduleBar = active => MODULE_CSS + `<nav id="modtabs">`
+const moduleBar = active => MODULE_CSS + (active === "goal" ? "<style>header{top:40px !important}@media print{header{top:0 !important}}</style>" : "") + `<nav id="modtabs">`
   + `<a href="/"${active === "goal" ? ' class="on"' : ""}>Goal Setting</a>`
   + `<a href="/french-ipa.html"${active === "french" ? ' class="on"' : ""}>French IPA</a></nav>\n`;
 function withModuleBar(html, active) {
