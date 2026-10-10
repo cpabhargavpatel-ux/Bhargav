@@ -1,7 +1,7 @@
 @echo off
 rem Double-click: downloads the latest Goal Setting + French files from GitHub into THIS folder,
 rem then restarts the server and opens the app.
-rem Your goals database and public\app.html are never touched. Old files are saved in "update-backup".
+rem Your goals database is never touched. Old copies of every replaced file (including public\app.html) are saved in "update-backup".
 setlocal
 set "APPDIR=%~dp0"
 cd /d "%APPDIR%"

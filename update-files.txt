@@ -1,5 +1,6 @@
 server.mjs
 public/french-ipa.html
+public/app.html
 public/fonts/gentium-book-plus-400.woff2
 public/fonts/gentium-book-plus-400-italic.woff2
 public/fonts/gentium-book-plus-700.woff2
