@@ -87,6 +87,9 @@
     border-radius: 10px;
     padding: 8px 10px;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: transform 0.12s ease;
   }
   .current-phoneme.speaking { transform: scale(1.06); }
@@ -1432,6 +1435,34 @@ select(DATA[1].items[7], null);
   const bar = document.getElementById("modtabs"), build = document.getElementById("modbuild");
   if (bar) bar.insertBefore(ctl, build || null); else { ctl.classList.add("floating"); document.body.appendChild(ctl); }
   set(pct);
+})();
+
+/* ---------- Optical centering of the sound tile ----------
+   Glyphs carry uneven space (descenders, slashes, italic overhang), so the line box is not the
+   same as the visible symbol. Measure the real ink and nudge the padding so it sits dead centre. */
+(function(){
+  const tile = document.getElementById("bigSym");
+  const ctx = document.createElement("canvas").getContext("2d");
+  function center() {
+    const cs = getComputedStyle(tile);
+    tile.style.padding = "";                                   // back to the CSS padding
+    if (tile.classList.contains("longsym") || !tile.textContent.trim()) return;
+    const fs = parseFloat(cs.fontSize), lh = cs.lineHeight === "normal" ? fs * 1.2 : parseFloat(cs.lineHeight);
+    ctx.font = cs.fontStyle + " " + cs.fontWeight + " " + fs + "px " + cs.fontFamily;
+    const m = ctx.measureText(tile.textContent);
+    if (!m.fontBoundingBoxAscent) return;                      // very old browser: leave as is
+    const fa = m.fontBoundingBoxAscent, fd = m.fontBoundingBoxDescent;
+    const base = (lh - (fa + fd)) / 2 + fa;                    // baseline inside the line box
+    const dy = lh / 2 - (base + (m.actualBoundingBoxDescent - m.actualBoundingBoxAscent) / 2);   // + = move the symbol down
+    const dx = (m.width / 2) - ((m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2);       // + = move the symbol right
+    const pt = parseFloat(cs.paddingTop), pb = parseFloat(cs.paddingBottom), pl = parseFloat(cs.paddingLeft), pr = parseFloat(cs.paddingRight);
+    tile.style.padding = Math.max(0, pt + dy) + "px " + Math.max(0, pr - dx) + "px " + Math.max(0, pb - dy) + "px " + Math.max(0, pl + dx) + "px";
+  }
+  new MutationObserver(center).observe(tile, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+  new MutationObserver(center).observe(document.documentElement, { attributes: true, attributeFilter: ["style"] });   // text-size control
+  addEventListener("resize", center);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(center);
+  center();
 })();
 </script>
 </body>
