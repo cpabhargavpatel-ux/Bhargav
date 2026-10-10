@@ -262,6 +262,9 @@
   .sp-words .ok { color: #1B7F3B; }
   .sp-words .miss { color: #C62828; text-decoration: underline wavy; }
   .sp-heard { color: var(--gray); font-size: 0.85rem; margin-top: 6px; }
+  .sp-rounds { margin-top: 10px; font-size: 0.9rem; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .sp-rounds b { color: var(--blue); }
+  .sp-chk { display: block; margin-top: 8px; font-size: 0.85rem; color: var(--gray); }
   .sp-note { color: var(--gray); font-size: 0.78rem; margin-top: 10px; }
 </style>
 </head>
@@ -336,8 +339,17 @@
     <div class="sp-mine">
       <div class="sp-row" style="margin-top:0">
         <button class="play rec" id="spRec">● Record my voice</button>
+        <button class="play loop" id="spPractice" title="Hear the sentence, then it records you automatically — and repeats">🔁 Practice loop</button>
+        <div class="slider-group">
+          <label for="spRecT">Record time</label>
+          <input type="range" id="spRecT" min="2" max="15" step="1" value="6">
+          <output id="spRecTOut" for="spRecT">6 s</output>
+        </div>
         <span class="sp-status" id="spRecStatus" style="margin:0"></span>
       </div>
+      <p class="sp-note" style="margin-top:6px">Practice loop: it says the sentence <b>Repeats</b> times (set above); after each time it records you for the Record time, then shows your score. <b>■ Stop</b> ends it.</p>
+      <div class="sp-rounds" id="spRounds" hidden></div>
+      <label class="sp-chk"><input type="checkbox" id="spAudioLoop"> Loop my recording when I play it back</label>
       <audio id="spAudio" controls hidden></audio>
       <div class="sp-score" id="spScore" hidden>
         <div class="big" id="spScoreBig"></div>
@@ -978,8 +990,11 @@ select(DATA[1].items[7], null);
   gp.addEventListener("input", () => { $("spGapOut").textContent = gp.value + " s"; });
 
   /* --- speak with repetition --- */
-  let tok = 0;
-  function setBusy(b) { sayB.disabled = loopB.disabled = b; stopB.disabled = !b; }
+  let tok = 0, looping = false;
+  const recB = $("spRec"), recSt = $("spRecStatus"), audio = $("spAudio"), pracB = $("spPractice"), recT = $("spRecT");
+  recT.addEventListener("input", () => { $("spRecTOut").textContent = recT.value + " s"; });
+  $("spAudioLoop").addEventListener("change", e => { audio.loop = e.target.checked; });
+  function setBusy(b) { sayB.disabled = loopB.disabled = pracB.disabled = b; recB.disabled = b && looping; stopB.disabled = !b; }
   async function run(forever) {
     const text = txt.value.trim();
     if (!text) { st.textContent = "Type a sentence first."; txt.focus(); return; }
@@ -1000,20 +1015,23 @@ select(DATA[1].items[7], null);
   }
   sayB.onclick = () => run(false);
   loopB.onclick = () => run(true);
-  stopB.onclick = () => { tok++; speechSynthesis.cancel(); st.textContent = ""; setBusy(false); };
+  stopB.onclick = async () => {
+    tok++; speechSynthesis.cancel(); st.textContent = "";
+    if (recording) await finish();
+    looping = false; recSt.textContent = ""; setBusy(false);
+  };
 
   /* --- record my voice --- */
-  const recB = $("spRec"), recSt = $("spRecStatus"), audio = $("spAudio");
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   let stream = null, mr = null, chunks = [], sr = null, heard = "", recording = false, srErr = "";
+  let mrDone = true, srDone = true, pending = null;
 
   const norm = t => t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[’']/g, " ")
     .split(/[^a-z0-9]+/).filter(Boolean);
 
   function score(targetText, heardText) {
     const T = targetText.split(/\s+/).filter(Boolean);              // words as typed, for display
-    const Tn = T.map(w => norm(w).join(" ")), H = norm(heardText);
-    // flatten target into normalized tokens, remembering which displayed word each belongs to
+    const H = norm(heardText);
     const toks = []; T.forEach((w, i) => norm(w).forEach(x => toks.push({ x, i })));
     const m = toks.length, n = H.length;
     const L = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
@@ -1030,16 +1048,16 @@ select(DATA[1].items[7], null);
     return { pct: m ? Math.round(100 * matched / m) : 0, words: T, okWord };
   }
 
-  function showScore() {
+  function showScore() {   // returns the percentage, or null when nothing could be checked
     const target = txt.value.trim(), box = $("spScore");
-    if (!target) { box.hidden = true; return; }
-    if (!SR) { box.hidden = true; recSt.textContent = "Recorded. (This browser can’t check pronunciation — use Chrome or Edge for that.)"; return; }
+    if (!target) { box.hidden = true; return null; }
+    if (!SR) { box.hidden = true; recSt.textContent = "Recorded. (This browser can’t check pronunciation — use Chrome or Edge for that.)"; return null; }
     box.hidden = false;
     if (!heard.trim()) {
       $("spScoreBig").textContent = "Couldn’t hear anything to check";
       $("spWords").textContent = "";
       $("spHeard").textContent = srErr ? "(" + srErr + ")" : "Try again a little louder and closer to the microphone.";
-      return;
+      return 0;
     }
     const r = score(target, heard);
     $("spScoreBig").textContent = r.pct + "% — " + (r.pct >= 90 ? "excellent" : r.pct >= 70 ? "good, retry the red words" : "keep practising");
@@ -1049,42 +1067,81 @@ select(DATA[1].items[7], null);
       w.appendChild(sp); w.appendChild(document.createTextNode(" "));
     });
     $("spHeard").textContent = "Heard: “" + heard.trim() + "”";
+    return r.pct;
   }
 
-  async function startRec() {
-    speechSynthesis.cancel(); tok++; setBusy(false); st.textContent = "";
+  function check() { if (mrDone && srDone && pending) { const f = pending; pending = null; f(showScore()); } }
+
+  async function begin() {   // start recording; false if it couldn't start
     if (!window.isSecureContext || !navigator.mediaDevices || !window.MediaRecorder) {
-      recSt.textContent = "Recording needs the page opened at http://localhost:… (or https), in a recent Chrome/Edge/Firefox."; return;
+      recSt.textContent = "Recording needs the page opened at http://localhost:… (or https), in a recent Chrome/Edge/Firefox."; return false;
     }
-    try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
-    catch (e) { recSt.textContent = "Microphone blocked — allow it in the browser’s address bar, then try again."; return; }
-    chunks = []; heard = ""; srErr = "";
+    if (!stream || !stream.active) {
+      try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+      catch (e) { recSt.textContent = "Microphone blocked — allow it in the browser’s address bar, then try again."; return false; }
+    }
+    chunks = []; heard = ""; srErr = ""; mrDone = false; srDone = !SR;
     mr = new MediaRecorder(stream);
     mr.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
     mr.onstop = () => {
-      stream.getTracks().forEach(t => t.stop());
       if (audio.src) URL.revokeObjectURL(audio.src);
       audio.src = URL.createObjectURL(new Blob(chunks, { type: mr.mimeType || "audio/webm" }));
-      audio.hidden = false;
-      if (!SR) showScore();
+      audio.hidden = false; mrDone = true; check();
     };
     mr.start();
     if (SR) {
       sr = new SR(); sr.lang = "fr-FR"; sr.continuous = true; sr.interimResults = false; sr.maxAlternatives = 1;
       sr.onresult = e => { for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) heard += " " + e.results[i][0].transcript; };
       sr.onerror = e => { srErr = e.error === "not-allowed" ? "speech check blocked" : e.error === "network" ? "no internet for the speech check" : e.error; };
-      sr.onend = () => { if (!recording) showScore(); };
-      try { sr.start(); } catch (e) {}
+      sr.onend = () => { if (recording) { try { sr.start(); } catch (e) { srDone = true; check(); } } else { srDone = true; check(); } };
+      try { sr.start(); } catch (e) { srDone = true; }
     }
     recording = true; recB.classList.add("on"); recB.textContent = "■ Stop recording";
-    recSt.textContent = "Recording — say the sentence…"; $("spScore").hidden = true;
+    $("spScore").hidden = true;
+    return true;
   }
-  function stopRec() {
-    recording = false; recB.classList.remove("on"); recB.textContent = "● Record my voice"; recSt.textContent = "";
-    try { mr.stop(); } catch (e) {}
-    if (sr) { try { sr.stop(); } catch (e) {} }
+  function finish() {   // stop recording; resolves with the score once everything has finished
+    return new Promise(res => {
+      pending = res; recording = false; recB.classList.remove("on"); recB.textContent = "● Record my voice";
+      try { mr.stop(); } catch (e) { mrDone = true; }
+      if (sr) { try { sr.stop(); } catch (e) { srDone = true; } }
+      check();
+    });
   }
-  recB.onclick = () => recording ? stopRec() : startRec();
+  recB.onclick = async () => {
+    if (recording) { recSt.textContent = ""; await finish(); return; }
+    speechSynthesis.cancel(); tok++; setBusy(false); st.textContent = "";
+    if (await begin()) recSt.textContent = "Recording — say the sentence…";
+  };
+
+  /* --- practice loop: say it -> record me -> score -> repeat --- */
+  pracB.onclick = async () => {
+    const text = txt.value.trim();
+    if (!text) { st.textContent = "Type a sentence first."; txt.focus(); return; }
+    const my = ++tok, total = parseInt(reps.value, 10), recMs = parseInt(recT.value, 10) * 1000;
+    looping = true; speechSynthesis.cancel(); setBusy(true);
+    const log = $("spRounds"); log.hidden = false; log.textContent = ""; const scores = [];
+    for (let n = 1; n <= total; n++) {
+      st.textContent = "Round " + n + " of " + total + " — listen…";
+      await speakOnce(text);
+      if (my !== tok) return;
+      st.textContent = "Round " + n + " of " + total + " — your turn";
+      if (!(await begin())) { looping = false; setBusy(false); st.textContent = ""; return; }
+      for (let t = recMs; t > 0 && my === tok; t -= 100) {
+        recSt.textContent = "Recording… " + Math.ceil(t / 1000) + " s";
+        await wait(100);
+      }
+      if (my !== tok) return;           // Stop already finished the recording
+      recSt.textContent = "Checking…";
+      const pct = await finish(); recSt.textContent = "";
+      if (my !== tok) return;
+      scores.push(pct == null ? "–" : pct + "%");
+      log.innerHTML = scores.map((x, i) => "Round " + (i + 1) + ": <b>" + x + "</b>").join(" &nbsp;·&nbsp; ");
+      if (n < total) await wait(1500);   // a moment to read the result
+      if (my !== tok) return;
+    }
+    looping = false; st.textContent = "Done."; setBusy(false);
+  };
 })();
 
 </script>
