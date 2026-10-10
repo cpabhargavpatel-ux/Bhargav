@@ -260,6 +260,19 @@
   .sl-one .t{font-family:Georgia,serif;font-size:18px;line-height:1.5}
   .sl-one .acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 
+  /* ---------- week-by-week progress chart ---------- */
+  .rt-chartwrap{position:relative;margin-top:8px}
+  .rt-chartwrap svg{display:block;width:100%;height:auto;overflow:visible}
+  .rt-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted);margin:4px 0 2px}
+  .rt-legend span{display:inline-flex;align-items:center;gap:6px}
+  .rt-legend i{display:inline-block;width:18px;height:0;border-top:2px solid var(--c);border-radius:2px}
+  .rt-tip{position:absolute;pointer-events:none;z-index:5;background:#fff;border:1px solid var(--line);border-radius:8px;
+    box-shadow:0 6px 18px rgba(16,32,48,.18);padding:8px 10px;font-size:12.5px;min-width:150px;display:none}
+  .rt-tip b{display:block;margin-bottom:4px;color:#1c2733}
+  .rt-tip div{display:flex;align-items:center;gap:6px;justify-content:space-between}
+  .rt-tip div span:first-child{display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
+  .rt-tip i{width:10px;height:0;border-top:2px solid var(--c)}
+  .rt-tip .tot{border-top:1px solid var(--line);margin-top:4px;padding-top:4px;font-weight:700;color:#1c2733}
   /* ---------- daily ratings (scoreboard) ---------- */
   .rt-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 10px}
   .rt-wk{font-size:19px;font-weight:700;color:var(--brand)}
@@ -1889,6 +1902,66 @@ const rtFmt = a => a == null ? "&ndash;" : (Math.round(a*10)/10).toFixed(1);
 const rtShort = iso => iso.slice(5);                               // mm-dd
 const rtWeekVals = (ld, ws) => [0,1,2,3,4,5,6].map(i => +ld.rate[addDaysISO(ws, i)] || 0);
 
+/* ---- the week-by-week progress chart: one line per measure + the overall score, 0-10 ---- */
+const RT_COLORS = ["#2a78d6","#eb6834","#1baf7a","#eda100","#e87ba4","#008300","#6250d6","#e34948"];   // fixed order, never cycled
+const RT_INK = "#1c2733";
+let rtChartData = null;
+function rtChart(dom, rated, weeksOldestFirst){
+  const W = 760, H = 270, L = 34, R = 46, T = 14, B = 34, n = weeksOldestFirst.length;
+  const x = i => n === 1 ? L + (W - L - R) / 2 : L + i * (W - L - R) / (n - 1);
+  const y = v => T + (10 - v) / 10 * (H - T - B);
+  const series = rated.slice(0, RT_COLORS.length).map(l => ({
+    id: l.id, name: l.name || "(unnamed)", color: RT_COLORS[Math.max(0, dom.leads.indexOf(l)) % RT_COLORS.length],
+    vals: weeksOldestFirst.map(w => rtAvg(rtWeekVals(l, w)))
+  }));
+  const overall = weeksOldestFirst.map(w => { const all = []; for (const l of rated) all.push(...rtWeekVals(l, w)); return rtAvg(all); });
+  rtChartData = { weeks: weeksOldestFirst.map(w => ({ ws: w, wn: rtWeekNo(dom, w) })), series, overall, W, H, L, R, T, B };
+  const path = vals => { let d = "", pen = false; vals.forEach((v, i) => { if (v == null){ pen = false; return; } d += (pen ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1) + " "; pen = true; }); return d.trim(); };
+  let g = '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Average rating per week, out of 10">';
+  for (let t = 0; t <= 10; t += 2){
+    g += '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(t)+'" y2="'+y(t)+'" stroke="#e4eaf0" stroke-width="1"/>'
+      + '<text x="'+(L-8)+'" y="'+(y(t)+4)+'" text-anchor="end" font-size="11" fill="#5b6b7a">'+t+'</text>';
+  }
+  const step = Math.ceil(n / 12);
+  weeksOldestFirst.forEach((w, i) => { if (i % step === 0 || i === n - 1)
+    g += '<text x="'+x(i)+'" y="'+(H-12)+'" text-anchor="middle" font-size="11" fill="#5b6b7a">W'+rtWeekNo(dom, w)+'</text>'; });
+  series.forEach(sr => { g += '<path d="'+path(sr.vals)+'" fill="none" stroke="'+sr.color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+    sr.vals.forEach((v, i) => { if (v != null) g += '<circle cx="'+x(i)+'" cy="'+y(v)+'" r="4" fill="'+sr.color+'" stroke="#fff" stroke-width="2"/>'; }); });
+  g += '<path d="'+path(overall)+'" fill="none" stroke="'+RT_INK+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+  overall.forEach((v, i) => { if (v != null) g += '<circle cx="'+x(i)+'" cy="'+y(v)+'" r="4.5" fill="'+RT_INK+'" stroke="#fff" stroke-width="2"/>'; });
+  const lastI = overall.reduce((a, v, i) => v != null ? i : a, -1);
+  if (lastI >= 0) g += '<text x="'+(x(lastI) + 10)+'" y="'+(y(overall[lastI]) + 4)+'" text-anchor="start" font-size="12" font-weight="700" fill="'+RT_INK+'">'+rtFmt(overall[lastI])+'</text>';
+  g += '<line id="rtCross" x1="0" x2="0" y1="'+T+'" y2="'+(H-B)+'" stroke="#9fb0c2" stroke-width="1" style="display:none"/>'
+     + '<rect id="rtHit" x="'+L+'" y="'+T+'" width="'+(W-L-R)+'" height="'+(H-T-B)+'" fill="transparent"/></svg>';
+  const legend = '<div class="rt-legend">' + series.map(sr => '<span style="--c:'+sr.color+'"><i></i>'+esc(fbTr(sr.name, 28))+'</span>').join('')
+    + '<span style="--c:'+RT_INK+'"><i style="border-top-width:3px"></i><b>Overall</b></span></div>';
+  return '<div class="rt-chartwrap">' + legend + g + '<div class="rt-tip" id="rtTip"></div></div>';
+}
+function wireRtChart(main){
+  const wrap = main.querySelector(".rt-chartwrap"), hit = main.querySelector("#rtHit");
+  if (!wrap || !hit || !rtChartData) return;
+  const D = rtChartData, svg = wrap.querySelector("svg"), cross = wrap.querySelector("#rtCross"), tip = wrap.querySelector("#rtTip"), n = D.weeks.length;
+  const xOf = i => n === 1 ? D.L + (D.W - D.L - D.R) / 2 : D.L + i * (D.W - D.L - D.R) / (n - 1);
+  function show(ev){
+    const r = svg.getBoundingClientRect(), vx = (ev.clientX - r.left) / r.width * D.W;
+    let i = n === 1 ? 0 : Math.round((vx - D.L) / ((D.W - D.L - D.R) / (n - 1)));
+    i = Math.max(0, Math.min(n - 1, i));
+    cross.setAttribute("x1", xOf(i)); cross.setAttribute("x2", xOf(i)); cross.style.display = "";
+    const wk = D.weeks[i];
+    tip.innerHTML = '<b>Week '+wk.wn+' &middot; '+rtShort(wk.ws)+' &ndash; '+rtShort(addDaysISO(wk.ws, 6))+'</b>'
+      + D.series.map(sr => '<div><span style="--c:'+sr.color+'"><i></i>'+esc(fbTr(sr.name, 22))+'</span><span>'+rtFmt(sr.vals[i])+'</span></div>').join('')
+      + '<div class="tot"><span>Overall</span><span>'+rtFmt(D.overall[i])+'</span></div>';
+    tip.style.display = "block";
+    const wr = wrap.getBoundingClientRect(), px = xOf(i) / D.W * r.width + (r.left - wr.left);
+    const tw = tip.offsetWidth;
+    tip.style.left = Math.max(0, Math.min(wr.width - tw, px + 14 > wr.width - tw ? px - tw - 14 : px + 14)) + "px";
+    tip.style.top = "30px";
+  }
+  hit.addEventListener("mousemove", show); hit.addEventListener("touchstart", e => show(e.touches[0]), { passive: true });
+  hit.addEventListener("touchmove", e => show(e.touches[0]), { passive: true });
+  hit.addEventListener("mouseleave", () => { cross.style.display = "none"; tip.style.display = "none"; });
+}
+
 function ratingsCard(dom){
   const todayWs = weekStartISO(), today = todayISO(), startWs = rtStartMonday(dom);
   const RT_BACK = 520, RT_FWD = 52;                             // you can page through any week: 10 years back, a year ahead
@@ -1948,7 +2021,10 @@ function ratingsCard(dom){
   if (rated.length && nWeeks > 0){
     const list = []; for (let k = 0; k < nWeeks; k++) list.push(addDaysISO(todayWs, -7 * k));      // newest first
     const shown = rtHistAll ? list : list.slice(0, 12);
-    h += '<h3 style="margin:16px 0 0;font-size:14px">Week by week</h3>'
+    h += '<h3 style="margin:16px 0 0;font-size:14px">Progress by week</h3>'
+      + '<p class="statline" style="margin:2px 0 0">Average rating (out of 10) for each measure; the dark line is your overall score. Hover the chart for the numbers.</p>'
+      + rtChart(dom, rated, shown.slice().reverse())
+      + '<h3 style="margin:18px 0 0;font-size:14px">Week by week</h3>'
       + '<table class="rt-hist"><thead><tr><th class="l">Week</th><th class="l">Dates</th>'
       + rated.map(l => '<th>'+esc(fbTr(l.name, 16))+'</th>').join('') + '<th>Overall</th></tr></thead><tbody>'
       + shown.map(w => {
@@ -1977,6 +2053,7 @@ function wireRatings(main, dom){
   on("#rtNext", () => { scWeekOff = Math.min(52, scWeekOff + 1); render(); });
   on("#rtToday", () => { scWeekOff = 0; render(); });
   on("#rtHistToggle", () => { rtHistAll = !rtHistAll; render(); });
+  wireRtChart(main);
   const st = main.querySelector("#rtStart");
   if (st) st.addEventListener("change", () => { dom.scStart = st.value || ""; scWeekOff = 0; save(); render(); });
   if (rtFocusKey){
