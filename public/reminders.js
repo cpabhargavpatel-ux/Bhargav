@@ -90,7 +90,7 @@
     ".gtnrem .days{display:inline-flex;gap:4px;flex-wrap:wrap}.gtnrem .days label{border:1px solid var(--line);border-radius:6px;padding:2px 8px;cursor:pointer;font-size:.82rem;background:var(--bg)}.gtnrem .days input{display:none}.gtnrem .days input:checked+span{font-weight:800;color:var(--acc)}" +
     ".gtnrem .days label:has(input:checked){border-color:var(--acc);background:var(--soft)}" +
     ".gtnrem .b{border:1px solid var(--acc);background:var(--acc);color:var(--accink);border-radius:8px;padding:7px 14px;font:600 .9rem system-ui,sans-serif;cursor:pointer}.gtnrem .b.alt{background:transparent;color:var(--acc)}" +
-    ".gtnrem .ft{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:10px 20px 14px;background:var(--soft);color:var(--mute);font-size:.85rem}.gtnrem .ft label{display:flex;gap:6px;align-items:center;cursor:pointer}.gtnrem .ft .b{margin-left:auto}" +
+    ".gtnrem .ft{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:10px 20px 14px;background:var(--soft);color:var(--mute);font-size:.85rem}.gtnrem .ft label{display:flex;gap:6px;align-items:center;cursor:pointer}.gtnrem .ft .b{margin-left:auto}.gtnrem .ft .b+.b{margin-left:0}" +
     ".gtnrem .ico{background:none;border:1px solid var(--line);color:var(--mute);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:.95rem;flex:none}.gtnrem .ico:hover{border-color:var(--acc);color:var(--acc)}.gtnrem .ico.on{color:var(--star);border-color:var(--star)}" +
     ".gtnrem li.ed{display:block}.gtnrem li.ed .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0}";
   document.head.appendChild(css);
@@ -156,7 +156,7 @@
   function paint() {
     var day = ymd(), keep = dlg.querySelector("#rmText") ? { t: dlg.querySelector("#rmText").value, r: dlg.querySelector("#rmRep").value, s: dlg.querySelector("#rmStar").checked } : null;
     dlg.innerHTML = head(day) + '<div class="body">' + (view === "today" ? todayList(day) : allList()) + "</div>" + addForm() +
-      '<div class="ft"><label><input type="checkbox" id="rmOpen"' + (data.showOnOpen ? " checked" : "") + '> Flash my reminders when I open the app</label><button class="b alt" id="rmClose">Close</button></div>';
+      '<div class="ft"><label><input type="checkbox" id="rmOpen"' + (data.showOnOpen ? " checked" : "") + '> Flash my reminders when I open the app</label><button class="b alt" id="rmShow" title="Flash today\u2019s reminders at the top right, as when you open the app">Show now</button><button class="b alt" id="rmClose">Close</button></div>';
     dlg.querySelectorAll("li.ed select[data-k=repeat]").forEach(function (s) { s.value = (data.items.filter(function (x) { return x.id === editing; })[0] || {}).repeat; });
     if (keep) { dlg.querySelector("#rmText").value = keep.t; dlg.querySelector("#rmRep").value = keep.r; dlg.querySelector("#rmStar").checked = keep.s; extra(); }
     paintBell();
@@ -182,6 +182,7 @@
   dlg.addEventListener("click", function (e) {
     var t = e.target;
     if (t.id === "rmX" || t.id === "rmClose") { dlg.close(); return; }
+    if (t.id === "rmShow") { dlg.close(); if (pending(ymd()).length) showFlash(); return; }
     if (t.id === "rmAdd") { addNew(); return; }
     var v = t.closest && t.closest(".tabs button"); if (v) { view = v.dataset.v; editing = null; paint(); return; }
     var b = t.closest && t.closest("[data-a]"); if (!b) return;
@@ -241,16 +242,11 @@
   bell.onclick = function () { open("today"); };
 
   /* ---------- only when the app is opened ----------
-     "Opened" = nothing from this app was open in this browser for the last 30 minutes. Switching between the
-     Goal Setting / French / English tabs, opening a second tab or reloading does not show the message again. */
-  var ACTIVE = "gtn-rem-active", GAP = 30 * 60 * 1000;
-  function lastActive() { try { return +localStorage.getItem(ACTIVE) || 0; } catch (e) { return 0; } }
-  function beat() { try { localStorage.setItem(ACTIVE, String(Date.now())); } catch (e) {} }
-  var freshOpen = Date.now() - lastActive() > GAP;
-  beat();
-  setInterval(function () { if (document.visibilityState === "visible") beat(); }, 60000);
-  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") beat(); });
-  window.addEventListener("pagehide", beat);
+     "Opened" = the first page you load in a new browser tab or window (what the shortcut does). Switching between the
+     Goal Setting / French / English tabs or reloading does not flash them again; the bell and "Show now" always work. */
+  var TABKEY = "gtn-rem-tab";
+  var freshOpen = true;
+  try { freshOpen = !sessionStorage.getItem(TABKEY); sessionStorage.setItem(TABKEY, "1"); } catch (e) {}
   function maybeShow() {
     if (!freshOpen || !data.showOnOpen) return;
     freshOpen = false;
