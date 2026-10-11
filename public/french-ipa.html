@@ -345,6 +345,20 @@
   .weak-sec h2 .vcount { margin-left: 0; }
   .weak-sub { color: var(--gray); font-size: 0.88rem; margin-top: 4px; }
   .wk-items { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .wk-grp { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; font: 700 0.78rem var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--gray); }
+  .wk-grp:first-of-type { margin-top: 10px; } .wk-grp + .wk-items { margin-top: 6px; }
+  .wk-grp .gloop { text-transform: none; letter-spacing: 0; }
+  .wk-item.wk-sent { max-width: 100%; text-align: left; } .wk-item.wk-sent span { font-family: var(--serif); font-size: 1.02rem; overflow-wrap: anywhere; }
+  .sv-tabs { display: flex; gap: 6px; margin: 4px 0 6px; flex-wrap: wrap; }
+  .sv-tabs button { font: 600 0.82rem var(--sans); border: 1px solid var(--rule); background: #fff; color: var(--ink, #222); border-radius: 999px; padding: 3px 12px; cursor: pointer; }
+  .sv-tabs button.on { background: var(--blue, #2540d9); border-color: var(--blue, #2540d9); color: #fff; }
+  .sv-head { display: flex; align-items: flex-start; gap: 8px; }
+  .sv-head .sv-t { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .sv .wk { position: static; opacity: .55; flex: none; border: 1px solid var(--rule); border-radius: 6px; padding: 3px 7px; min-width: 28px; cursor: pointer; transform: none; }
+  .sv:hover .wk, .sv .wk[data-l] { opacity: 1; }
+  .sv .wk[data-l="0"] { color: var(--gray); background: transparent; }
+  .sv .wk[data-l="1"] { color: #A56A00; background: #fff1cc; } .sv .wk[data-l="2"] { color: #C25A0E; background: #ffe0c8; } .sv .wk[data-l="3"] { color: #fff; background: #C62828; }
+
   .wk-item { font: inherit; display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--rule);
     background: #fff; cursor: pointer; font-family: var(--serif); font-size: 1.05rem; }
   .wk-item:hover { background: var(--blue-tint); }
@@ -434,10 +448,13 @@
 
   <section class="weak-sec" id="weakSec">
     <h2><span>Weak spots <span class="vcount" id="weakCount"></span></span>
-      <button class="gloop" id="weakLoop" data-label="Loop weak spots" hidden>Loop weak spots</button>
+      <button class="gloop" id="weakLoop" data-label="Loop all weak spots" hidden>Loop all weak spots</button>
       <button class="gloop" id="weakClear" hidden style="margin-left:auto">Clear all</button></h2>
     <p class="weak-sub" id="weakSub"></p>
+    <div class="wk-grp" id="weakGrpW" hidden><span>Sounds &amp; words</span><button class="gloop" id="weakLoopW" data-label="Loop these">Loop these</button></div>
     <div class="wk-items" id="weakItems"></div>
+    <div class="wk-grp" id="weakGrpS" hidden><span>Sentences</span><button class="gloop" id="weakLoopS" data-label="Loop these">Loop these</button></div>
+    <div class="wk-items" id="weakSent"></div>
   </section>
 
   <div id="sections"></div>
@@ -524,6 +541,7 @@
 
   <section class="sp-sec" id="savedSec">
     <h2>My sentences <span class="vcount" id="savedCount"></span></h2>
+    <div class="sv-tabs" id="svTabs" role="group" aria-label="Show"></div>
     <div id="savedList"><p class="sv-empty">Nothing yet. Say or record a sentence and it appears here.</p></div>
   </section>
 
@@ -651,11 +669,12 @@ function makeBadge(key, what) {
 function weakVocab(key) { const w = key.slice(2); return VOCAB.find(e => e[0] === w); }
 function weakItems() {   // [{key,item,lvl}] weakest first
   const out = [];
-  Object.keys(WEAK).forEach(k => { const item = k[0] === "s" ? WEAK_ITEMS[k] : weakVocab(k); if (item) out.push({ key: k, item, lvl: WEAK[k] }); });
+  Object.keys(WEAK).forEach(k => { const item = (k[0] === "s" || k[0] === "t") ? WEAK_ITEMS[k] : weakVocab(k); if (item) out.push({ key: k, item, lvl: WEAK[k] }); });
   return out.sort((a, b) => b.lvl - a.lvl);
 }
-function weakPlan() {    // level 3 plays 3 times per round, level 2 twice, level 1 once
-  const list = weakItems(), plan = [];
+const isSentItem = x => !!(x.item && x.item.sentence && !x.item.isWord);      // typed text with 2+ words
+function weakPlan(which) {    // level 3 plays 3 times per round, level 2 twice, level 1 once; which: "w" sounds+words, "s" sentences, else all
+  const list = weakItems().filter(x => which === "s" ? isSentItem(x) : which === "w" ? !isSentItem(x) : true), plan = [];
   for (let r = 1; r <= 3; r++) list.filter(x => x.lvl >= r).forEach(x => plan.push(x.item));
   return plan;
 }
@@ -674,17 +693,20 @@ function refreshWeak() {
     ? "The weakest are practised most. Tap a mark again to raise it, or cycle it off."
     : "Tap the \u21BB on any sound or word you find hard. \u21BB weak, \u21BB\u21BB weaker, \u21BB\u21BB\u21BB weakest \u2014 the weakest get repeated most.";
   document.getElementById("weakLoop").hidden = document.getElementById("weakClear").hidden = !list.length;
-  box.textContent = "";
+  const sbox = document.getElementById("weakSent");
+  box.textContent = ""; sbox.textContent = "";
+  const wl = list.filter(x => !isSentItem(x)), sl = list.filter(isSentItem);
+  document.getElementById("weakGrpW").hidden = !wl.length; document.getElementById("weakGrpS").hidden = !sl.length;
   list.forEach(x => {
-    const b = document.createElement("button"); b.type = "button"; b.className = "wk-item"; b.dataset.l = x.lvl;
-    const label = Array.isArray(x.item) ? x.item[0] : (x.item.word ? x.item.sym + " " + x.item.word : x.item.sym);
+    const b = document.createElement("button"); b.type = "button"; b.className = "wk-item" + (isSentItem(x) ? " wk-sent" : ""); b.dataset.l = x.lvl;
+    const label = x.item.sentence ? x.item.text : Array.isArray(x.item) ? x.item[0] : (x.item.word ? x.item.sym + " " + x.item.word : x.item.sym);
     b.innerHTML = "<span></span><i class=\"wk-en\"></i><small></small>";
     b.firstChild.textContent = label; b.lastChild.textContent = WEAK_MARK[x.lvl];
-    const wen = Array.isArray(x.item) ? (x.item[1] ? FRIPA.word(x.item[1]) : "") : ((FRIPA.forItem(x.item) || {}).en || "");
+    const wen = x.item.sentence ? "" : Array.isArray(x.item) ? (x.item[1] ? FRIPA.word(x.item[1]) : "") : ((FRIPA.forItem(x.item) || {}).en || "");
     b.querySelector(".wk-en").textContent = wen ? "\u2248 /" + wen + "/" : "";
     b.title = "Play it \u00B7 " + WEAK_NAME[x.lvl];
     b.addEventListener("click", () => { applyItem(x.item); if (!looping) playSequence(); });
-    box.appendChild(b);
+    (isSentItem(x) ? sbox : box).appendChild(b);
   });
 }
 
@@ -1104,7 +1126,8 @@ function makeGroupBtn(items) {
 }
 
 function applyItem(item) {
-  if (Array.isArray(item)) selectVocab(item[0], item[1], item[2]);   // vocab entry
+  if (item.sentence) selectVocab(item.text, "", item.isWord ? "my word" : "my sentence");   // typed in Sentence practice
+  else if (Array.isArray(item)) selectVocab(item[0], item[1], item[2]);   // vocab entry
   else select(item, item._chip || null);
 }
 
@@ -1231,6 +1254,13 @@ weakLoop.addEventListener("click", () => {
   if (looping && groupBtnActive === weakLoop) { stopLoop(); return; }
   const plan = weakPlan(); if (plan.length) startGroupLoop(plan, weakLoop);
 });
+[["weakLoopW", "w"], ["weakLoopS", "s"]].forEach(([id, which]) => {
+  const bt = $(id);
+  bt.addEventListener("click", () => {
+    if (looping && groupBtnActive === bt) { stopLoop(); return; }
+    const plan = weakPlan(which); if (plan.length) startGroupLoop(plan, bt);
+  });
+});
 $("weakClear").addEventListener("click", () => {
   if (!Object.keys(WEAK).length || !confirm("Clear every repeat mark?")) return;
   WEAK = {}; Store.save(WEAK_STORE, WEAK);
@@ -1327,16 +1357,32 @@ refreshWeak();
     playing = new Audio(URL.createObjectURL(blob)); playing.play();
   }
   const fmtDate = ms => new Date(ms).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+  const isOneWord = text => String(text || "").trim().split(/\s+/).length === 1;
+  let svTab = "all"; try { svTab = localStorage.getItem("fr-svtab") || "all"; } catch (e) {}
   async function renderSaved() {
     let all; try { all = await dbAll(); } catch (e) { savedUnavailable(); return; }
     all.sort((a, b) => b.updated - a.updated);
     $("savedCount").textContent = all.length ? "(" + all.length + ")" : "";
     updateSrs(all);
+    Object.keys(WEAK_ITEMS).forEach(k => { if (k[0] === "t") delete WEAK_ITEMS[k]; });
+    all.forEach(r => { WEAK_ITEMS["t:" + r.key] = { sentence: true, text: r.text, isWord: isOneWord(r.text) }; });
+    let gone = false; Object.keys(WEAK).forEach(k => { if (k[0] === "t" && !WEAK_ITEMS[k]) { delete WEAK[k]; gone = true; } });   // the sentence was deleted
+    if (gone) Store.save(WEAK_STORE, WEAK);
+    const nW = all.filter(r => isOneWord(r.text)).length, nS = all.length - nW;
+    const tabs = $("svTabs"); tabs.textContent = "";
+    [["all", "All (" + all.length + ")"], ["sentences", "Sentences (" + nS + ")"], ["words", "Words (" + nW + ")"]].forEach(([k, label]) => {
+      const b = document.createElement("button"); b.type = "button"; b.textContent = label; b.className = svTab === k ? "on" : "";
+      b.onclick = () => { svTab = k; try { localStorage.setItem("fr-svtab", k); } catch (e) {} renderSaved(); };
+      tabs.appendChild(b);
+    });
+    tabs.hidden = !all.length;
+    if (svTab === "sentences") all = all.filter(r => !isOneWord(r.text)); else if (svTab === "words") all = all.filter(r => isOneWord(r.text));
     const box = $("savedList"); box.textContent = "";
-    if (!all.length) { box.innerHTML = '<p class="sv-empty">Nothing yet. Say or record a sentence and it appears here.</p>'; return; }
+    if (!all.length) { box.innerHTML = '<p class="sv-empty">' + (svTab === "words" ? "No single words yet. Type one word in the box above and say or record it." : svTab === "sentences" ? "No sentences yet. Type a sentence in the box above and say or record it." : "Nothing yet. Say or record a sentence and it appears here.") + "</p>"; refreshWeak(); return; }
     for (const r of all) {
       const d = document.createElement("div"); d.className = "sv";
       const t = document.createElement("div"); t.className = "sv-t"; t.lang = "fr"; t.textContent = r.text;
+      const hd = document.createElement("div"); hd.className = "sv-head"; hd.append(t, makeBadge("t:" + r.key, "this sentence"));
       const m = document.createElement("div"); m.className = "sv-m";
       m.textContent = (r.attempts ? r.attempts + " recording" + (r.attempts > 1 ? "s" : "") : "no recording yet")
         + (r.last != null ? " · last " + r.last + "%" : "") + (r.best != null ? " · best " + r.best + "%" : "") + " · " + fmtDate(r.updated);
@@ -1349,8 +1395,9 @@ refreshWeak();
       mk("🎧 Compare", () => { txt.value = r.text; txt.dispatchEvent(new Event("input")); compare(r.text, false); }, "", !r.hasRec);
       mk("🔁 Loop", () => { txt.value = r.text; txt.dispatchEvent(new Event("input")); compare(r.text, true); }, "", !r.hasRec);
       mk("Delete", async () => { if (confirm("Delete this sentence and its recording?")) { try { await dbDel(r.key); } catch (e) {} renderSaved(); } }, "del");
-      d.append(t, m, bt); box.appendChild(d);
+      d.append(hd, m, bt); box.appendChild(d);
     }
+    refreshWeak();
   }
   renderSaved();
   reps.addEventListener("input", () => { $("spRepsOut").textContent = reps.value + "×"; });
