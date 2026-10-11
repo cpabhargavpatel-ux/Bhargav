@@ -68,6 +68,13 @@ CREATE TABLE IF NOT EXISTS docs (
   user_id INTEGER PRIMARY KEY, body TEXT NOT NULL,
   rev INTEGER NOT NULL DEFAULT 0, updated_at TEXT);
 
+/* Everything the French / English / timer pages save, per user: small JSON values (kv) and
+   binary recordings (blobs). Same database file, so the daily backups cover it. */
+CREATE TABLE IF NOT EXISTS kv (
+  user_id INTEGER NOT NULL, k TEXT NOT NULL, v TEXT NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (user_id, k));
+CREATE TABLE IF NOT EXISTS blobs (
+  user_id INTEGER NOT NULL, k TEXT NOT NULL, mime TEXT, data BLOB NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (user_id, k));
+
 /* Append-only log of account events. Goal content is deliberately NOT
    audited — these are personal goals, not shared books. */
 CREATE TABLE IF NOT EXISTS events (
@@ -117,6 +124,15 @@ const q = {
                       ON CONFLICT(user_id) DO UPDATE SET body=excluded.body, rev=excluded.rev, updated_at=excluded.updated_at`),
   addEvent: db.prepare(`INSERT INTO events (ts,username,action,detail,ip) VALUES (?,?,?,?,?)`),
 };
+Object.assign(q, {
+  getKv: db.prepare(`SELECT v, t FROM kv WHERE user_id = ? AND k = ?`),
+  putKv: db.prepare(`INSERT INTO kv (user_id,k,v,t) VALUES (?,?,?,?) ON CONFLICT(user_id,k) DO UPDATE SET v=excluded.v, t=excluded.t`),
+  delKv: db.prepare(`DELETE FROM kv WHERE user_id = ? AND k = ?`),
+  getBlob: db.prepare(`SELECT mime, data FROM blobs WHERE user_id = ? AND k = ?`),
+  putBlob: db.prepare(`INSERT INTO blobs (user_id,k,mime,data,t) VALUES (?,?,?,?,?) ON CONFLICT(user_id,k) DO UPDATE SET mime=excluded.mime, data=excluded.data, t=excluded.t`),
+  delBlob: db.prepare(`DELETE FROM blobs WHERE user_id = ? AND k = ?`),
+  blobBytes: db.prepare(`SELECT COALESCE(SUM(length(data)),0) n FROM blobs WHERE user_id = ? AND k <> ?`),
+});
 const logEvent = (username, action, detail, ip) =>
   q.addEvent.run(new Date().toISOString(), username ?? null, action, detail ?? null, ip ?? null);
 
@@ -141,6 +157,9 @@ const json = (res, code, obj) => { const b = Buffer.from(JSON.stringify(obj));
 const readBody = req => new Promise((resolve, reject) => { let d = "";
   req.on("data", c => { d += c; if (d.length > 5e6) req.destroy(); });          // a goal doc is a few KB; 5MB is generous
   req.on("end", () => { try { resolve(d ? JSON.parse(d) : {}); } catch (e) { reject(e); } }); req.on("error", reject); });
+const readRaw = (req, max) => new Promise((resolve, reject) => { const chunks = []; let n = 0;
+  req.on("data", c => { n += c.length; if (n > max) { reject(Object.assign(new Error("too big"), { tooBig: true })); req.destroy(); return; } chunks.push(c); });
+  req.on("end", () => resolve(Buffer.concat(chunks))); req.on("error", reject); });
 const cookies = req => Object.fromEntries((req.headers.cookie || "").split(";").map(s => s.trim().split("=")).filter(a => a[0]));
 const ipOf = req => (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").toString();
 
@@ -179,7 +198,7 @@ const moduleBar = (active, sub) => MODULE_CSS + (active === "goal" ? "<style>hea
   + `<span class="mt-drop"><a href="/english.html"${active === "english" ? ' class="on"' : ""}>English <i>&#9662;</i></a><span class="mt-menu">`
   + [["Idioms", "/english.html", "idioms"], ["Vocabulary", "/vocabulary.html", "vocabulary"], ["Grammar", "/grammar.html", "grammar"]]
       .map(([t, h, k]) => `<a href="${h}"${active === "english" && sub === k ? ' class="cur" aria-current="page"' : ""}>${t}</a>`).join("")
-  + `</span></span><span id="modbuild">build 10-10-w</span></nav>\n<script src="/timer.js"></script>\n`;
+  + `</span></span><span id="modbuild">build 10-10-x</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n`;
 function withModuleBar(html, active, sub) {
   const m = /<body[^>]*>/i.exec(html);
   return m ? html.slice(0, m.index + m[0].length) + "\n" + moduleBar(active, sub) + html.slice(m.index + m[0].length)
@@ -188,7 +207,7 @@ function withModuleBar(html, active, sub) {
 
 /* pages and assets that need no sign-in (they hold no server data) */
 const ENGLISH_SUB = { "english.html": "idioms", "vocabulary.html": "vocabulary", "grammar.html": "grammar" };
-const PUBLIC_PAGES = new Set(["login.html", "server-shim.js", "french-ipa.html", "timer.js", "study.js", "study.css", "srs.js", ...Object.keys(ENGLISH_SUB)]);
+const PUBLIC_PAGES = new Set(["login.html", "server-shim.js", "timer.js", "store.js", "study.js", "study.css", "srs.js"]);   // assets only; the French / English pages need a sign-in because their data lives in your account
 const SHIM_TAG = `<script src="/server-shim.js"></script>\n`;
 function serveApp(res) {
   const f = join(PUBLIC, "app.html");
@@ -222,7 +241,7 @@ const server = createServer(async (req, res) => {
       const file = join(PUBLIC, rel);
       if (!file.startsWith(PUBLIC + sep) || !existsSync(file) || statSync(file).isDirectory()) { res.writeHead(404).end("Not found"); return; }
       const isFont = rel.startsWith("fonts/") && extname(file) === ".woff2";   // public, cacheable
-      if (rel !== "login.html" && rel !== "server-shim.js" && !PUBLIC_PAGES.has(rel) && !isFont && !u) { res.writeHead(302, { location: "/login.html" }); res.end(); return; }
+      if (rel !== "login.html" && rel !== "server-shim.js" && !PUBLIC_PAGES.has(rel) && !isFont && !u) { res.writeHead(302, { location: "/login.html?next=" + encodeURIComponent("/" + rel) }); res.end(); return; }
       let b = readFileSync(file);
       if (rel === "french-ipa.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "french"));
       if (ENGLISH_SUB[rel]) b = Buffer.from(withModuleBar(b.toString("utf8"), "english", ENGLISH_SUB[rel]));
@@ -299,6 +318,40 @@ const server = createServer(async (req, res) => {
         dailyBackup();
         return json(res, 200, { ok: true, rev: nextRev });
       }
+    }
+
+    /* ---- the signed-in user's study data: small JSON values and recordings ---- */
+    let km;
+    if ((km = /^\/api\/kv\/([A-Za-z0-9_.:-]{1,120})$/.exec(p))) {
+      const key = km[1];
+      if (req.method === "GET") { const r = q.getKv.get(u.id, key); return json(res, 200, r ? { v: JSON.parse(r.v), t: r.t } : { v: null, t: 0 }); }
+      if (req.headers["x-gtn"] !== "1") return json(res, 400, { error: "Bad request." });
+      if (req.method === "PUT") {
+        const b = await readBody(req);
+        if (!("v" in b)) return json(res, 400, { error: "No value." });
+        const t = Date.now(); q.putKv.run(u.id, key, JSON.stringify(b.v), t); dailyBackup();
+        return json(res, 200, { ok: true, t });
+      }
+      if (req.method === "DELETE") { q.delKv.run(u.id, key); return json(res, 200, { ok: true }); }
+    }
+    if ((km = /^\/api\/blob\/([A-Za-z0-9_.:-]{1,120})$/.exec(p))) {
+      const key = km[1];
+      if (req.method === "GET") {
+        const r = q.getBlob.get(u.id, key); if (!r) { res.writeHead(404).end("Not found"); return; }
+        res.writeHead(200, { "content-type": r.mime || "application/octet-stream", "content-length": r.data.length, "cache-control": "private, max-age=3600", "x-content-type-options": "nosniff" });
+        res.end(Buffer.from(r.data)); return;
+      }
+      if (req.headers["x-gtn"] !== "1") return json(res, 400, { error: "Bad request." });
+      if (req.method === "PUT") {
+        let buf; try { buf = await readRaw(req, 8e6); } catch (e) { return json(res, 413, { error: "That recording is too large (8 MB limit)." }); }
+        if (!buf.length) return json(res, 400, { error: "Empty recording." });
+        if (q.blobBytes.get(u.id, key).n + buf.length > 300e6) return json(res, 413, { error: "Your recordings storage is full (300 MB)." });
+        const ct = String(req.headers["content-type"] || "").split(";")[0].trim().toLowerCase();      // "audio/webm;codecs=opus" -> "audio/webm"
+        const mime = /^[a-z0-9.+\/-]{3,60}$/.test(ct) ? ct : "application/octet-stream";
+        q.putBlob.run(u.id, key, mime, buf, Date.now()); dailyBackup();
+        return json(res, 200, { ok: true });
+      }
+      if (req.method === "DELETE") { q.delBlob.run(u.id, key); return json(res, 200, { ok: true }); }
     }
 
     /* ---- administration ---- */

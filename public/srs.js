@@ -179,8 +179,8 @@
       dlg.innerHTML = h; S = null; o.save(); o.refresh(); updateBadge();
       dlg.querySelector("#srsX").onclick = close; dlg.querySelector("#srsDone").onclick = close; dlg.querySelector("#srsAgain").onclick = setup;
     }
-    dlg.addEventListener("keydown", function (e) {
-      if (!S || !S.card) return;
+    document.addEventListener("keydown", function (e) {      // on the document, so the keys still work after the focused button is hidden
+      if (!dlg.open || !S || !S.card) return;
       var typing = e.target && e.target.tagName === "TEXTAREA";
       if (!S.card.revealed) { if (e.key === " " && !typing || (e.key === "Enter" && (e.ctrlKey || e.metaKey || !typing))) { e.preventDefault(); reveal(); } return; }
       if (/^[1-4]$/.test(e.key) && !typing) { e.preventDefault(); grade(+e.key - 1); }

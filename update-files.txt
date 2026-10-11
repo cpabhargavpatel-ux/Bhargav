@@ -1,6 +1,8 @@
 server.mjs
 public/french-ipa.html
 public/english.html
+public/store.js
+public/login.html
 public/srs.js
 public/study.css
 public/study.js

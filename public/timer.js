@@ -20,7 +20,11 @@
   function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
   function nextMidnight(t) { var d = new Date(t); d.setHours(24, 0, 0, 0); return d.getTime(); }
   function state() { return get(KS, { running: false }); }
-  function log() { return get(KL, []); }
+  /* the time log lives in your account (via store.js); this variable is the in-page copy */
+  var logCache = window.Store ? Store.cached("time-log", [], KL) : get(KL, []);
+  if (!Array.isArray(logCache)) logCache = [];
+  function log() { return logCache; }
+  function saveLog(entries) { logCache = entries; if (window.Store) Store.save("time-log", entries); else put(KL, entries); }
 
   /* ---- start / stop ---- */
   function start() {
@@ -28,15 +32,18 @@
     put(KS, { running: true, startedAt: Date.now(), area: area });
     refresh();
   }
-  function stop() {
+  async function stop() {
     var s = state(); if (!s.running) return;
-    var a = s.startedAt, b = Date.now(), entries = log();
+    put(KS, { running: false });                       // stop the clock right away, then record it
+    var a = s.startedAt, b = Date.now();
+    var entries = window.Store ? await Store.load("time-log", logCache, KL) : log();      // the latest log from your account
+    if (!Array.isArray(entries)) entries = [];
     while (ymd(a) !== ymd(b)) {                       // a session that crosses midnight is split, each part on its own day
       var m = nextMidnight(a);
       entries.push(entry(a, m, s.area)); a = m;
     }
     if (b - a >= 1000) entries.push(entry(a, b, s.area));
-    put(KL, entries); put(KS, { running: false });
+    saveLog(entries);
     refresh();
   }
   function entry(a, b, ar) { return { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), day: ymd(a), start: a, end: b, ms: b - a, area: ar || area, note: "" }; }
@@ -129,10 +136,10 @@
     $("gtnClose").onclick = function () { panel.style.display = "none"; };
     $("gtnCsv").onclick = exportCsv;
     panel.querySelectorAll("[data-n]").forEach(function (i) { i.addEventListener("change", function () {
-      var all = log(); all.forEach(function (x) { if (x.id === i.dataset.n) x.note = i.value; }); put(KL, all); }); });
+      var all = log(); all.forEach(function (x) { if (x.id === i.dataset.n) x.note = i.value; }); saveLog(all); }); });
     panel.querySelectorAll("[data-x]").forEach(function (b) { b.onclick = function () {
       if (!confirm("Delete this time entry?")) return;
-      put(KL, log().filter(function (x) { return x.id !== b.dataset.x; })); renderPanel(); refresh(); }; });
+      saveLog(log().filter(function (x) { return x.id !== b.dataset.x; })); renderPanel(); refresh(); }; });
   }
   function exportCsv() {
     var rows = ["date,start,end,net_seconds,net_time,area,note"];
@@ -144,6 +151,10 @@
     a.download = "time-log-" + ymd(Date.now()) + ".csv"; panel.appendChild(a); a.click(); a.remove();   // inside the panel, so the outside-click handler leaves it open
   }
 
-  window.addEventListener("storage", function (e) { if (e.key === KS || e.key === KL) refresh(); });   // another tab started/stopped it
+  window.addEventListener("storage", function (e) {
+    if (e.key === "gtn-store:time-log" && window.Store) logCache = Store.cached("time-log", [], KL);
+    if (e.key === KS || e.key === KL || e.key === "gtn-store:time-log") refresh();
+  });
+  if (window.Store) Store.load("time-log", logCache, KL).then(function (v) { logCache = Array.isArray(v) ? v : []; refresh(); });   // pull the log from your account   // another tab started/stopped it
   refresh(); setInterval(refresh, 1000);
 })();

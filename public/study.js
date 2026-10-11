@@ -1,6 +1,6 @@
 /* Shared engine for the English study pages (Vocabulary, Grammar): editable cards with a hard (repeat) marker,
    a usage marker, search / filter / sort, a weighted "practise hard ones" loop, import / export.
-   Data lives in this browser (localStorage). Each page passes a config; see vocabulary.html and grammar.html. */
+   Data is saved to your account on the server (see store.js). Each page passes a config; see vocabulary.html and grammar.html. */
 (function () {
   "use strict";
   var NAV = [["Idioms", "/english.html", "idioms"], ["Vocabulary", "/vocabulary.html", "vocabulary"], ["Grammar", "/grammar.html", "grammar"]];
@@ -16,7 +16,8 @@
     var USE_TIP = cfg.useTip || "How often people use it (my guess)";
     var items = [], filter = "all", playing = false, playToken = 0;
     var review = null;
-    try { items = JSON.parse(localStorage.getItem(cfg.key) || "[]") || []; } catch (e) { items = []; }
+    items = Store.cached(cfg.key, [], cfg.key);                 // instant first paint from this browser; the account copy loads right after
+    if (!Array.isArray(items)) items = [];
 
     /* ---------- page skeleton ---------- */
     var root = $("app");
@@ -43,7 +44,7 @@
       '<p id="impMsg" style="margin:10px 0 0"></p></dialog>';
     document.title = cfg.title;
 
-    var save = function () { try { localStorage.setItem(cfg.key, JSON.stringify(items)); } catch (e) { $("status").textContent = "Couldn't save in this browser (private window?)."; } };
+    var save = function () { Store.save(cfg.key, items); };
     function mk(obj, extra) {
       var it = { id: uid(), hard: 0, use: 0, added: Date.now(), orig: null };
       fields.forEach(function (f) { it[f.k] = ""; }); if (cfg.pos) it.pos = "";
@@ -254,6 +255,10 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(growAll);
     new MutationObserver(growAll).observe(document.documentElement, { attributes: true, attributeFilter: ["style"] });
     render();
+    Store.load(cfg.key, [], cfg.key).then(function (v) {          // the copy in your account is the real one
+      v = Array.isArray(v) ? v : [];
+      if (JSON.stringify(v) !== JSON.stringify(items)) { items = v; render(); }
+    });
 
     /* ---------- spaced-repetition flashcards ---------- */
     review = SRS.attach({

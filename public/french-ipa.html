@@ -510,6 +510,7 @@
   </div>
 </div>
 
+<script src="/store.js"></script>
 <script>
 const DATA = [
   { title: "The alphabet — letter names", items: [
@@ -609,13 +610,13 @@ function markWord(word, hit) {
 
 /* ---------- Weak spots: a repeat mark (↻) you set per sound or word; weakest gets repeated most ---------- */
 const WEAK_STORE = "fr-weak", WEAK_ITEMS = {};
-let WEAK = {};
-try { WEAK = JSON.parse(localStorage.getItem(WEAK_STORE) || "{}") || {}; } catch (e) { WEAK = {}; }
+let WEAK = Store.cached(WEAK_STORE, {}, WEAK_STORE) || {};            // instant from this browser; your account copy loads next
+Store.load(WEAK_STORE, {}, WEAK_STORE).then(v => { v = v || {}; if (JSON.stringify(v) !== JSON.stringify(WEAK)) { WEAK = v; refreshWeak(); } });
 const WEAK_MARK = ["\u21BB", "\u21BB", "\u21BB\u21BB", "\u21BB\u21BB\u21BB"];
 const WEAK_NAME = ["not marked", "weak", "weaker", "weakest \u2014 repeated most"];
 function setWeak(key, lvl) {
   if (lvl) WEAK[key] = lvl; else delete WEAK[key];
-  try { localStorage.setItem(WEAK_STORE, JSON.stringify(WEAK)); } catch (e) {}
+  Store.save(WEAK_STORE, WEAK);
   refreshWeak();
 }
 function makeBadge(key, what) {
@@ -1189,7 +1190,7 @@ weakLoop.addEventListener("click", () => {
 });
 $("weakClear").addEventListener("click", () => {
   if (!Object.keys(WEAK).length || !confirm("Clear every repeat mark?")) return;
-  WEAK = {}; try { localStorage.setItem(WEAK_STORE, "{}"); } catch (e) {}
+  WEAK = {}; Store.save(WEAK_STORE, WEAK);
   refreshWeak();
 });
 refreshWeak();
@@ -1213,26 +1214,46 @@ refreshWeak();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(grow);
   new MutationObserver(grow).observe(document.documentElement, { attributes: true, attributeFilter: ["style"] });   // text-size control
 
-  /* --- saved sentences (this browser, IndexedDB): text + latest recording + scores --- */
+  /* --- saved sentences (in your account): text + latest recording + scores --- */
   const keyOf = t => t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[’']/g, " ")
     .split(/[^a-z0-9]+/).filter(Boolean).join(" ");
-  let dbp = null;
-  const db = () => dbp || (dbp = new Promise((res, rej) => {
-    try {
-      const r = indexedDB.open("fr-ipa-trainer", 1);
-      r.onupgradeneeded = () => r.result.createObjectStore("sentences", { keyPath: "key" });
-      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
-    } catch (e) { rej(e); }
-  }));
-  const tx = async (mode, fn) => {
-    const d = await db();
-    return new Promise((res, rej) => {
-      const t = d.transaction("sentences", mode), rq = fn(t.objectStore("sentences"));
-      t.oncomplete = () => res(rq && rq.result); t.onerror = () => rej(t.error);
+  /* The sentence list + review schedule is one JSON value in your account; each latest recording is its own file. */
+  let SENT = Store.cached("fr-sentences", {}, null) || {};
+  const h36 = s => { let a = 2166136261, b = 5381; for (const c of s) { const k = c.codePointAt(0); a ^= k; a = Math.imul(a, 16777619); b = (Math.imul(b, 33) ^ k) | 0; } return (a >>> 0).toString(36) + (b >>> 0).toString(36); };
+  const recId = key => "fr-rec-" + h36(key), recCache = {};
+  async function idbAll() {        // the old browser-only storage: read once so nothing you already saved is lost
+    return new Promise(res => {
+      try {
+        const r = indexedDB.open("fr-ipa-trainer", 1);
+        r.onupgradeneeded = () => { try { r.transaction.abort(); } catch (e) {} res([]); };   // it never existed: don't create it
+        r.onsuccess = () => { try { const rq = r.result.transaction("sentences", "readonly").objectStore("sentences").getAll(); rq.onsuccess = () => res(rq.result || []); rq.onerror = () => res([]); } catch (e) { res([]); } };
+        r.onerror = () => res([]);
+      } catch (e) { res([]); }
     });
+  }
+  async function migrateIdb() {
+    try { if (localStorage.getItem("fr-idb-migrated")) return; } catch (e) { return; }
+    const old = await idbAll(); let ok = true, changed = false;
+    for (const r of old) {
+      if (!r || !r.key || SENT[r.key]) continue;
+      const { blob, ...meta } = r;
+      if (blob) { if (await Store.putBlob(recId(r.key), blob)) meta.hasRec = true; else { ok = false; continue; } }
+      SENT[r.key] = meta; changed = true;
+    }
+    if (changed) Store.save("fr-sentences", SENT);
+    if (ok) try { localStorage.setItem("fr-idb-migrated", "1"); } catch (e) {}
+  }
+  const sentReady = (async () => { SENT = (await Store.load("fr-sentences", {}, null)) || {}; await migrateIdb(); })();
+  const dbAll = async () => { await sentReady; return Object.values(SENT).map(r => Object.assign({}, r)); };
+  const dbGet = async k => { await sentReady; return SENT[k] ? Object.assign({}, SENT[k]) : undefined; };
+  const dbPut = async r => {
+    await sentReady; const { blob, ...meta } = r;
+    if (blob) { recCache[r.key] = blob; meta.hasRec = true; Store.putBlob(recId(r.key), blob); }
+    else meta.hasRec = !!(SENT[r.key] && SENT[r.key].hasRec);
+    SENT[r.key] = meta; Store.save("fr-sentences", SENT);
   };
-  const dbAll = () => tx("readonly", s => s.getAll()), dbGet = k => tx("readonly", s => s.get(k)),
-        dbPut = r => tx("readwrite", s => s.put(r)), dbDel = k => tx("readwrite", s => s.delete(k));
+  const dbDel = async k => { await sentReady; delete SENT[k]; delete recCache[k]; Store.save("fr-sentences", SENT); Store.delBlob(recId(k)); };
+  async function getRec(key) { if (recCache[key]) return recCache[key]; const b = await Store.getBlob(recId(key)); if (b) recCache[key] = b; return b; }
   const fresh = (key, text) => ({ key, text, created: Date.now(), updated: Date.now(), attempts: 0, best: null, last: null, blob: null, mime: "",
     ease: 2.5, interval: 0, reps: 0, lapses: 0, due: Date.now() });   // spaced repetition: new sentences are due straight away
 
@@ -1253,7 +1274,7 @@ refreshWeak();
     } catch (e) { savedUnavailable(); }
   }
   function savedUnavailable() {
-    $("savedList").innerHTML = '<p class="sv-empty">Saving isn’t available in this browser mode (private window?). Practice still works.</p>';
+    $("savedList").innerHTML = '<p class="sv-empty">Couldn’t reach your saved sentences. Practice still works.</p>';
   }
 
   let playing = null;
@@ -1281,7 +1302,7 @@ refreshWeak();
       const mk = (label, fn, cls, dis) => { const b = document.createElement("button"); b.textContent = label; if (cls) b.className = cls; b.disabled = !!dis; b.onclick = fn; bt.appendChild(b); };
       mk("Practise", () => { txt.value = r.text; txt.dispatchEvent(new Event("input")); txt.focus(); });
       mk("▶ Model", () => { tok++; setBusy(false); speakOnce(r.text); });
-      mk("▶ My recording", () => playBlob(r.blob), "", !r.blob);
+      mk("▶ My recording", async () => { const b = await getRec(r.key); if (b) playBlob(b); }, "", !r.hasRec);
       mk("Delete", async () => { if (confirm("Delete this sentence and its recording?")) { try { await dbDel(r.key); } catch (e) {} renderSaved(); } }, "del");
       d.append(t, m, bt); box.appendChild(d);
     }

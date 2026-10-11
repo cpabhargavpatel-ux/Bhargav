@@ -145,6 +145,7 @@
   <p id="impMsg" style="margin:10px 0 0"></p>
 </dialog>
 
+<script src="/store.js"></script>
 <script src="/srs.js"></script>
 <script>
 "use strict";
@@ -208,10 +209,10 @@ const STARTER = [
 ];
 
 let items = [], filter = "all", playing = false, playToken = 0;
-try { items = JSON.parse(localStorage.getItem(KEY) || "[]") || []; } catch (e) { items = []; }
+items = Store.cached(KEY, [], KEY); if (!Array.isArray(items)) items = [];        // instant first paint; the account copy loads right after
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const norm = s => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-function save() { try { localStorage.setItem(KEY, JSON.stringify(items)); } catch (e) { $("status").textContent = "Couldn't save in this browser (private window?)."; } }
+function save() { Store.save(KEY, items); }
 function mk(idiom, meaning, example, extra) {
   return Object.assign({ id: uid(), idiom, meaning: meaning || "", example: example || "", hard: 0, use: 0, added: Date.now(), orig: null }, extra || {});
 }
@@ -404,6 +405,7 @@ addEventListener("resize", () => document.querySelectorAll(".card textarea").for
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => document.querySelectorAll(".card textarea").forEach(grow));
 new MutationObserver(() => document.querySelectorAll(".card textarea").forEach(grow)).observe(document.documentElement, { attributes: true, attributeFilter: ["style"] });
 render();
+Store.load(KEY, [], KEY).then(v => { v = Array.isArray(v) ? v : []; if (JSON.stringify(v) !== JSON.stringify(items)) { items = v; render(); } });   // the account copy is the real one
 
 /* ---------- spaced-repetition flashcards ---------- */
 window.__review = SRS.attach({

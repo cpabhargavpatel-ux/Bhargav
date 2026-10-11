@@ -91,7 +91,8 @@ async function go(){
       body: JSON.stringify({ username, password, remember: $("#rem").checked }) });
     const j2 = await r2.json();
     if (!r2.ok){ msg(j2.error || "Sign-in failed.", "err"); return; }
-    location.href = "/";
+    const nx = new URLSearchParams(location.search).get("next");        // come back to the page you asked for
+    location.href = nx && nx[0] === "/" && nx[1] !== "/" && !nx.startsWith("/login") ? nx : "/";
   }catch(e){ msg("Could not reach the server.", "err"); }
   finally{ $("#go").disabled = false; }
 }
