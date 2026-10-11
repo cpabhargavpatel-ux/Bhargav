@@ -314,6 +314,16 @@
   .srs-sum b { color: var(--blue); }
   .sv-due { font-weight: 600; }
   .sv-due.now { color: #C62828; }
+  /* ---------- English IPA equivalents (the nearest English sounds) ---------- */
+  .chip { flex-wrap: wrap; }
+  .chip .en { flex-basis: 100%; font-family: var(--sans); font-size: 0.78rem; color: #8a5a00; margin-top: 2px; }
+  .chip .en b { font-family: var(--serif); font-weight: 400; font-size: 0.95rem; }
+  .current-en { color: #8a5a00; font-size: 0.9rem; margin-top: 3px; }
+  .current-en b { font-family: var(--serif); font-weight: 400; font-size: 1.05rem; }
+  .vrow .ven { color: #8a5a00; font-family: var(--serif); font-size: 0.95rem; margin-left: 8px; }
+  .wk-item .wk-en { font: 400 0.8rem var(--serif); color: #8a5a00; }
+  .enlab { display: inline-flex; align-items: center; gap: 6px; margin-left: 14px; color: #8a5a00; font-size: 0.88rem; cursor: pointer; }
+  body.no-en .en, body.no-en .ven, body.no-en .current-en, body.no-en .wk-en { display: none !important; }
   /* ---------- Weak-spot marks (repeat sign) ---------- */
   .chipwrap, .vwrap { position: relative; }
   .chipwrap { display: flex; }
@@ -383,6 +393,7 @@
       <div class="current-info">
         <div class="current-word" id="bigWord"></div>
         <div class="current-hint" id="bigHint"></div>
+        <div class="current-en" id="bigEn"></div>
         <div class="status" id="status"></div>
       </div>
     </div>
@@ -412,6 +423,7 @@
     <div class="voice-row">
       <label for="voiceSel">Voice</label>
       <select id="voiceSel"></select>
+      <label class="enlab" title="Show the closest English IPA next to every French IPA"><input type="checkbox" id="enToggle" checked> English IPA ≈</label>
     </div>
     <div class="warn" id="warn">No French voice found on this device — playback will use the default voice, which may sound wrong. On iPhone: Settings → Accessibility → Spoken Content → Voices → French.</div>
   </div>
@@ -511,6 +523,7 @@
 </div>
 
 <script src="/store.js"></script>
+<script src="/fr-en-ipa.js"></script>
 <script>
 const DATA = [
   { title: "The alphabet — letter names", items: [
@@ -656,13 +669,32 @@ function refreshWeak() {
   list.forEach(x => {
     const b = document.createElement("button"); b.type = "button"; b.className = "wk-item"; b.dataset.l = x.lvl;
     const label = Array.isArray(x.item) ? x.item[0] : (x.item.word ? x.item.sym + " " + x.item.word : x.item.sym);
-    b.innerHTML = "<span></span><small></small>";
+    b.innerHTML = "<span></span><i class=\"wk-en\"></i><small></small>";
     b.firstChild.textContent = label; b.lastChild.textContent = WEAK_MARK[x.lvl];
+    const wen = Array.isArray(x.item) ? (x.item[1] ? FRIPA.word(x.item[1]) : "") : ((FRIPA.forItem(x.item) || {}).en || "");
+    b.querySelector(".wk-en").textContent = wen ? "\u2248 /" + wen + "/" : "";
     b.title = "Play it \u00B7 " + WEAK_NAME[x.lvl];
     b.addEventListener("click", () => { applyItem(x.item); if (!looping) playSequence(); });
     box.appendChild(b);
   });
 }
+
+/* ---------- English IPA: the nearest English sound for each French one ---------- */
+const enSlash = s => "/" + s + "/";
+function enChip(item) {                   // the small amber line on each sound / letter chip
+  const e = FRIPA.forItem(item); if (!e || !e.en) return "";
+  return '<span class="en" title="Closest English IPA' + (e.ex ? ": as in \u201C" + e.ex + "\u201D" : "") + (e.note ? ". " + e.note : "") + '">\u2248 <b>' + enSlash(e.en) + "</b>" + (e.ex ? " " + e.ex : "") + "</span>";
+}
+function enLine(item) {                   // the line under the big sound in the player
+  const e = FRIPA.forItem(item); if (!e || !e.en) return "";
+  return "\u2248 English <b>" + enSlash(e.en) + "</b>" + (e.ex ? " \u2014 as in \u201C" + e.ex + "\u201D" : "") + (e.note ? ". " + e.note : "");
+}
+const enToggle = $("enToggle");
+try { if (localStorage.getItem("fr-showen") === "0") { enToggle.checked = false; document.body.classList.add("no-en"); } } catch (e) {}
+enToggle.addEventListener("change", () => {
+  document.body.classList.toggle("no-en", !enToggle.checked);
+  try { localStorage.setItem("fr-showen", enToggle.checked ? "1" : "0"); } catch (e) {}
+});
 
 /* ---------- Build the phoneme grids ---------- */
 const sections = $("sections");
@@ -678,7 +710,7 @@ DATA.forEach(group => {
   group.items.forEach(item => {
     const b = document.createElement("button");
     b.className = "chip";
-    b.innerHTML = '<span class="sym">' + item.sym + '</span><span class="word">' + markWord(item.word, item.hit) + "</span>";
+    b.innerHTML = '<span class="sym">' + item.sym + '</span><span class="word">' + markWord(item.word, item.hit) + "</span>" + enChip(item);
     b.addEventListener("click", () => {
       select(item, b);
       if (!looping) playSequence();   // while looping, the loop picks up the new word
@@ -704,6 +736,7 @@ function select(item, chipEl) {
   bigSym.classList.remove("longsym");
   bigWord.innerHTML = markWord(item.word, item.hit);
   bigHint.textContent = item.hint;
+  $("bigEn").innerHTML = enLine(item);
 }
 
 /* ---------- Voices ---------- */
@@ -1135,7 +1168,7 @@ function vRender(reset) {
     b.innerHTML =
       '<span class="rank">' + rank + '</span>' +
       '<span><span class="vw">' + esc(w) + '</span>' +
-      (ipa ? '<span class="vipa">/' + esc(ipa) + '/</span>' : '') + '</span>' +
+      (ipa ? '<span class="vipa">/' + esc(ipa) + '/</span><span class="ven" title="Closest English IPA">\u2248 /' + esc(FRIPA.word(ipa)) + '/</span>' : '') + '</span>' +
       '<span class="vm">' + esc(m) + '</span>';
     b.addEventListener("click", () => {
       selectVocab(w, ipa, m);
@@ -1159,6 +1192,7 @@ function selectVocab(w, ipa, m) {
   bigSym.classList.add("longsym");
   bigWord.textContent = w;
   bigHint.textContent = m;
+  $("bigEn").innerHTML = ipa ? "\u2248 English <b>" + enSlash(FRIPA.word(ipa)) + "</b>" : "";
 }
 
 let vTimer;
