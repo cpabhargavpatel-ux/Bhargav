@@ -86,7 +86,8 @@
   #quoteBar{background:linear-gradient(90deg,#0d2446,#17406e);color:#ffd9a0;padding:7px 22px;
     display:flex;align-items:center;gap:10px;flex-wrap:wrap;
     font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:14.5px;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 3px 10px rgba(8,22,40,.25)}
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 3px 10px rgba(8,22,40,.25);
+    position:sticky;top:0;z-index:19}   /* frozen under the header: only the content below the quote scrolls */
   #quoteBar .qa{color:#9fb4cc;font-size:12.5px;font-style:normal;flex:none}
   #quoteBar button{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;
     border-radius:6px;font-size:11.5px;padding:2px 9px;cursor:pointer;flex:none;font-style:normal;font-family:"Segoe UI",system-ui,sans-serif}
@@ -2733,6 +2734,17 @@ if (window.GTN_REMOTE){
   render();
   initQuotes();
 }
+</script>
+<script>
+/* keep the quote bar frozen directly under the header, whatever height the header has (it wraps on narrow windows) */
+(function () {
+  var h = document.querySelector("header"), q = document.getElementById("quoteBar");
+  if (!h || !q) return;
+  function place() { var top = parseFloat(getComputedStyle(h).top) || 0; q.style.top = (top + h.getBoundingClientRect().height) + "px"; }
+  place(); window.addEventListener("resize", place); window.addEventListener("load", place);
+  if (window.ResizeObserver) new ResizeObserver(place).observe(h);
+  setInterval(place, 1500);   // cheap safety net: the header changes height when tabs are added or renamed
+})();
 </script>
 </body>
 </html>
