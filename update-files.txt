@@ -13,6 +13,7 @@ public/irregular-verbs.html
 public/vocabulary.html
 public/app.html
 public/timer.js
+public/reminders.js
 public/fonts/gentium-book-plus-400.woff2
 public/fonts/gentium-book-plus-400-italic.woff2
 public/fonts/gentium-book-plus-700.woff2
