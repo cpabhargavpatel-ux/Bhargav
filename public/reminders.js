@@ -1,5 +1,5 @@
 /* Daily reminders. A bell in the top bar shows how many are waiting today; when you open the app the reminders
-   flash at the top right (once each time you open the app) and stay until you tick or hide them. Everything is saved to your account via store.js.
+   flash in big text at the top centre (once each time you open the app) and stay until you tick or hide them. Everything is saved to your account via store.js.
    Data: Store key "reminders" = { showOnOpen: true, items: [ { id, text, repeat, days, date, star, done: {"YYYY-MM-DD": 1}, added } ] }
    repeat: "daily" | "weekdays" | "weekly" (days = [0-6], Sun = 0) | "once" (date = "YYYY-MM-DD") */
 (function () {
@@ -56,16 +56,16 @@
     "#gtnBell{align-self:center;margin-left:10px;display:inline-flex;align-items:center;gap:6px;background:#2a3a66;color:#fff;border:0;border-radius:8px;padding:4px 10px;font:600 12px system-ui,sans-serif;cursor:pointer}" +
     "#gtnBell:hover{background:#3a4d86}#gtnBell b{background:#e0662b;color:#fff;border-radius:999px;padding:0 7px;font-size:11px;line-height:17px}" +
     "#gtnBell.none b{display:none}" +
-    "#gtnFlash{position:fixed;top:48px;right:14px;z-index:999;width:min(380px,calc(100vw - 28px));display:flex;flex-direction:column;gap:8px;font:400 15px/1.4 system-ui,-apple-system,'Segoe UI',sans-serif}" +
+    "#gtnFlash{position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:999;width:min(720px,calc(100vw - 28px));display:flex;flex-direction:column;gap:8px;font:400 15px/1.4 system-ui,-apple-system,'Segoe UI',sans-serif}" +
     "#gtnFlash[hidden]{display:none}" +
-    "#gtnFlash .fh{display:flex;align-items:center;gap:8px;color:#fff;background:rgba(16,24,43,.92);border-radius:10px;padding:6px 8px 6px 12px;font-weight:700;font-size:.85rem;box-shadow:0 6px 18px rgba(8,14,30,.35)}" +
-    "#gtnFlash .fh span{flex:1}#gtnFlash .fh button{background:rgba(255,255,255,.14);color:#fff;border:0;border-radius:6px;padding:3px 9px;font:600 .78rem system-ui,sans-serif;cursor:pointer}#gtnFlash .fh button:hover{background:rgba(255,255,255,.28)}" +
-    "#gtnFlash .fc{display:flex;align-items:center;gap:10px;background:#fff7e6;color:#3b2500;border:2px solid #f0a020;border-radius:12px;padding:10px 10px 10px 14px;box-shadow:0 8px 22px rgba(8,14,30,.35);animation:gtnflash 1.2s ease-in-out infinite}" +
+    "#gtnFlash .fh{display:flex;align-items:center;gap:8px;color:#fff;background:rgba(16,24,43,.92);border-radius:10px;padding:8px 10px 8px 16px;font-weight:700;font-size:1.05rem;box-shadow:0 6px 18px rgba(8,14,30,.35)}" +
+    "#gtnFlash .fh span{flex:1}#gtnFlash .fh button{background:rgba(255,255,255,.14);color:#fff;border:0;border-radius:8px;padding:5px 12px;font:600 .95rem system-ui,sans-serif;cursor:pointer}#gtnFlash .fh button:hover{background:rgba(255,255,255,.28)}" +
+    "#gtnFlash .fc{display:flex;align-items:center;gap:16px;background:#fff7e6;color:#3b2500;border:3px solid #f0a020;border-radius:16px;padding:16px 16px 16px 20px;box-shadow:0 8px 22px rgba(8,14,30,.35);animation:gtnflash 1.2s ease-in-out infinite}" +
     "#gtnFlash .fc.star{background:#ffeede;border-color:#e0501b}" +
     "#gtnFlash.calm .fc{animation:none}" +
-    "#gtnFlash .fc .t{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:600}#gtnFlash .fc .t i{font-style:normal;color:#c4570f;margin-right:4px}" +
-    "#gtnFlash .fc button{flex:none;border:1px solid #b87200;background:#fff;color:#6a4200;border-radius:8px;padding:4px 10px;font:700 .8rem system-ui,sans-serif;cursor:pointer}#gtnFlash .fc button:hover{background:#ffe9bf}#gtnFlash .fc button.nx{border-color:transparent;background:transparent;padding:4px 7px;color:#8a6a2a}" +
-    "@keyframes gtnflash{0%,100%{background:#fff7e6;box-shadow:0 8px 22px rgba(8,14,30,.35),0 0 0 0 rgba(240,160,32,.0)}50%{background:#ffd98a;box-shadow:0 8px 22px rgba(8,14,30,.35),0 0 0 6px rgba(240,160,32,.45)}}" +
+    "#gtnFlash .fc .t{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:800;font-size:clamp(1.6rem,4.2vw,2.4rem);line-height:1.2}#gtnFlash .fc .t i{font-style:normal;color:#c4570f;margin-right:4px}" +
+    "#gtnFlash .fc button{flex:none;border:1px solid #b87200;background:#fff;color:#6a4200;border-radius:10px;padding:10px 16px;font:700 1.05rem system-ui,sans-serif;cursor:pointer}#gtnFlash .fc button:hover{background:#ffe9bf}#gtnFlash .fc button.nx{border-color:transparent;background:transparent;padding:8px 12px;font-size:1.3rem;color:#8a6a2a}" +
+    "@keyframes gtnflash{0%,100%{background:#fff7e6;box-shadow:0 8px 22px rgba(8,14,30,.35),0 0 0 0 rgba(240,160,32,.0)}50%{background:#ffd98a;box-shadow:0 8px 22px rgba(8,14,30,.35),0 0 0 9px rgba(240,160,32,.5)}}" +
     "@media (prefers-reduced-motion:reduce){#gtnFlash .fc{animation:none}}" +
     "dialog.gtnrem{--bg:#fff;--ink:#16202e;--mute:#667085;--line:#e1e6ee;--soft:#f3f6fb;--acc:#2540d9;--accink:#fff;--star:#c4570f;--ok:#1b8a4f;" +
     "border:0;border-radius:16px;padding:0;width:min(560px,94vw);max-height:88vh;margin:auto;background:var(--bg);color:var(--ink);box-shadow:0 24px 70px rgba(10,20,40,.45);font:400 15px/1.45 system-ui,-apple-system,'Segoe UI',sans-serif;overflow:hidden}" +
@@ -214,7 +214,7 @@
 
   /* ---------- the flashing reminders shown when the app is opened (instead of the whole window) ---------- */
   var flash = document.createElement("div"); flash.id = "gtnFlash"; flash.hidden = true; flash.setAttribute("role", "alert"); document.body.appendChild(flash);
-  var hiddenIds = {}, flashOn = false, calmTimer = 0, MAXF = 5;
+  var hiddenIds = {}, flashOn = false, calmTimer = 0, MAXF = 4;
   function paintFlash() {
     if (!flashOn) return;
     var day = ymd(), list = pending(day).filter(function (it) { return !hiddenIds[it.id]; });
