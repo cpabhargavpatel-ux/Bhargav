@@ -13,11 +13,7 @@
 <script src="/store.js"></script>
 <script src="/srs.js"></script>
 <script src="/study.js"></script>
-<script src="/irregular-verbs.js"></script>
 <script>
-/* "be \u2013 was / were \u2013 been" is read aloud as "be, was or were, been" */
-function say(n) { return String(n || "").replace(/ \u2013 /g, ", ").replace(/ \/ /g, " or "); }
-function verbForms(i) { var p = String(i.name || "").split(" \u2013 "); return p.length === 3 ? p : null; }
 StudyPage({
   key: "en-grammar", sub: "grammar", title: "Grammar", noun: "topic",
   commonLabel: "Comes up often", useSort: "Comes up most first", useLegend: "how often this comes up for me or for most learners (1\u20133 stars).",
@@ -29,21 +25,20 @@ StudyPage({
     { k: "mistake", label: "Common mistake", ph: "A mistake to avoid\u2026", cls: "mistake" }
   ],
   modes: [
-    { label: "topic + example", parts: function (i) { return [say(i.name), i.example]; } },
-    { label: "topic only", parts: function (i) { return [say(i.name)]; } },
-    { label: "topic + rule + example", parts: function (i) { return [say(i.name), i.meaning, i.example]; } }
+    { label: "topic + example", parts: function (i) { return [i.name, i.example]; } },
+    { label: "topic only", parts: function (i) { return [i.name]; } },
+    { label: "topic + rule + example", parts: function (i) { return [i.name, i.meaning, i.example]; } }
   ],
   review: [
     { label: "Topic \u2192 rule", can: function (i) { return !!i.meaning; },
       ask: function (i) { return { prompt: "Explain this grammar point", q: i.name, spoken: i.name, target: i.meaning, a: [["Rule", i.meaning], ["Example", i.example], ["Common mistake", i.mistake]] }; } },
-    { label: "Irregular verb: past + participle", can: function (i) { return !!verbForms(i); },
-      ask: function (i) { var f = verbForms(i); return { prompt: "Give the past simple and the past participle", q: f[0], spoken: f[0], target: f[1] + ", " + f[2], a: [["Past simple", f[1]], ["Past participle", f[2]], ["Note", i.meaning]] }; } },
     { label: "Spot the mistake", can: function (i) { return !!i.mistake; },
       ask: function (i) { return { prompt: "What is wrong here, and how do you fix it?", q: i.mistake, spoken: "", target: i.meaning, a: [["Topic", i.name], ["Rule", i.meaning], ["Example", i.example]] }; } },
     { label: "Rule \u2192 topic", can: function (i) { return !!i.meaning; },
       ask: function (i) { return { prompt: "Which grammar point is this?", q: i.meaning, spoken: i.meaning, target: i.name, a: [["Topic", i.name], ["Example", i.example]] }; } }
   ],
-  packs: [{ label: "Irregular verbs (" + window.IRREGULAR_VERBS.length + ")", title: "Add the list of irregular verbs: base \u2013 past \u2013 participle. The 30 most common are starred.", noun: "irregular verbs", rows: window.IRREGULAR_VERBS }],
+  /* the irregular verbs used to be added here; they now have their own tab, so remove the untouched copies */
+  prune: function (i) { return /^Irregular verb \(/.test(i.meaning || "") && String(i.name || "").split(" \u2013 ").length === 3 && !i.example && !i.mistake; },
   importHint: "topic | rule | example | common mistake", importOrder: ["name", "meaning", "example", "mistake"],
   starterKeys: ["name", "meaning", "example", "mistake"],
   starter: [

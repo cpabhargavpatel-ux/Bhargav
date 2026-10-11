@@ -196,9 +196,9 @@ const moduleBar = (active, sub) => MODULE_CSS + (active === "goal" ? "<style>hea
   + `<a href="/"${active === "goal" ? ' class="on"' : ""}>Goal Setting</a>`
   + `<a href="/french-ipa.html"${active === "french" ? ' class="on"' : ""}>French</a>`
   + `<span class="mt-drop"><a href="/english.html"${active === "english" ? ' class="on"' : ""}>English <i>&#9662;</i></a><span class="mt-menu">`
-  + [["Idioms", "/english.html", "idioms"], ["Vocabulary", "/vocabulary.html", "vocabulary"], ["Grammar", "/grammar.html", "grammar"]]
+  + [["Idioms", "/english.html", "idioms"], ["Vocabulary", "/vocabulary.html", "vocabulary"], ["Grammar", "/grammar.html", "grammar"], ["Irregular verbs", "/irregular-verbs.html", "verbs"]]
       .map(([t, h, k]) => `<a href="${h}"${active === "english" && sub === k ? ' class="cur" aria-current="page"' : ""}>${t}</a>`).join("")
-  + `</span></span><span id="modbuild">build 10-11-a</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n`;
+  + `</span></span><span id="modbuild">build 10-11-b</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n`;
 function withModuleBar(html, active, sub) {
   const m = /<body[^>]*>/i.exec(html);
   return m ? html.slice(0, m.index + m[0].length) + "\n" + moduleBar(active, sub) + html.slice(m.index + m[0].length)
@@ -206,7 +206,7 @@ function withModuleBar(html, active, sub) {
 }
 
 /* pages and assets that need no sign-in (they hold no server data) */
-const ENGLISH_SUB = { "english.html": "idioms", "vocabulary.html": "vocabulary", "grammar.html": "grammar" };
+const ENGLISH_SUB = { "english.html": "idioms", "vocabulary.html": "vocabulary", "grammar.html": "grammar", "irregular-verbs.html": "verbs" };
 const PUBLIC_PAGES = new Set(["login.html", "server-shim.js", "timer.js", "store.js", "fr-en-ipa.js", "study.js", "study.css", "srs.js"]);   // assets only; the French / English pages need a sign-in because their data lives in your account
 const SHIM_TAG = `<script src="/server-shim.js"></script>\n`;
 function serveApp(res) {

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Irregular verbs</title>
+<script>try{var p=parseInt(localStorage.getItem("en-fontsize"));if(p>=80&&p<=180)document.documentElement.style.fontSize=p+"%"}catch(e){}</script>
+<style>
+  :root {
+    --bg: #f4f7f6; --card: #ffffff; --ink: #14272b; --mute: #5d7378; --line: #d5e0de; --head: #e6efed;
+    --accent: #0b7a75; --accent-ink: #ffffff; --accent-soft: #dff1ef;
+    --warn: #b4540a; --warn-soft: #fdebd9; --star: #c78500;
+    --t-same: #5b4bb5; --t-same-bg: #ebe8f9;
+    --t-past: #0b6b9a; --t-past-bg: #def0fa;
+    --t-base: #8a5a00; --t-base-bg: #fbefd2;
+    --t-diff: #a1304d; --t-diff-bg: #fbe3e9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1b1d; --card: #172628; --ink: #e4efee; --mute: #93aaad; --line: #2b4144; --head: #1d3235;
+      --accent: #3cc2ba; --accent-ink: #052a28; --accent-soft: #1b3d3c;
+      --warn: #f0a566; --warn-soft: #3d2a18; --star: #f1b83c;
+      --t-same: #b7acf3; --t-same-bg: #2a2547;
+      --t-past: #7fc6ec; --t-past-bg: #17354a;
+      --t-base: #f0c46c; --t-base-bg: #40320f;
+      --t-diff: #f19ab0; --t-diff-bg: #482130;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { font-size: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .page { max-width: 1280px; margin: 0 auto; padding: 18px 20px 60px; }
+  h1 { margin: 6px 0 2px; font-size: 1.7rem; letter-spacing: -0.01em; }
+  .sub { color: var(--mute); margin: 0 0 14px; }
+
+  /* ---------- filter panel ---------- */
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .filters { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; }
+  .f { display: flex; flex-direction: column; gap: 3px; }
+  .f > span { font-size: 0.72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); }
+  .panel input[type=search], .panel select { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; min-width: 140px; max-width: 250px; }
+  .panel input[type=search] { min-width: 200px; }
+  .panel input:focus-visible, .panel select:focus-visible, button:focus-visible, textarea:focus-visible, .cell:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .chk { display: flex; align-items: center; gap: 6px; padding: 8px 0; cursor: pointer; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+  .btn { font: 600 0.9rem system-ui, sans-serif; border-radius: 8px; padding: 7px 13px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); }
+  .btn.alt { background: transparent; color: var(--accent); }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .btn.srs-btn b { background: var(--warn); color: #fff; border-radius: 999px; padding: 0 7px; margin-left: 6px; font-size: .8rem; }
+  .count { color: var(--mute); margin-left: auto; font-size: .9rem; }
+  .link { background: none; border: 0; color: var(--accent); font: inherit; cursor: pointer; text-decoration: underline; padding: 0; }
+  .msg { color: var(--mute); font-size: .88rem; }
+
+  /* ---------- the table ---------- */
+  table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+  thead th:first-child { border-top-left-radius: 11px; } thead th:last-child { border-top-right-radius: 11px; }
+  col.cb { width: 11%; } col.cp { width: 13%; } col.cpp { width: 13%; } col.ct { width: 13%; } col.cn { width: 17%; } col.ce { width: auto; } col.ca { width: 150px; }
+  thead th { position: sticky; top: 40px; z-index: 3; background: var(--head); text-align: left; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); padding: 9px 10px; border-bottom: 1px solid var(--line); }
+  tbody td { padding: 8px 10px; vertical-align: top; border-bottom: 1px solid var(--line); }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: var(--accent-soft); }
+  tbody tr.common td:first-child { box-shadow: inset 4px 0 0 var(--star); }
+  .cell { width: 100%; font: inherit; color: inherit; background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 4px 6px; resize: none; display: block; }
+  .cell:hover { border-color: var(--line); background: var(--bg); }
+  .cell:focus { background: var(--bg); border-color: var(--accent); }
+  .form { font-size: 1.12rem; font-weight: 700; letter-spacing: .005em; }
+  .note, .ex { font-size: .92rem; }
+  .ex { font-style: italic; }
+  .ex::placeholder, .note::placeholder { color: var(--mute); opacity: .7; font-style: normal; }
+  .badge { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: .78rem; font-weight: 700; white-space: nowrap; }
+  .badge.same { color: var(--t-same); background: var(--t-same-bg); }
+  .badge.past { color: var(--t-past); background: var(--t-past-bg); }
+  .badge.base { color: var(--t-base); background: var(--t-base-bg); }
+  .badge.diff { color: var(--t-diff); background: var(--t-diff-bg); }
+  .ico { background: none; border: 1px solid var(--line); color: var(--mute); border-radius: 8px; width: 32px; height: 32px; cursor: pointer; font-size: 1rem; line-height: 1; }
+  .ico:hover { border-color: var(--accent); color: var(--accent); }
+  .ico.star.on { color: var(--star); border-color: var(--star); background: rgba(199,133,0,.12); }
+  .ico.hard.l1, .ico.hard.l2, .ico.hard.l3 { color: var(--warn); border-color: var(--warn); background: var(--warn-soft); }
+  .ico.hard.l3 { font-weight: 900; }
+  .ico.del:hover { color: #c0392b; border-color: #c0392b; }
+  .btns { display: flex; gap: 5px; flex-wrap: nowrap; }
+  td.act { white-space: nowrap; }
+  .empty { text-align: center; padding: 40px 10px; color: var(--mute); background: var(--card); border: 1px dashed var(--line); border-radius: 12px; }
+  .foot { color: var(--mute); font-size: .85rem; margin-top: 14px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+  @media (max-width: 880px) {
+    .page { padding: 12px 16px 60px; }
+    table, thead, tbody, tr, td, colgroup { display: block; }
+    colgroup { display: none; }
+    thead { display: none; }
+    tbody tr { border-bottom: 1px solid var(--line); padding: 10px 6px; }
+    tbody td { border: 0; padding: 3px 6px; }
+    tbody td::before { content: attr(data-l); display: block; font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); }
+    td.act { width: auto; }
+  }
+  /* the text-size buttons in the tab bar */
+  #fontctl { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; align-self: center; }
+  #fontctl button { background: #2a3a66; color: #fff; border: 0; border-radius: 6px; padding: 3px 8px; font: 600 12px system-ui, sans-serif; cursor: pointer; }
+  #fontctl button:disabled { opacity: .4; cursor: default; }
+  #fontctl.floating { position: fixed; right: 10px; top: 6px; z-index: 50; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Irregular verbs</h1>
+  <p class="sub" id="sub"></p>
+
+  <div class="panel" id="panel">
+    <div class="filters">
+      <label class="f"><span>Search</span><input type="search" id="q" placeholder="verb, note or example…" autocomplete="off"></label>
+      <label class="f"><span>Type</span><select id="fType"></select></label>
+      <label class="f"><span>Common</span><select id="fCommon"></select></label>
+      <label class="f"><span>Notes</span><select id="fNotes"></select></label>
+      <label class="chk"><input type="checkbox" id="fHard"> ↻ hard ones only</label>
+      <label class="f"><span>Sort</span><select id="sort">
+        <option value="list">List order</option><option value="az">A – Z</option><option value="common">Common first</option><option value="hard">Hardest first</option>
+      </select></label>
+    </div>
+    <div class="actions">
+      <button class="btn" id="add">+ Add verb</button>
+      <button class="btn alt srs-btn" id="review">Review</button>
+      <button class="btn alt" id="csv">Export CSV</button>
+      <button class="btn alt" id="restore" title="Put back any verbs from the original list that you deleted">Restore deleted verbs</button>
+      <button class="link" id="clear" hidden>Clear filters</button>
+      <span class="msg" id="msg" role="status"></span>
+      <span class="count" id="count"></span>
+    </div>
+  </div>
+
+  <table id="tbl">
+    <colgroup><col class="cb"><col class="cp"><col class="cpp"><col class="ct"><col class="cn"><col class="ce"><col class="ca"></colgroup>
+    <thead><tr>
+      <th>Base</th><th>Past simple</th><th>Past participle</th><th>Type</th><th>Notes</th><th>Example</th><th></th>
+    </tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <div class="empty" id="empty" hidden>No verbs match these filters.</div>
+  <p class="foot">Click any verb, note or example to edit it — it saves to your account as you type. ★ marks the common verbs. ↻ marks a verb you find hard (click again: weak, weaker, weakest); the weakest come up first in <b>Review</b>.</p>
+</div>
+
+<script src="/store.js"></script>
+<script src="/srs.js"></script>
+<script src="/irregular-verbs.js"></script>
+<script>
+(function () {
+  "use strict";
+  var KEY = "en-verbs";
+  var $ = function (id) { return document.getElementById(id); };
+  var uid = function () { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); };
+  var norm = function (s) { return String(s || "").toLowerCase().replace(/\s+/g, " ").trim(); };
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+
+  var TYPES = [
+    ["same", "Same in all 3", "Base = past = participle (cut – cut – cut)"],
+    ["past", "Past = participle", "Past and participle are the same (buy – bought – bought)"],
+    ["base", "Base = participle", "Base and participle are the same (come – came – come)"],
+    ["diff", "All different", "Three different forms (sing – sang – sung)"]
+  ];
+  function typeOf(v) {
+    var b = norm(v.base), p = norm(v.past), pp = norm(v.pp);
+    if (b === p && p === pp) return "same";
+    if (p === pp) return "past";
+    if (b === pp) return "base";
+    return "diff";
+  }
+  var typeName = function (k) { return TYPES.filter(function (t) { return t[0] === k; })[0][1]; };
+  function noteKind(n) {                       // what kind of note is it?
+    n = String(n || "").trim(); if (!n) return "none";
+    if (/→/.test(n)) return "pattern";
+    if (/\b(also|regular|US|UK)\b/i.test(n)) return "alt";
+    return "usage";
+  }
+  var NOTE_OPTS = [["all", "All"], ["any", "Has a note"], ["none", "No note"], ["pattern", "Sound pattern (i → a → u)"], ["alt", "Other accepted forms (also regular, US / UK)"], ["usage", "Meaning or spelling"]];
+  var COMMON_OPTS = [["all", "All"], ["yes", "Common only ★"], ["no", "Not marked common"]];
+
+  function fromRow(r, i) {
+    return { id: uid() + i, base: r[0], past: r[1], pp: r[2], note: r[3] || "", example: r[4] || "", common: !!r[5], hard: 0, use: r[5] ? 3 : 0, added: Date.now() + i, orig: true };
+  }
+  var seed = function () { return window.IRREGULAR_VERBS.map(fromRow); };
+
+  var items = Store.cached(KEY, null, KEY);
+  if (!Array.isArray(items)) items = seed();
+  var save = function () { Store.save(KEY, items); };
+  var F = { q: "", type: "all", common: "all", notes: "all", hard: false, sort: "list" };
+
+  /* ---------- filter widgets ---------- */
+  function fillSelects() {
+    var cnt = { all: items.length }; TYPES.forEach(function (t) { cnt[t[0]] = 0; }); items.forEach(function (v) { cnt[typeOf(v)]++; });
+    $("fType").innerHTML = '<option value="all">All (' + cnt.all + ')</option>' + TYPES.map(function (t) { return '<option value="' + t[0] + '" title="' + esc(t[2]) + '">' + t[1] + " (" + cnt[t[0]] + ")</option>"; }).join("");
+    $("fType").value = F.type;
+    var nc = items.filter(function (v) { return v.common; }).length;
+    $("fCommon").innerHTML = COMMON_OPTS.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + (o[0] === "yes" ? " (" + nc + ")" : o[0] === "no" ? " (" + (items.length - nc) + ")" : "") + "</option>"; }).join("");
+    $("fCommon").value = F.common;
+    var k = { all: items.length, any: 0, none: 0, pattern: 0, alt: 0, usage: 0 };
+    items.forEach(function (v) { var n = noteKind(v.note); k[n]++; if (n !== "none") k.any++; });
+    $("fNotes").innerHTML = NOTE_OPTS.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + " (" + k[o[0]] + ")</option>"; }).join("");
+    $("fNotes").value = F.notes;
+  }
+
+  function matches(v) {
+    if (F.type !== "all" && typeOf(v) !== F.type) return false;
+    if (F.common === "yes" && !v.common) return false;
+    if (F.common === "no" && v.common) return false;
+    if (F.notes !== "all") { var n = noteKind(v.note); if (F.notes === "any" ? n === "none" : n !== F.notes) return false; }
+    if (F.hard && !v.hard) return false;
+    if (F.q) { var hay = norm([v.base, v.past, v.pp, v.note, v.example, typeName(typeOf(v))].join(" ")); if (hay.indexOf(F.q) < 0) return false; }
+    return true;
+  }
+  function sorted(list) {
+    var a = list.slice();
+    if (F.sort === "az") a.sort(function (x, y) { return norm(x.base).localeCompare(norm(y.base)); });
+    else if (F.sort === "common") a.sort(function (x, y) { return (y.common ? 1 : 0) - (x.common ? 1 : 0) || norm(x.base).localeCompare(norm(y.base)); });
+    else if (F.sort === "hard") a.sort(function (x, y) { return (y.hard || 0) - (x.hard || 0) || norm(x.base).localeCompare(norm(y.base)); });
+    return a;
+  }
+
+  /* ---------- rows ---------- */
+  function badge(v) { var k = typeOf(v); return '<span class="badge ' + k + '">' + typeName(k) + "</span>"; }
+  var HARD_TIP = ["Not marked hard — click to mark", "Weak — click for weaker", "Weaker — click for weakest", "Weakest — click to clear"];
+  function rowHtml(v) {
+    return '<tr data-id="' + v.id + '" class="' + (v.common ? "common" : "") + '">' +
+      '<td data-l="Base"><input class="cell form" data-k="base" value="' + esc(v.base) + '" aria-label="Base form"></td>' +
+      '<td data-l="Past simple"><input class="cell form" data-k="past" value="' + esc(v.past) + '" aria-label="Past simple"></td>' +
+      '<td data-l="Past participle"><input class="cell form" data-k="pp" value="' + esc(v.pp) + '" aria-label="Past participle"></td>' +
+      '<td data-l="Type" class="typ">' + badge(v) + "</td>" +
+      '<td data-l="Notes"><textarea class="cell note" data-k="note" rows="1" placeholder="Add a note…" aria-label="Notes">' + esc(v.note) + "</textarea></td>" +
+      '<td data-l="Example"><textarea class="cell ex" data-k="example" rows="1" placeholder="Add an example sentence…" aria-label="Example">' + esc(v.example) + "</textarea></td>" +
+      '<td class="act"><div class="btns">' +
+        '<button class="ico star' + (v.common ? " on" : "") + '" data-a="star" title="' + (v.common ? "Common verb — click to unmark" : "Mark as common") + '" aria-pressed="' + !!v.common + '">★</button>' +
+        '<button class="ico hard l' + (v.hard || 0) + '" data-a="hard" title="' + HARD_TIP[v.hard || 0] + '">↻</button>' +
+        '<button class="ico" data-a="say" title="Listen">▶</button>' +
+        '<button class="ico del" data-a="del" title="Delete this verb">✕</button></div></td></tr>';
+  }
+  function grow(t) { t.style.height = "auto"; t.style.height = (t.scrollHeight + 2) + "px"; }
+  function render() {
+    fillSelects();
+    var list = sorted(items.filter(matches));
+    $("rows").innerHTML = list.map(rowHtml).join("");
+    document.querySelectorAll("#rows textarea").forEach(grow);
+    $("tbl").hidden = !list.length; $("empty").hidden = !!list.length;
+    if (!list.length && !items.length) $("empty").innerHTML = 'You have no verbs. <button class="link" id="restore2">Restore the original list</button>'; else $("empty").textContent = "No verbs match these filters.";
+    var r2 = $("restore2"); if (r2) r2.onclick = restore;
+    $("count").textContent = list.length === items.length ? items.length + " verbs" : list.length + " of " + items.length + " verbs";
+    var filtered = F.q || F.type !== "all" || F.common !== "all" || F.notes !== "all" || F.hard;
+    $("clear").hidden = !filtered;
+    $("sub").textContent = items.length + " verbs · " + items.filter(function (v) { return v.common; }).length + " common · " + items.filter(function (v) { return v.hard; }).length + " marked hard";
+    $("fHard").parentElement.title = "Show only the verbs you marked ↻";
+    if (window.__rv) window.__rv.updateBadge && window.__rv.updateBadge();
+  }
+
+  /* ---------- editing ---------- */
+  function find(id) { return items.filter(function (v) { return v.id === id; })[0]; }
+  $("rows").addEventListener("input", function (e) {
+    var t = e.target, tr = t.closest("tr"); if (!tr || !t.dataset.k) return;
+    var v = find(tr.dataset.id); if (!v) return;
+    v[t.dataset.k] = t.value; if (t.tagName === "TEXTAREA") grow(t);
+    if (t.dataset.k === "base" || t.dataset.k === "past" || t.dataset.k === "pp") tr.querySelector(".typ").innerHTML = badge(v);
+    save();
+  });
+  $("rows").addEventListener("change", function () { fillSelects(); });                   // keep the filter counts current without moving rows
+  $("rows").addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && e.target.tagName === "TEXTAREA" && !e.shiftKey) { e.preventDefault(); e.target.blur(); }
+  });
+  $("rows").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-a]"); if (!b) return;
+    var tr = b.closest("tr"), v = find(tr.dataset.id); if (!v) return;
+    var a = b.dataset.a;
+    if (a === "star") { v.common = !v.common; v.use = v.common ? 3 : 0; save(); render(); }
+    else if (a === "hard") { v.hard = ((v.hard || 0) + 1) % 4; save(); render(); }
+    else if (a === "say") sayVerb(v);
+    else if (a === "del") {
+      if (!confirm("Delete “" + v.base + " – " + v.past + " – " + v.pp + "”?")) return;
+      items = items.filter(function (x) { return x !== v; }); save(); render(); flash("Deleted. “Restore deleted verbs” brings back the original ones.");
+    }
+  });
+  var timer;
+  function flash(t) { $("msg").textContent = t; clearTimeout(timer); timer = setTimeout(function () { $("msg").textContent = ""; }, 5000); }
+
+  $("add").onclick = function () {
+    var v = { id: uid(), base: "", past: "", pp: "", note: "", example: "", common: false, hard: 0, use: 0, added: Date.now(), orig: false };
+    items.push(v); F = { q: "", type: "all", common: "all", notes: "all", hard: false, sort: "list" };
+    $("q").value = ""; $("fHard").checked = false; $("sort").value = "list"; save(); render();
+    var tr = document.querySelector('tr[data-id="' + v.id + '"]'); if (tr) { tr.scrollIntoView({ block: "center" }); tr.querySelector('[data-k="base"]').focus(); }
+  };
+  function restore() {
+    var have = {}; items.forEach(function (v) { have[norm(v.base) + "|" + norm(v.past) + "|" + norm(v.pp)] = 1; });
+    var haveBase = {}; items.forEach(function (v) { haveBase[norm(v.base)] = 1; });
+    var n = 0; window.IRREGULAR_VERBS.forEach(function (r, i) { if (haveBase[norm(r[0])]) return; items.push(fromRow(r, i)); n++; });
+    save(); render(); flash(n ? "Restored " + n + " verb" + (n === 1 ? "" : "s") + "." : "Nothing to restore — you have every verb from the original list.");
+  }
+  $("restore").onclick = restore;
+
+  /* ---------- filter events ---------- */
+  $("q").addEventListener("input", function () { F.q = norm(this.value); render(); });
+  $("fType").onchange = function () { F.type = this.value; render(); };
+  $("fCommon").onchange = function () { F.common = this.value; render(); };
+  $("fNotes").onchange = function () { F.notes = this.value; render(); };
+  $("fHard").onchange = function () { F.hard = this.checked; render(); };
+  $("sort").onchange = function () { F.sort = this.value; render(); };
+  $("clear").onclick = function () { F = { q: "", type: "all", common: "all", notes: "all", hard: false, sort: F.sort }; $("q").value = ""; $("fHard").checked = false; render(); };
+
+  /* ---------- export ---------- */
+  $("csv").onclick = function () {
+    var q = function (s) { s = String(s == null ? "" : s); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    var lines = [["Base", "Past", "Past Participle", "Type", "Common?", "Notes", "Example", "Hard"].join(",")];
+    sorted(items.filter(matches)).forEach(function (v) { lines.push([v.base, v.past, v.pp, typeName(typeOf(v)), v.common ? "Yes" : "", v.note, v.example, v.hard || 0].map(q).join(",")); });
+    var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv" })); a.download = "irregular-verbs.csv";
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  };
+
+  /* ---------- speech ---------- */
+  var voice = null;
+  function pickVoice() { if (!("speechSynthesis" in window)) return; var vs = speechSynthesis.getVoices().filter(function (v) { return v.lang.toLowerCase().indexOf("en") === 0; }); voice = vs.filter(function (v) { return /en-us/i.test(v.lang); })[0] || vs[0] || null; }
+  if ("speechSynthesis" in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+  function say(text) {
+    return new Promise(function (res) {
+      if (!("speechSynthesis" in window) || !text) return res();
+      var u = new SpeechSynthesisUtterance(text); u.lang = "en-US"; u.rate = 0.9; if (voice) u.voice = voice;
+      u.onend = u.onerror = function () { res(); }; speechSynthesis.speak(u);
+    });
+  }
+  var spoken = function (s) { return String(s || "").replace(/ \/ /g, " or "); };
+  async function sayVerb(v) { speechSynthesis.cancel(); await say(spoken(v.base) + ", " + spoken(v.past) + ", " + spoken(v.pp) + "."); if (v.example) await say(v.example); }
+
+  /* ---------- spaced-repetition review ---------- */
+  var forms = function (v) { return { b: spoken(v.base), p: spoken(v.past), pp: spoken(v.pp) }; };
+  var ans = function (v) { return [["Base", v.base], ["Past simple", v.past], ["Past participle", v.pp], ["Type", typeName(typeOf(v))], ["Note", v.note], ["Example", v.example]]; };
+  window.__rv = SRS.attach({
+    key: "verbs", title: "Irregular verbs", button: $("review"),
+    items: function () { return items; }, save: save, refresh: render, say: say,
+    speakParts: function (v) { return sayVerb(v); }, stopSay: function () { speechSynthesis.cancel(); },
+    modes: [
+      { label: "Base → past + participle", can: function (v) { return v.base && v.past && v.pp; },
+        ask: function (v) { var f = forms(v); return { prompt: "Give the past simple and the past participle", q: v.base, spoken: f.b, target: f.p + ", " + f.pp, a: ans(v) }; } },
+      { label: "Past simple → base + participle", can: function (v) { return v.base && v.past && v.pp; },
+        ask: function (v) { var f = forms(v); return { prompt: "This is the past simple. Give the base form and the past participle", q: v.past, spoken: f.p, target: f.b + ", " + f.pp, a: ans(v) }; } },
+      { label: "Participle → base + past", can: function (v) { return v.base && v.past && v.pp; },
+        ask: function (v) { var f = forms(v); return { prompt: "This is the past participle. Give the base form and the past simple", q: v.pp, spoken: f.pp, target: f.b + ", " + f.p, a: ans(v) }; } },
+      { label: "Fill the gap (example sentence)", can: function (v) { return !!v.example && (v.past || v.pp); },
+        ask: function (v) {
+          var re = function (w) { return new RegExp("\\b(" + String(w).split(" / ")[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")\\b", "i"); };
+          var gap = v.example.replace(re(v.pp), "_____");
+          if (gap === v.example) gap = v.example.replace(re(v.past), "_____");
+          return { prompt: "Fill the gap with the correct form of “" + v.base + "”", q: gap, spoken: "", target: v.past + ", " + v.pp, a: ans(v) };
+        } }
+    ]
+  });
+
+  /* ---------- go ---------- */
+  render();
+  Store.load(KEY, null, KEY).then(function (v) {                 // the copy in your account is the real one
+    if (!Array.isArray(v)) { items = items.length ? items : seed(); save(); render(); return; }
+    if (JSON.stringify(v) !== JSON.stringify(items)) { items = v; render(); }
+  });
+
+  /* ---------- text size control (in the top tab bar) ---------- */
+  var KEYF = "en-fontsize", pct = 100;
+  try { var sv = parseInt(localStorage.getItem(KEYF), 10); if (sv >= 80 && sv <= 180) pct = sv; } catch (e) {}
+  var ctl = document.createElement("span"); ctl.id = "fontctl"; ctl.title = "Text size for this page";
+  var mkb = function (t, title, fn) { var x = document.createElement("button"); x.type = "button"; x.textContent = t; x.title = title; x.onclick = fn; ctl.appendChild(x); return x; };
+  var dec = mkb("A−", "Smaller text", function () { setPct(pct - 10); }), lab = mkb("100%", "Reset to 100%", function () { setPct(100); }), inc = mkb("A+", "Bigger text", function () { setPct(pct + 10); });
+  function setPct(v) { pct = Math.max(80, Math.min(180, v)); document.documentElement.style.fontSize = pct + "%"; lab.textContent = pct + "%"; dec.disabled = pct <= 80; inc.disabled = pct >= 180; try { localStorage.setItem(KEYF, String(pct)); } catch (e) {} }
+  var bar = $("modtabs"), build = $("modbuild");
+  if (bar) bar.insertBefore(ctl, build || null); else { ctl.classList.add("floating"); document.body.appendChild(ctl); }
+  setPct(pct);
+})();
+</script>
+</body>
+</html>
