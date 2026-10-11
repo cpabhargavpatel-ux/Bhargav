@@ -1,5 +1,5 @@
-/* Daily reminders. A bell in the top bar shows how many are waiting today; the list also opens by itself
-   when you open the app (once each time you open the app). Everything is saved to your account via store.js.
+/* Daily reminders. A bell in the top bar shows how many are waiting today; when you open the app the reminders
+   flash at the top right (once each time you open the app) and stay until you tick or hide them. Everything is saved to your account via store.js.
    Data: Store key "reminders" = { showOnOpen: true, items: [ { id, text, repeat, days, date, star, done: {"YYYY-MM-DD": 1}, added } ] }
    repeat: "daily" | "weekdays" | "weekly" (days = [0-6], Sun = 0) | "once" (date = "YYYY-MM-DD") */
 (function () {
@@ -56,6 +56,17 @@
     "#gtnBell{align-self:center;margin-left:10px;display:inline-flex;align-items:center;gap:6px;background:#2a3a66;color:#fff;border:0;border-radius:8px;padding:4px 10px;font:600 12px system-ui,sans-serif;cursor:pointer}" +
     "#gtnBell:hover{background:#3a4d86}#gtnBell b{background:#e0662b;color:#fff;border-radius:999px;padding:0 7px;font-size:11px;line-height:17px}" +
     "#gtnBell.none b{display:none}" +
+    "#gtnFlash{position:fixed;top:48px;right:14px;z-index:999;width:min(380px,calc(100vw - 28px));display:flex;flex-direction:column;gap:8px;font:400 15px/1.4 system-ui,-apple-system,'Segoe UI',sans-serif}" +
+    "#gtnFlash[hidden]{display:none}" +
+    "#gtnFlash .fh{display:flex;align-items:center;gap:8px;color:#fff;background:rgba(16,24,43,.92);border-radius:10px;padding:6px 8px 6px 12px;font-weight:700;font-size:.85rem;box-shadow:0 6px 18px rgba(8,14,30,.35)}" +
+    "#gtnFlash .fh span{flex:1}#gtnFlash .fh button{background:rgba(255,255,255,.14);color:#fff;border:0;border-radius:6px;padding:3px 9px;font:600 .78rem system-ui,sans-serif;cursor:pointer}#gtnFlash .fh button:hover{background:rgba(255,255,255,.28)}" +
+    "#gtnFlash .fc{display:flex;align-items:center;gap:10px;background:#fff7e6;color:#3b2500;border:2px solid #f0a020;border-radius:12px;padding:10px 10px 10px 14px;box-shadow:0 8px 22px rgba(8,14,30,.35);animation:gtnflash 1.2s ease-in-out infinite}" +
+    "#gtnFlash .fc.star{background:#ffeede;border-color:#e0501b}" +
+    "#gtnFlash.calm .fc{animation:none}" +
+    "#gtnFlash .fc .t{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:600}#gtnFlash .fc .t i{font-style:normal;color:#c4570f;margin-right:4px}" +
+    "#gtnFlash .fc button{flex:none;border:1px solid #b87200;background:#fff;color:#6a4200;border-radius:8px;padding:4px 10px;font:700 .8rem system-ui,sans-serif;cursor:pointer}#gtnFlash .fc button:hover{background:#ffe9bf}#gtnFlash .fc button.nx{border-color:transparent;background:transparent;padding:4px 7px;color:#8a6a2a}" +
+    "@keyframes gtnflash{0%,100%{background:#fff7e6;box-shadow:0 8px 22px rgba(8,14,30,.35),0 0 0 0 rgba(240,160,32,.0)}50%{background:#ffd98a;box-shadow:0 8px 22px rgba(8,14,30,.35),0 0 0 6px rgba(240,160,32,.45)}}" +
+    "@media (prefers-reduced-motion:reduce){#gtnFlash .fc{animation:none}}" +
     "dialog.gtnrem{--bg:#fff;--ink:#16202e;--mute:#667085;--line:#e1e6ee;--soft:#f3f6fb;--acc:#2540d9;--accink:#fff;--star:#c4570f;--ok:#1b8a4f;" +
     "border:0;border-radius:16px;padding:0;width:min(560px,94vw);max-height:88vh;margin:auto;background:var(--bg);color:var(--ink);box-shadow:0 24px 70px rgba(10,20,40,.45);font:400 15px/1.45 system-ui,-apple-system,'Segoe UI',sans-serif;overflow:hidden}" +
     "@media (prefers-color-scheme:dark){dialog.gtnrem{--bg:#18202f;--ink:#e8edf7;--mute:#9aa7bf;--line:#2b3750;--soft:#202b3f;--acc:#7f95ff;--accink:#0d1330;--star:#ffab70;--ok:#5fd394}}" +
@@ -96,6 +107,7 @@
     var n = pending(ymd()).length, b = document.getElementById("gtnBellN");
     b.textContent = n; bell.classList.toggle("none", n === 0);
     bell.title = n ? n + " reminder" + (n === 1 ? "" : "s") + " left for today" : "Today's reminders";
+    if (typeof paintFlash === "function") paintFlash();
   }
 
   /* ---------- the dialog ---------- */
@@ -144,7 +156,7 @@
   function paint() {
     var day = ymd(), keep = dlg.querySelector("#rmText") ? { t: dlg.querySelector("#rmText").value, r: dlg.querySelector("#rmRep").value, s: dlg.querySelector("#rmStar").checked } : null;
     dlg.innerHTML = head(day) + '<div class="body">' + (view === "today" ? todayList(day) : allList()) + "</div>" + addForm() +
-      '<div class="ft"><label><input type="checkbox" id="rmOpen"' + (data.showOnOpen ? " checked" : "") + '> Show this when I open the app</label><button class="b alt" id="rmClose">Close</button></div>';
+      '<div class="ft"><label><input type="checkbox" id="rmOpen"' + (data.showOnOpen ? " checked" : "") + '> Flash my reminders when I open the app</label><button class="b alt" id="rmClose">Close</button></div>';
     dlg.querySelectorAll("li.ed select[data-k=repeat]").forEach(function (s) { s.value = (data.items.filter(function (x) { return x.id === editing; })[0] || {}).repeat; });
     if (keep) { dlg.querySelector("#rmText").value = keep.t; dlg.querySelector("#rmRep").value = keep.r; dlg.querySelector("#rmStar").checked = keep.s; extra(); }
     paintBell();
@@ -199,6 +211,32 @@
   dlg.addEventListener("close", function () { editing = null; paintBell(); });
   dlg.addEventListener("click", function (e) { if (e.target === dlg) dlg.close(); });   // click on the backdrop
 
+  /* ---------- the flashing reminders shown when the app is opened (instead of the whole window) ---------- */
+  var flash = document.createElement("div"); flash.id = "gtnFlash"; flash.hidden = true; flash.setAttribute("role", "alert"); document.body.appendChild(flash);
+  var hiddenIds = {}, flashOn = false, calmTimer = 0, MAXF = 5;
+  function paintFlash() {
+    if (!flashOn) return;
+    var day = ymd(), list = pending(day).filter(function (it) { return !hiddenIds[it.id]; });
+    if (!list.length) { flashOn = false; flash.hidden = true; return; }
+    flash.hidden = false;
+    flash.innerHTML = '<div class="fh"><span>\uD83D\uDD14 ' + list.length + ' reminder' + (list.length === 1 ? "" : "s") + ' for today</span><button data-f="list">Open list</button><button data-f="hideall" aria-label="Hide all reminders">Hide</button></div>' +
+      list.slice(0, MAXF).map(function (it) {
+        return '<div class="fc' + (it.star ? " star" : "") + '" data-id="' + it.id + '"><div class="t">' + (it.star ? "<i>\u2605</i>" : "") + esc(it.text) + '</div><button data-f="done" aria-label="Done: ' + esc(it.text) + '">\u2713 Done</button><button class="nx" data-f="hide" title="Hide for now" aria-label="Hide for now">\u2715</button></div>';
+      }).join("") + (list.length > MAXF ? '<div class="fh"><span>+ ' + (list.length - MAXF) + ' more</span><button data-f="list">Open list</button></div>' : "");
+  }
+  function showFlash() {
+    flashOn = true; hiddenIds = {}; flash.classList.remove("calm"); paintFlash();
+    clearTimeout(calmTimer); calmTimer = setTimeout(function () { flash.classList.add("calm"); }, 12000);   // flashes for 12 seconds, then stays steady until you act
+  }
+  flash.addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-f]"); if (!b) return;
+    var f = b.dataset.f, card = b.closest(".fc"), it = card && find(card.dataset.id);
+    if (f === "list") { open("today"); }
+    else if (f === "hideall") { flashOn = false; flash.hidden = true; }
+    else if (f === "hide" && it) { hiddenIds[it.id] = 1; paintFlash(); }
+    else if (f === "done" && it) { it.done = it.done || {}; it.done[ymd()] = 1; save(); paintBell(); paintFlash(); }
+  });
+
   function open(v) { if (v) view = v; paint(); if (!dlg.open) dlg.showModal(); }
   bell.onclick = function () { open("today"); };
 
@@ -217,7 +255,7 @@
     if (!freshOpen || !data.showOnOpen) return;
     freshOpen = false;
     if (!pending(ymd()).length) return;
-    open("today");
+    showFlash();
   }
   paintBell();
   Store.load(KEY, null).then(function (v) {
