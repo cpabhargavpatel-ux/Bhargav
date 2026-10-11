@@ -362,6 +362,10 @@
   .sp-row .slider-group { margin: 0; }
   .sp-sec button.play { padding: 8px 14px; font-size: 0.9rem; }
   .sp-row { gap: 8px 10px; }
+  button.play.cmp { background: #00796B; }
+  button.play.cmp:hover { background: #00574D; }
+  button.play.cmp:disabled, button.play.cmp[disabled] { opacity: .5; }
+  .sp-cmp { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line, #d8d4c8); }
   button.play.rec { background: #C62828; }
   button.play.rec:hover { background: #A71F1F; }
   button.play.rec.on { animation: sp-pulse 1s infinite; }
@@ -478,6 +482,11 @@
           <output id="spRecTOut" for="spRecT">6 s</output>
         </div>
         <span class="sp-status" id="spRecStatus" style="margin:0"></span>
+      </div>
+      <div class="sp-row sp-cmp">
+        <button class="play cmp" id="spCmp" title="Hear the model voice first, then your latest recording">🎧 Compare</button>
+        <button class="play loop" id="spCmpLoop" title="Model voice, then your recording, again and again until you press Stop">🔁 Loop compare</button>
+        <span class="sp-note" style="margin:0">model voice first, then your recording</span>
       </div>
       <div class="sp-rounds" id="spRounds" hidden></div>
       <label class="sp-chk"><input type="checkbox" id="spAudioLoop"> Loop my recording when I play it back</label>
@@ -1337,6 +1346,8 @@ refreshWeak();
       mk("Practise", () => { txt.value = r.text; txt.dispatchEvent(new Event("input")); txt.focus(); });
       mk("▶ Model", () => { tok++; setBusy(false); speakOnce(r.text); });
       mk("▶ My recording", async () => { const b = await getRec(r.key); if (b) playBlob(b); }, "", !r.hasRec);
+      mk("🎧 Compare", () => { txt.value = r.text; txt.dispatchEvent(new Event("input")); compare(r.text, false); }, "", !r.hasRec);
+      mk("🔁 Loop", () => { txt.value = r.text; txt.dispatchEvent(new Event("input")); compare(r.text, true); }, "", !r.hasRec);
       mk("Delete", async () => { if (confirm("Delete this sentence and its recording?")) { try { await dbDel(r.key); } catch (e) {} renderSaved(); } }, "del");
       d.append(t, m, bt); box.appendChild(d);
     }
@@ -1350,7 +1361,7 @@ refreshWeak();
   const recB = $("spRec"), recSt = $("spRecStatus"), audio = $("spAudio"), pracB = $("spPractice"), recT = $("spRecT");
   recT.addEventListener("input", () => { $("spRecTOut").textContent = recT.value + " s"; });
   $("spAudioLoop").addEventListener("change", e => { audio.loop = e.target.checked; });
-  function setBusy(b) { sayB.disabled = loopB.disabled = pracB.disabled = b; recB.disabled = b && looping; stopB.disabled = !b; }
+  function setBusy(b) { sayB.disabled = loopB.disabled = pracB.disabled = cmpB.disabled = cmpLoopB.disabled = b; recB.disabled = b && looping; stopB.disabled = !b; }
   async function run(forever) {
     const text = txt.value.trim();
     if (!text) { st.textContent = "Type a sentence first."; txt.focus(); return; }
@@ -1373,10 +1384,51 @@ refreshWeak();
   sayB.onclick = () => run(false);
   loopB.onclick = () => run(true);
   stopB.onclick = async () => {
-    tok++; speechSynthesis.cancel(); st.textContent = "";
+    tok++; speechSynthesis.cancel(); stopMine(); st.textContent = "";
     if (recording) await finish();
     looping = false; recSt.textContent = ""; setBusy(false);
   };
+
+  /* --- compare: the model voice first, then my recording (once, or looped) --- */
+  const cmpB = $("spCmp"), cmpLoopB = $("spCmpLoop");
+  let mine = null;                                              // the recording that is playing right now
+  function stopMine() { if (mine) { const a = mine; mine = null; a.pause(); try { URL.revokeObjectURL(a.src); } catch (e) {} if (a._done) a._done(); } }
+  function playMine(blob) {
+    return new Promise(res => {
+      stopMine();
+      const a = new Audio(URL.createObjectURL(blob)); mine = a;
+      a._done = res; a.onended = a.onerror = () => { if (mine === a) mine = null; try { URL.revokeObjectURL(a.src); } catch (e) {} res(); };
+      a.play().catch(() => res());
+    });
+  }
+  async function myRecordingFor(text) {
+    let b = null; try { b = await getRec(keyOf(text)); } catch (e) {}
+    if (!b && lastBlob && recTarget && keyOf(recTarget) === keyOf(text)) b = lastBlob;
+    return b;
+  }
+  async function compare(text, forever) {
+    text = (text || "").trim();
+    if (!text) { st.textContent = "Type a sentence first."; txt.focus(); return; }
+    const my = ++tok; speechSynthesis.cancel(); stopMine(); looping = false; setBusy(true);
+    st.textContent = "Finding your recording…";
+    const blob = await myRecordingFor(text); if (my !== tok) return;
+    if (!blob) { st.textContent = "No recording of this sentence yet — press ● Record my voice first."; setBusy(false); return; }
+    const gapMs = Math.max(800, parseFloat(gp.value) * 1000);
+    for (let n = 1; ; n++) {
+      st.textContent = (forever ? "Round " + n + " — " : "") + "🎧 model voice…";
+      await speakOnce(text); if (my !== tok) return;
+      await wait(500); if (my !== tok) return;
+      st.textContent = (forever ? "Round " + n + " — " : "") + "🎧 your recording…";
+      await playMine(blob); if (my !== tok) return;
+      if (!forever) break;
+      st.textContent = "Round " + n + " done — next in a moment (■ Stop to end)";
+      await wait(gapMs); if (my !== tok) return;
+    }
+    st.textContent = ""; setBusy(false);
+  }
+  cmpB.onclick = () => compare(txt.value, false);
+  cmpLoopB.onclick = () => compare(txt.value, true);
+  window.__frCompare = compare;   // used by the My sentences buttons
 
   /* --- record my voice --- */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
