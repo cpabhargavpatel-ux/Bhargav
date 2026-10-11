@@ -1,5 +1,5 @@
 /* Daily reminders. A bell in the top bar shows how many are waiting today; the list also opens by itself
-   when you open the app (once per browser tab session). Everything is saved to your account via store.js.
+   when you open the app (once each time you open the app). Everything is saved to your account via store.js.
    Data: Store key "reminders" = { showOnOpen: true, items: [ { id, text, repeat, days, date, star, done: {"YYYY-MM-DD": 1}, added } ] }
    repeat: "daily" | "weekdays" | "weekly" (days = [0-6], Sun = 0) | "once" (date = "YYYY-MM-DD") */
 (function () {
@@ -8,7 +8,7 @@
   if (!bar || window.__gtnReminders || !window.Store) return;
   window.__gtnReminders = true;
 
-  var KEY = "reminders", SEEN = "gtn-rem-seen";
+  var KEY = "reminders";
   var DAYN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], MONTHN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   var pad = function (n) { return (n < 10 ? "0" : "") + n; };
   var ymd = function (d) { d = d || new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); };
@@ -55,9 +55,7 @@
   css.textContent =
     "#gtnBell{align-self:center;margin-left:10px;display:inline-flex;align-items:center;gap:6px;background:#2a3a66;color:#fff;border:0;border-radius:8px;padding:4px 10px;font:600 12px system-ui,sans-serif;cursor:pointer}" +
     "#gtnBell:hover{background:#3a4d86}#gtnBell b{background:#e0662b;color:#fff;border-radius:999px;padding:0 7px;font-size:11px;line-height:17px}" +
-    "#gtnBell.none b{display:none}#gtnBell.ring{animation:gtnring .9s ease 2}" +
-    "@keyframes gtnring{0%,100%{transform:rotate(0)}20%{transform:rotate(-14deg)}40%{transform:rotate(12deg)}60%{transform:rotate(-8deg)}80%{transform:rotate(5deg)}}" +
-    "@media (prefers-reduced-motion:reduce){#gtnBell.ring{animation:none}}" +
+    "#gtnBell.none b{display:none}" +
     "dialog.gtnrem{--bg:#fff;--ink:#16202e;--mute:#667085;--line:#e1e6ee;--soft:#f3f6fb;--acc:#2540d9;--accink:#fff;--star:#c4570f;--ok:#1b8a4f;" +
     "border:0;border-radius:16px;padding:0;width:min(560px,94vw);max-height:88vh;margin:auto;background:var(--bg);color:var(--ink);box-shadow:0 24px 70px rgba(10,20,40,.45);font:400 15px/1.45 system-ui,-apple-system,'Segoe UI',sans-serif;overflow:hidden}" +
     "@media (prefers-color-scheme:dark){dialog.gtnrem{--bg:#18202f;--ink:#e8edf7;--mute:#9aa7bf;--line:#2b3750;--soft:#202b3f;--acc:#7f95ff;--accink:#0d1330;--star:#ffab70;--ok:#5fd394}}" +
@@ -204,13 +202,22 @@
   function open(v) { if (v) view = v; paint(); if (!dlg.open) dlg.showModal(); }
   bell.onclick = function () { open("today"); };
 
-  /* ---------- on page open ---------- */
-  function seen() { try { return sessionStorage.getItem(SEEN) === ymd(); } catch (e) { return false; } }
-  function markSeen() { try { sessionStorage.setItem(SEEN, ymd()); } catch (e) {} }
+  /* ---------- only when the app is opened ----------
+     "Opened" = nothing from this app was open in this browser for the last 30 minutes. Switching between the
+     Goal Setting / French / English tabs, opening a second tab or reloading does not show the message again. */
+  var ACTIVE = "gtn-rem-active", GAP = 30 * 60 * 1000;
+  function lastActive() { try { return +localStorage.getItem(ACTIVE) || 0; } catch (e) { return 0; } }
+  function beat() { try { localStorage.setItem(ACTIVE, String(Date.now())); } catch (e) {} }
+  var freshOpen = Date.now() - lastActive() > GAP;
+  beat();
+  setInterval(function () { if (document.visibilityState === "visible") beat(); }, 60000);
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") beat(); });
+  window.addEventListener("pagehide", beat);
   function maybeShow() {
-    if (seen() || !data.showOnOpen) return;
+    if (!freshOpen || !data.showOnOpen) return;
+    freshOpen = false;
     if (!pending(ymd()).length) return;
-    markSeen(); open("today");
+    open("today");
   }
   paintBell();
   Store.load(KEY, null).then(function (v) {
@@ -219,11 +226,10 @@
     prune(); paintBell();
     if (dlg.open) paint();
     maybeShow();
-    if (pending(ymd()).length) { bell.classList.add("ring"); setTimeout(function () { bell.classList.remove("ring"); }, 2000); }
   });
-  /* the day changes while the app stays open */
+  /* the day changes while the app stays open: just refresh the count, never pop up */
   var lastDay = ymd();
-  setInterval(function () { if (ymd() !== lastDay) { lastDay = ymd(); paintBell(); if (dlg.open) paint(); else { try { sessionStorage.removeItem(SEEN); } catch (e) {} maybeShow(); } } }, 60000);
+  setInterval(function () { if (ymd() !== lastDay) { lastDay = ymd(); paintBell(); if (dlg.open) paint(); } }, 60000);
 
   window.GTNReminders = { open: open, dueOn: dueOn, todays: todays, _data: function () { return data; } };
 })();
