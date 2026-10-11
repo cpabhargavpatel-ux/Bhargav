@@ -1,6 +1,7 @@
 server.mjs
 public/french-ipa.html
 public/english.html
+public/srs.js
 public/study.css
 public/study.js
 public/grammar.html

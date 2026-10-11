@@ -15,6 +15,7 @@
     var USE_NAME = cfg.useName || ["not rated", "rarely used", "sometimes used", "used a lot"];
     var USE_TIP = cfg.useTip || "How often people use it (my guess)";
     var items = [], filter = "all", playing = false, playToken = 0;
+    var review = null;
     try { items = JSON.parse(localStorage.getItem(cfg.key) || "[]") || []; } catch (e) { items = []; }
 
     /* ---------- page skeleton ---------- */
@@ -28,7 +29,7 @@
       '<span class="chips" role="group" aria-label="Filter"><button class="chip on" data-f="all">All</button><button class="chip" data-f="hard">↻ Hard</button><button class="chip" data-f="common">★ ' + cfg.commonLabel + '</button></span>' +
       '<select id="sort" aria-label="Sort"><option value="added">Order added</option><option value="az">A – Z</option><option value="hard">Hardest first</option><option value="use">' + cfg.useSort + '</option></select>' +
       '<button class="play alt" id="add">+ Add ' + cfg.noun + '</button><button class="play alt" id="imp">Import / export</button></div>' +
-      '<div class="bar-row"><button class="play" id="practise">↻ Practise hard ones</button><button class="play stop" id="stop" hidden>■ Stop</button>' +
+      '<div class="bar-row"><button class="play" id="practise">↻ Practise hard ones</button><button class="play stop" id="stop" hidden>■ Stop</button><button class="play alt srs-btn" id="review">Review</button>' +
       '<label class="slider">Say <select id="mode">' + cfg.modes.map(function (m, i) { return '<option value="' + i + '">' + m.label + '</option>'; }).join("") + '</select></label>' +
       '<label class="slider">Speed <input type="range" id="rate" min="0.5" max="1.3" step="0.05" value="0.9"><output id="rateOut">0.9×</output></label>' +
       '<label class="slider">Voice <select id="voice"></select></label><span class="status" id="status"></span>' +
@@ -75,12 +76,13 @@
       h.dataset.l = it.hard; h.textContent = MARK[it.hard]; h.title = "Hard for me: " + HARD_NAME[it.hard] + " — click to change";
       u.dataset.l = it.use; u.textContent = STAR[it.use]; u.title = USE_TIP + ": " + USE_NAME[it.use] + " — click to change";
       var c = changed(it); card.querySelector(".edited").hidden = !c; card.querySelector(".restore").hidden = !c;
+      var d = SRS.dueLabel(it), dl = card.querySelector(".due"); dl.textContent = d.text; dl.className = "due " + d.cls; dl.title = "Spaced repetition: when this card is next due for review";
     }
     function build(it) {
       var c = document.createElement("div"); c.className = "card"; c.dataset.id = it.id;
       c.innerHTML = '<div class="top"><input class="idi" aria-label="' + first.label + '" placeholder="' + first.label + '">' +
         (cfg.pos ? '<select class="pos" aria-label="Part of speech"><option value=""></option>' + cfg.pos.map(function (p) { return '<option>' + p + '</option>'; }).join("") + '</select>' : '') +
-        '<span class="edited" hidden>edited</span><button class="mk hard" type="button"></button><button class="mk use" type="button"></button>' +
+        '<span class="due"></span><span class="edited" hidden>edited</span><button class="mk hard" type="button"></button><button class="mk use" type="button"></button>' +
         '<button class="ico say" type="button" title="Listen">▶</button>' +
         '<button class="ico restore" type="button" title="Restore the original text" hidden>↺</button>' +
         '<button class="ico del" type="button" title="Delete">✕</button></div>' +
@@ -110,6 +112,7 @@
       if (shown == null) shown = document.querySelectorAll(".card").length;
       $("count").textContent = items.length ? shown + (shown !== items.length ? " of " + items.length : "") + (hard ? " \u00B7 " + hard + " marked hard" : "") : "";
       $("practise").disabled = !hard;
+      if (review) review.updateBadge();
     }
     function render() {
       var list = visible(), box = $("list"); box.textContent = "";
@@ -251,6 +254,13 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(growAll);
     new MutationObserver(growAll).observe(document.documentElement, { attributes: true, attributeFilter: ["style"] });
     render();
+
+    /* ---------- spaced-repetition flashcards ---------- */
+    review = SRS.attach({
+      key: cfg.sub, title: cfg.title, button: $("review"), modes: cfg.review,
+      items: function () { return items; }, save: save, refresh: render, say: say,
+      speakParts: function (it) { return speakItem(it, 0); }
+    });
 
     /* ---------- text size control (in the top tab bar; shared with the Idioms page) ---------- */
     (function () {

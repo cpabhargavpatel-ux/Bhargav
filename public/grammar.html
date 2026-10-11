@@ -10,6 +10,7 @@
 </head>
 <body>
 <div id="app"></div>
+<script src="/srs.js"></script>
 <script src="/study.js"></script>
 <script>
 StudyPage({
@@ -26,6 +27,14 @@ StudyPage({
     { label: "topic + example", parts: function (i) { return [i.name, i.example]; } },
     { label: "topic only", parts: function (i) { return [i.name]; } },
     { label: "topic + rule + example", parts: function (i) { return [i.name, i.meaning, i.example]; } }
+  ],
+  review: [
+    { label: "Topic \u2192 rule", can: function (i) { return !!i.meaning; },
+      ask: function (i) { return { prompt: "Explain this grammar point", q: i.name, spoken: i.name, target: i.meaning, a: [["Rule", i.meaning], ["Example", i.example], ["Common mistake", i.mistake]] }; } },
+    { label: "Spot the mistake", can: function (i) { return !!i.mistake; },
+      ask: function (i) { return { prompt: "What is wrong here, and how do you fix it?", q: i.mistake, spoken: "", target: i.meaning, a: [["Topic", i.name], ["Rule", i.meaning], ["Example", i.example]] }; } },
+    { label: "Rule \u2192 topic", can: function (i) { return !!i.meaning; },
+      ask: function (i) { return { prompt: "Which grammar point is this?", q: i.meaning, spoken: i.meaning, target: i.name, a: [["Topic", i.name], ["Example", i.example]] }; } }
   ],
   importHint: "topic | rule | example | common mistake", importOrder: ["name", "meaning", "example", "mistake"],
   starterKeys: ["name", "meaning", "example", "mistake"],

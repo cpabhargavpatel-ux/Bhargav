@@ -10,6 +10,7 @@
 </head>
 <body>
 <div id="app"></div>
+<script src="/srs.js"></script>
 <script src="/study.js"></script>
 <script>
 StudyPage({
@@ -25,6 +26,14 @@ StudyPage({
     { label: "word + example", parts: function (i) { return [i.name, i.example]; } },
     { label: "word only", parts: function (i) { return [i.name]; } },
     { label: "word + meaning + example", parts: function (i) { return [i.name, i.meaning ? "It means: " + i.meaning : "", i.example]; } }
+  ],
+  review: [
+    { label: "Word \u2192 meaning", can: function (i) { return !!i.meaning; },
+      ask: function (i) { return { prompt: "What does it mean?", q: i.name, pos: i.pos, spoken: i.name, target: i.meaning, a: [["Meaning", i.meaning], ["Example", i.example]] }; } },
+    { label: "Meaning \u2192 word", can: function (i) { return !!i.meaning; },
+      ask: function (i) { return { prompt: "Which word fits this meaning?", q: i.meaning, spoken: i.meaning, target: i.name, a: [["Word", i.name + (i.pos ? " (" + i.pos + ")" : "")], ["Example", i.example]] }; } },
+    { label: "Fill the blank", can: function (i) { return SRS.blank(i.example, i.name) !== null; },
+      ask: function (i) { return { prompt: "Which word completes the sentence?", q: SRS.blank(i.example, i.name), target: i.name, spoken: i.example, a: [["Word", i.name], ["Meaning", i.meaning], ["Example", i.example]] }; } }
   ],
   importHint: "word | meaning | example", importOrder: ["name", "meaning", "example"],
   starterKeys: ["name", "pos", "meaning", "example"],
