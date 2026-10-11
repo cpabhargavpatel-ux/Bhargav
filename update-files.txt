@@ -2,6 +2,7 @@ server.mjs
 public/french-ipa.html
 public/english.html
 public/fr-en-ipa.js
+public/fr-vocab-more.js
 public/store.js
 public/login.html
 public/srs.js

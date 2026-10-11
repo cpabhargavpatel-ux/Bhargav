@@ -194,11 +194,13 @@ const MODULE_CSS = `<style>
 </style>`;
 const moduleBar = (active, sub) => MODULE_CSS + (active === "goal" ? "<style>header{top:40px !important}@media print{header{top:0 !important}}</style>" : "") + `<nav id="modtabs">`
   + `<a href="/"${active === "goal" ? ' class="on"' : ""}>Goal Setting</a>`
-  + `<a href="/french-ipa.html"${active === "french" ? ' class="on"' : ""}>French</a>`
+  + `<span class="mt-drop"><a href="/french-ipa.html"${active === "french" ? ' class="on"' : ""}>French <i>&#9662;</i></a><span class="mt-menu">`
+  + [["Sounds", "sounds"], ["Vocabulary &amp; Sentences", "vocab"]].map(([t, k]) => `<a href="/french-ipa.html#${k}" data-fr="${k}">${t}</a>`).join("")
+  + `</span></span>`
   + `<span class="mt-drop"><a href="/english.html"${active === "english" ? ' class="on"' : ""}>English <i>&#9662;</i></a><span class="mt-menu">`
   + [["Idioms", "/english.html", "idioms"], ["Vocabulary", "/vocabulary.html", "vocabulary"], ["Grammar", "/grammar.html", "grammar"], ["Irregular verbs", "/irregular-verbs.html", "verbs"]]
       .map(([t, h, k]) => `<a href="${h}"${active === "english" && sub === k ? ' class="cur" aria-current="page"' : ""}>${t}</a>`).join("")
-  + `</span></span><span id="modbuild">build 10-11-j</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n`;
+  + `</span></span><span id="modbuild">build 10-11-k</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n`;
 function withModuleBar(html, active, sub) {
   const m = /<body[^>]*>/i.exec(html);
   return m ? html.slice(0, m.index + m[0].length) + "\n" + moduleBar(active, sub) + html.slice(m.index + m[0].length)
