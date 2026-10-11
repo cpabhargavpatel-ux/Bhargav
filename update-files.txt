@@ -8,6 +8,7 @@ public/srs.js
 public/study.css
 public/study.js
 public/grammar.html
+public/irregular-verbs.js
 public/vocabulary.html
 public/app.html
 public/timer.js

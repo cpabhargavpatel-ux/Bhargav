@@ -29,7 +29,7 @@
       '<input type="search" id="q" placeholder="Search…" autocomplete="off" aria-label="Search">' +
       '<span class="chips" role="group" aria-label="Filter"><button class="chip on" data-f="all">All</button><button class="chip" data-f="hard">↻ Hard</button><button class="chip" data-f="common">★ ' + cfg.commonLabel + '</button></span>' +
       '<select id="sort" aria-label="Sort"><option value="added">Order added</option><option value="az">A – Z</option><option value="hard">Hardest first</option><option value="use">' + cfg.useSort + '</option></select>' +
-      '<button class="play alt" id="add">+ Add ' + cfg.noun + '</button><button class="play alt" id="imp">Import / export</button></div>' +
+      '<button class="play alt" id="add">+ Add ' + cfg.noun + '</button><button class="play alt" id="imp">Import / export</button>' + (cfg.packs || []).map(function (pk, i) { return '<button class="play alt" data-pack="' + i + '" title="' + pk.title + '">+ ' + pk.label + '</button>'; }).join("") + '</div>' +
       '<div class="bar-row"><button class="play" id="practise">↻ Practise hard ones</button><button class="play stop" id="stop" hidden>■ Stop</button><button class="play alt srs-btn" id="review">Review</button>' +
       '<label class="slider">Say <select id="mode">' + cfg.modes.map(function (m, i) { return '<option value="' + i + '">' + m.label + '</option>'; }).join("") + '</select></label>' +
       '<label class="slider">Speed <input type="range" id="rate" min="0.5" max="1.3" step="0.05" value="0.9"><output id="rateOut">0.9×</output></label>' +
@@ -138,6 +138,19 @@
       });
       save(); render();
     }
+    function addPack(pk) {
+      var have = {}; items.forEach(function (i) { have[keyText(i)] = 1; }); var n = 0, t = Date.now();
+      pk.rows.forEach(function (row) {
+        var o = {}; cfg.starterKeys.forEach(function (k, i) { o[k] = row[i] || ""; });
+        if (have[norm(o[first.k])]) return;
+        var orig = {}; rest.forEach(function (f) { orig[f.k] = o[f.k] || ""; });
+        items.push(mk(o, { orig: orig, use: row[cfg.starterKeys.length] || 0, added: t + n })); n++;
+      });
+      save(); render();
+      $("status").textContent = n ? "Added " + n + " " + pk.noun + "." : "You already have all of them.";
+      setTimeout(function () { if ($("status").textContent.indexOf(n ? "Added" : "You already") === 0) $("status").textContent = ""; }, 4000);
+    }
+    document.querySelectorAll("[data-pack]").forEach(function (b) { b.onclick = function () { addPack(cfg.packs[+b.dataset.pack]); }; });
     function addItem() {
       var it = mk({}, { added: Date.now() }); items.push(it);
       $("q").value = ""; filter = "all"; document.querySelectorAll(".chip").forEach(function (c) { c.classList.toggle("on", c.dataset.f === "all"); });
