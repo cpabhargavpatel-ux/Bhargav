@@ -1,0 +1,88 @@
+  @font-face { font-family: "Gentium Book Plus"; font-style: normal; font-weight: 400; font-display: swap; src: url(/fonts/gentium-book-plus-400.woff2) format("woff2"); }
+  @font-face { font-family: "Gentium Book Plus"; font-style: normal; font-weight: 700; font-display: swap; src: url(/fonts/gentium-book-plus-700.woff2) format("woff2"); }
+  @font-face { font-family: "Gentium Book Plus"; font-style: italic; font-weight: 400; font-display: swap; src: url(/fonts/gentium-book-plus-400-italic.woff2) format("woff2"); }
+  :root {
+    --paper: #FBFBF8; --ink: #17181C; --blue: #2240E8; --blue-tint: #E8ECFE; --gray: #6b6d75; --rule: #E3E2DC;
+    --serif: "Gentium Book Plus", "Charis SIL", "Doulos SIL", Cambria, Georgia, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--sans); line-height: 1.5; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  .wrap { max-width: 1480px; margin: 0 auto; padding: 0 28px 80px; }
+
+  /* ---------- toolbar (sticks under the tab bar) ---------- */
+  .bar { position: sticky; top: 40px; z-index: 10; background: var(--paper); border-bottom: 1px solid var(--rule); padding: 12px 0 10px; }
+  .bar-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+  .bar-row + .bar-row { margin-top: 8px; }
+  h1 { font-family: var(--serif); font-size: 1.5rem; margin-right: 6px; }
+  h1 small { font-family: var(--sans); font-size: 0.85rem; font-weight: 400; color: var(--gray); margin-left: 6px; }
+  input[type="search"], .bar select { font: inherit; font-size: 0.92rem; padding: 7px 10px; border: 1px solid var(--rule); border-radius: 8px; background: #fff; color: var(--ink); }
+  input[type="search"] { width: min(320px, 100%); }
+  .chips { display: inline-flex; gap: 6px; }
+  .chip { font: inherit; font-size: 0.88rem; font-weight: 600; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--rule); background: #fff; color: var(--gray); cursor: pointer; }
+  .chip.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+  button.play { font: inherit; font-size: 0.92rem; font-weight: 600; color: var(--paper); background: var(--blue); border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer; }
+  button.play:hover { background: #1B34C4; }
+  button.play:disabled { background: #85878E; cursor: default; }
+  button.play.alt { background: #fff; color: var(--blue); border: 1px solid var(--blue); }
+  button.play.alt:hover { background: var(--blue-tint); }
+  button.play.stop { background: #C62828; }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .slider { display: inline-flex; align-items: center; gap: 6px; font-size: 0.88rem; color: var(--gray); }
+  .slider input { width: 84px; } .slider output { min-width: 2.6em; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .legend { color: var(--gray); font-size: 0.85rem; }
+  .legend b { font-weight: 700; } .legend .h { color: #C62828; } .legend .u { color: #B07B00; }
+  .status { color: var(--blue); font-size: 0.88rem; min-height: 1.2em; }
+  .warn { color: #B4331F; font-size: 0.85rem; display: none; }
+
+  /* ---------- idiom cards ---------- */
+  .list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr)); gap: 14px; margin-top: 16px; }
+  .card { background: #fff; border: 1px solid var(--rule); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+  .card.playing { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-tint); }
+  .card.h1 { border-left: 5px solid #e9c77a; } .card.h2 { border-left: 5px solid #f0a56b; } .card.h3 { border-left: 5px solid #e57373; }
+  .top { display: flex; align-items: center; gap: 8px; }
+  .top input { flex: 1; min-width: 0; font-family: var(--serif); font-size: 1.3rem; font-weight: 700; border: 1px solid transparent; border-radius: 6px; padding: 2px 6px; background: transparent; color: var(--ink); }
+  .field label { display: block; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gray); padding-left: 6px; }
+  .card input:hover, .card input:focus, .card textarea:hover, .card textarea:focus { border-color: #cfd3dc; background: #fff; }
+  .card textarea { width: 100%; resize: none; overflow: hidden; border: 1px solid transparent; border-radius: 6px; padding: 3px 6px; font: inherit; font-family: var(--serif); font-size: 1.08rem; line-height: 1.4; background: transparent; color: var(--ink); }
+  .card textarea.ex { font-style: italic; color: #34363d; }
+  .mk { font: 700 0.9rem/1 var(--sans); border: 1px solid var(--rule); background: #fff; border-radius: 8px; padding: 6px 8px; cursor: pointer; color: #9aa3b2; min-width: 2.7em; letter-spacing: -1px; }
+  .mk:hover { background: var(--blue-tint); }
+  .mk.hard[data-l="1"] { color: #A56A00; background: #fff1cc; border-color: #e9c77a; }
+  .mk.hard[data-l="2"] { color: #C25A0E; background: #ffe0c8; border-color: #f0a56b; }
+  .mk.hard[data-l="3"] { color: #fff; background: #C62828; border-color: #C62828; }
+  .mk.use[data-l="1"] { color: #8a6a00; background: #fff8dd; border-color: #ecd68a; }
+  .mk.use[data-l="2"] { color: #8a6a00; background: #ffeeb0; border-color: #e6c85a; }
+  .mk.use[data-l="3"] { color: #5c4300; background: #ffd966; border-color: #e0b000; }
+  .ico { font: inherit; font-size: 0.95rem; border: none; background: transparent; cursor: pointer; color: var(--blue); padding: 4px 6px; border-radius: 6px; }
+  .ico:hover { background: var(--blue-tint); } .ico.del { color: #9aa3b2; } .ico.del:hover { color: #C62828; background: #fdecea; }
+  .edited { font-size: 0.72rem; color: #B07B00; margin-left: 2px; }
+  .empty { margin-top: 40px; text-align: center; color: var(--gray); }
+  .empty p { margin: 8px 0; }
+  .empty .row { display: flex; gap: 10px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+  dialog { border: none; border-radius: 12px; padding: 18px; width: min(680px, 94vw); box-shadow: 0 20px 60px rgba(8,22,40,.4); }
+  dialog::backdrop { background: rgba(8,22,40,.45); }
+  dialog h2 { font-family: var(--serif); font-size: 1.2rem; margin-bottom: 6px; }
+  dialog p { color: var(--gray); font-size: 0.88rem; margin-bottom: 8px; }
+  dialog textarea { width: 100%; min-height: 220px; font: 0.9rem/1.4 ui-monospace, Consolas, monospace; padding: 10px; border: 1px solid var(--rule); border-radius: 8px; }
+  dialog .row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
+  .note { color: var(--gray); font-size: 0.82rem; margin-top: 24px; }
+
+  /* ---------- text size control (lives in the top tab bar) ---------- */
+  #fontctl { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; align-self: center; font: 600 12px system-ui, sans-serif; color: #9fb0d6; }
+  #fontctl + #modbuild { margin-left: 14px !important; }
+  #fontctl button { font: inherit; font-size: 13px; line-height: 1; padding: 5px 9px; border: 0; border-radius: 6px; background: #1b2542; color: #c9d2ea; cursor: pointer; }
+  #fontctl button:hover:not(:disabled) { background: #27345c; color: #fff; }
+  #fontctl button:disabled { opacity: 0.35; cursor: default; }
+  #fontctl #fsPct { min-width: 3.6em; background: transparent; font-variant-numeric: tabular-nums; }
+  #fontctl.floating { position: fixed; top: 6px; right: 10px; z-index: 1000; background: #10182b; padding: 4px 6px; border-radius: 8px; }
+  @media (max-width: 700px) { .wrap { padding: 0 14px 60px; } }
+
+  /* ---------- sub-navigation (Idioms | Vocabulary | Grammar) ---------- */
+  .subnav { display: flex; gap: 6px; padding: 12px 0 0; flex-wrap: wrap; }
+  .subnav a { font-size: 0.92rem; font-weight: 600; padding: 6px 16px; border-radius: 999px; border: 1px solid var(--rule); background: #fff; color: var(--gray); text-decoration: none; }
+  .subnav a:hover { background: var(--blue-tint); color: var(--blue); }
+  .subnav a.on { background: var(--blue); border-color: var(--blue); color: #fff; cursor: default; }
+  .card .pos { font: inherit; font-size: 0.8rem; padding: 4px 6px; border: 1px solid var(--rule); border-radius: 6px; background: #fff; color: var(--gray); }
+  .card textarea.mistake { color: #8a2c1c; }

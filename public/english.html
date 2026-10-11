@@ -20,6 +20,10 @@
   body { background: var(--paper); color: var(--ink); font-family: var(--sans); line-height: 1.5; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
   .wrap { max-width: 1480px; margin: 0 auto; padding: 0 28px 80px; }
 
+  .subnav { display: flex; gap: 6px; padding: 12px 0 0; flex-wrap: wrap; }
+  .subnav a { font-size: 0.92rem; font-weight: 600; padding: 6px 16px; border-radius: 999px; border: 1px solid var(--rule); background: #fff; color: var(--gray); text-decoration: none; }
+  .subnav a:hover { background: var(--blue-tint); color: var(--blue); }
+  .subnav a.on { background: var(--blue); border-color: var(--blue); color: #fff; cursor: default; }
   /* ---------- toolbar (sticks under the tab bar) ---------- */
   .bar { position: sticky; top: 40px; z-index: 10; background: var(--paper); border-bottom: 1px solid var(--rule); padding: 12px 0 10px; }
   .bar-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
@@ -91,6 +95,7 @@
 </head>
 <body>
 <div class="wrap">
+  <nav class="subnav" aria-label="English pages"><a href="/english.html" class="on" aria-current="page">Idioms</a><a href="/vocabulary.html">Vocabulary</a><a href="/grammar.html">Grammar</a></nav>
   <div class="bar">
     <div class="bar-row">
       <h1>Idioms <small id="count"></small></h1>
@@ -250,7 +255,7 @@ function build(it) {
     el.addEventListener("input", () => { if (el.tagName === "TEXTAREA") grow(el); });
     el.addEventListener("change", () => { it[field] = el.value.trim(); save(); paint(c, it); }); };
   edit(".idi", "idiom"); edit(".mean", "meaning"); edit(".ex", "example");
-  c.querySelector(".mk.hard").onclick = () => { it.hard = (it.hard + 1) % 4; save(); paint(c, it); };
+  c.querySelector(".mk.hard").onclick = () => { it.hard = (it.hard + 1) % 4; save(); paint(c, it); counts(); };
   c.querySelector(".mk.use").onclick = () => { it.use = (it.use + 1) % 4; save(); paint(c, it); };
   c.querySelector(".say").onclick = () => { stopPlay(); speakIdiom(it, $("mode").value); };
   c.querySelector(".restore").onclick = () => { if (!it.orig) return; it.meaning = it.orig.meaning; it.example = it.orig.example;
@@ -259,13 +264,17 @@ function build(it) {
   paint(c, it);
   return c;
 }
+function counts(shown) {      // header count + whether there is anything marked hard to practise
+  const hard = items.filter(i => i.hard).length;
+  if (shown == null) shown = document.querySelectorAll(".card").length;
+  $("count").textContent = items.length ? shown + (shown !== items.length ? " of " + items.length : "") + (hard ? " \u00B7 " + hard + " marked hard" : "") : "";
+  $("practise").disabled = !hard;
+}
 function render() {
   const list = visible(), box = $("list"); box.textContent = "";
   list.forEach(it => box.appendChild(build(it)));
   box.querySelectorAll("textarea").forEach(grow);
-  const hard = items.filter(i => i.hard).length;
-  $("count").textContent = items.length ? list.length + (list.length !== items.length ? " of " + items.length : "") + (hard ? " · " + hard + " marked hard" : "") : "";
-  $("practise").disabled = !hard;
+  counts(list.length);
   const e = $("empty");
   if (!items.length) {
     e.hidden = false;

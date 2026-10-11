@@ -1,6 +1,10 @@
 server.mjs
 public/french-ipa.html
 public/english.html
+public/study.css
+public/study.js
+public/grammar.html
+public/vocabulary.html
 public/app.html
 public/timer.js
 public/fonts/gentium-book-plus-400.woff2

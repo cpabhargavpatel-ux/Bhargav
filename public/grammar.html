@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grammar</title>
+<script>try{var p=parseInt(localStorage.getItem("en-fontsize"));if(p>=80&&p<=180)document.documentElement.style.fontSize=p+"%"}catch(e){}</script>
+<link rel="preload" href="/fonts/gentium-book-plus-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/study.css">
+</head>
+<body>
+<div id="app"></div>
+<script src="/study.js"></script>
+<script>
+StudyPage({
+  key: "en-grammar", sub: "grammar", title: "Grammar", noun: "topic",
+  commonLabel: "Comes up often", useSort: "Comes up most first", useLegend: "how often this comes up for me or for most learners (1\u20133 stars).",
+  useName: ["not rated", "comes up rarely", "comes up sometimes", "comes up a lot"], useTip: "How often it comes up (my guess)",
+  fields: [
+    { k: "name", label: "Topic" },
+    { k: "meaning", label: "Rule", ph: "The rule in plain words\u2026" },
+    { k: "example", label: "Example", ph: "A correct example\u2026", cls: "ex" },
+    { k: "mistake", label: "Common mistake", ph: "A mistake to avoid\u2026", cls: "mistake" }
+  ],
+  modes: [
+    { label: "topic + example", parts: function (i) { return [i.name, i.example]; } },
+    { label: "topic only", parts: function (i) { return [i.name]; } },
+    { label: "topic + rule + example", parts: function (i) { return [i.name, i.meaning, i.example]; } }
+  ],
+  importHint: "topic | rule | example | common mistake", importOrder: ["name", "meaning", "example", "mistake"],
+  starterKeys: ["name", "meaning", "example", "mistake"],
+  starter: [
+[
+"Simple present vs present continuous",
+"Use the simple present for habits, routines and facts (she works, water boils). Use the present continuous (am/is/are + -ing) for actions happening now or temporary situations.",
+"I usually walk to work, but today I'm taking the bus.",
+"Wrong: \"I am knowing the answer.\" State verbs (know, like, want) are not normally used in the continuous."
+],
+[
+"Simple past vs present perfect",
+"Use the simple past for finished actions at a definite time (I saw it yesterday). Use the present perfect (have/has + past participle) for experiences or results that connect to now, with no definite time.",
+"I have visited Rome twice. I visited it in 2019.",
+"Wrong: \"I have seen him yesterday.\" Don't use the present perfect with a finished time like yesterday or last year."
+],
+[
+"Present perfect continuous",
+"Use have/has been + -ing for an action that started in the past and is still going on, or has just stopped with a visible result. It stresses the duration.",
+"I've been learning English for three years.",
+"Wrong: \"I am learning English since 2020.\" Use the present perfect (continuous) with since / for."
+],
+[
+"Past continuous vs simple past",
+"Use was/were + -ing for an action in progress at a past moment or interrupted by another. Use the simple past for the short action that interrupted.",
+"I was cooking when the phone rang.",
+"Wrong: \"I cooked when the phone was ringing.\" The longer background action takes the continuous."
+],
+[
+"Will vs going to",
+"Use going to for plans and intentions already decided, and for predictions based on evidence. Use will for sudden decisions, offers, promises and general predictions.",
+"Look at those clouds — it's going to rain. I'll help you carry that.",
+"Wrong: \"Wait, I am going to open the door for you\" (as an instant offer). Use \"I'll open the door.\""
+],
+[
+"Articles: a / an / the / no article",
+"Use a/an for one of many or the first mention; the for something specific or already known; no article for general plurals and uncountable nouns. Use an before a vowel SOUND.",
+"I saw a dog. The dog was huge. Dogs are loyal. She is an honest person.",
+"Wrong: \"I like the music\" (in general). Say \"I like music.\""
+],
+[
+"Countable and uncountable nouns",
+"Countable nouns have plurals (one book, two books) and use many / few / a few. Uncountable nouns (water, information, advice) have no plural and use much / little / a little.",
+"How much money do you have? How many coins?",
+"Wrong: \"informations\", \"advices\". Say \"some information\", \"a piece of advice\"."
+],
+[
+"Prepositions of time: in / on / at",
+"Use in for months, years, seasons and parts of the day; on for days and dates; at for clock times and fixed points (at noon, at night).",
+"The class starts at 9 on Monday in September.",
+"Wrong: \"on the morning\". Say \"in the morning\", but \"on Monday morning\"."
+],
+[
+"Prepositions of place: in / on / at",
+"Use in for enclosed spaces and areas (in the room, in Canada); on for surfaces and lines (on the table, on the street); at for specific points (at the door, at the bus stop).",
+"She is at the station, waiting on the platform, in the rain.",
+"Wrong: \"I live at Toronto.\" Use \"in\" for cities and countries."
+],
+[
+"First conditional",
+"If + simple present, will + base verb. Used for real or likely future situations.",
+"If it rains tomorrow, we will cancel the picnic.",
+"Wrong: \"If it will rain, we will cancel.\" Don't use will in the if-clause."
+],
+[
+"Second conditional",
+"If + simple past, would + base verb. Used for unreal or unlikely present or future situations.",
+"If I had more time, I would learn the piano.",
+"Wrong: \"If I would have more time...\" Don't use would in the if-clause. (\"If I were you\" is correct for all persons.)"
+],
+[
+"Third conditional",
+"If + past perfect, would have + past participle. Used for imagined situations in the past, usually regrets.",
+"If she had studied harder, she would have passed.",
+"Wrong: \"If she would have studied...\" Use had studied in the if-clause."
+],
+[
+"Passive voice",
+"be + past participle. Use it when the action or the object matters more than who did it, or the doer is unknown.",
+"The bridge was built in 1950. English is spoken worldwide.",
+"Wrong: \"The meeting was happened.\" Intransitive verbs (happen, arrive, die) have no passive."
+],
+[
+"Reported speech",
+"When reporting, move the tense back one step (am → was, will → would, have eaten → had eaten) and change pronouns and time words as needed.",
+"She said, \"I am tired.\" → She said (that) she was tired.",
+"Wrong: \"She told that she was tired.\" Use said, or told + person: \"She told me she was tired.\""
+],
+[
+"Relative clauses: who / which / that",
+"Use who for people, which for things, that for either in defining clauses. Use whose for possession. Non-defining clauses add extra information and use commas (which, who, not that).",
+"The woman who lives upstairs is a nurse. My car, which is old, still runs well.",
+"Wrong: \"The man which called...\" Use who for people."
+],
+[
+"Modal verbs: can, could, may, might, must, should",
+"Modals are followed by the base verb with no -s and no to. can/could = ability or possibility, may/might = possibility, must = strong obligation or deduction, should = advice.",
+"You should see a doctor. It might rain later.",
+"Wrong: \"She can to swim\", \"He musts go\". Use the base verb after a modal."
+],
+[
+"Used to vs be used to",
+"used to + base verb = a past habit that no longer happens. be/get used to + -ing = to be familiar with something.",
+"I used to live in Paris. I'm used to getting up early.",
+"Wrong: \"I am used to get up early.\" After be used to, use -ing."
+],
+[
+"Comparatives and superlatives",
+"Short adjectives: -er / -est (taller, tallest). Long adjectives: more / the most (more interesting). Irregular: good → better → best; bad → worse → worst. Use than with comparatives.",
+"This book is more interesting than that one. She is the tallest in the class.",
+"Wrong: \"more taller\", \"the most easiest\". Don't combine -er with more."
+],
+[
+"Gerund or infinitive",
+"Some verbs take -ing (enjoy, avoid, finish, suggest), some take to + verb (want, decide, hope, plan), and some take both (like, start) sometimes with a change of meaning (stop, remember).",
+"I enjoy reading. I decided to leave. I stopped to rest vs I stopped resting.",
+"Wrong: \"I enjoy to read.\" Learn which verbs take which form."
+],
+[
+"Subject–verb agreement",
+"A singular subject takes a singular verb and a plural subject takes a plural verb. Ignore words that come between them. Everyone, each and nobody are singular.",
+"The list of items is on the desk. Everyone is ready.",
+"Wrong: \"The list of items are...\" The subject is list, not items."
+],
+[
+"Word order in questions",
+"Question word + auxiliary + subject + main verb. Do not invert the subject and verb in an embedded (indirect) question.",
+"Where do you work? Do you know where she works?",
+"Wrong: \"Do you know where does she work?\" Use statement order in indirect questions."
+],
+[
+"Phrasal verbs: separable and inseparable",
+"A phrasal verb is a verb + particle with a new meaning. With separable ones the object can go in the middle (turn the light off); a pronoun object must go in the middle. Inseparable ones cannot be split (look after the baby).",
+"Please turn it off. We looked after our neighbour's cat.",
+"Wrong: \"turn off it\". With a pronoun, say \"turn it off\"."
+],
+[
+"Few / a few, little / a little",
+"a few / a little = some, a positive idea. few / little (no a) = hardly any, a negative idea. Few goes with countable nouns, little with uncountable.",
+"I have a few friends here, so I'm not lonely. I have little time, so I can't come.",
+"Wrong: \"a little friends\". Use a few with countable nouns."
+],
+[
+"Since and for",
+"Use since with a starting point (since 2020, since Monday) and for with a length of time (for three years, for ten minutes). Both are used with the present perfect.",
+"I've lived here since 2019, for about seven years.",
+"Wrong: \"I have lived here since five years.\" Use for with a duration."
+],
+[
+"Wish and if only",
+"Use wish + past simple for present regrets, wish + past perfect for past regrets, and wish + would for complaints or wanting change.",
+"I wish I had a bigger flat. I wish I had told her. I wish it would stop raining.",
+"Wrong: \"I wish I have more money.\" Use the past form."
+],
+[
+"Some and any",
+"Use some in positive sentences and in offers or requests expecting yes. Use any in negatives and most questions, and for \"it doesn't matter which\" in positives.",
+"I have some questions. Do you have any milk? Would you like some tea?",
+"Wrong: \"I don't have some money.\" Use any in negatives."
+],
+[
+"Linking words: although, however, despite",
+"Although / though + clause. Despite / in spite of + noun or -ing. However starts a new sentence (usually followed by a comma) and shows contrast.",
+"Although it was late, we kept working. Despite the rain, we went out. It was late. However, we kept working.",
+"Wrong: \"Despite of the rain\" or \"Although it was late, but we stayed.\" Don't add of after despite or but after although."
+]
+]
+});
+</script>
+</body>
+</html>

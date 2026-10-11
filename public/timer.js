@@ -7,7 +7,7 @@
   window.__gtnTimer = true;
 
   var KS = "gtn-timer", KL = "gtn-timelog";
-  var area = location.pathname.indexOf("french") >= 0 ? "French" : location.pathname.indexOf("english") >= 0 ? "English" : "Goal Setting";
+  var area = location.pathname.indexOf("french") >= 0 ? "French" : /english|vocabulary|grammar/.test(location.pathname) ? "English" : "Goal Setting";
   var DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   function get(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }

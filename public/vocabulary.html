@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vocabulary</title>
+<script>try{var p=parseInt(localStorage.getItem("en-fontsize"));if(p>=80&&p<=180)document.documentElement.style.fontSize=p+"%"}catch(e){}</script>
+<link rel="preload" href="/fonts/gentium-book-plus-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/study.css">
+</head>
+<body>
+<div id="app"></div>
+<script src="/study.js"></script>
+<script>
+StudyPage({
+  key: "en-vocab", sub: "vocabulary", title: "Vocabulary", noun: "word",
+  commonLabel: "Used often", useSort: "Most used first", useLegend: "how often I think people use the word (1\u20133 stars).",
+  fields: [
+    { k: "name", label: "Word" },
+    { k: "meaning", label: "Meaning", ph: "What it means\u2026" },
+    { k: "example", label: "Example", ph: "A sentence that uses it\u2026", cls: "ex" }
+  ],
+  pos: ["noun", "verb", "adjective", "adverb", "phrasal verb", "other"],
+  modes: [
+    { label: "word + example", parts: function (i) { return [i.name, i.example]; } },
+    { label: "word only", parts: function (i) { return [i.name]; } },
+    { label: "word + meaning + example", parts: function (i) { return [i.name, i.meaning ? "It means: " + i.meaning : "", i.example]; } }
+  ],
+  importHint: "word | meaning | example", importOrder: ["name", "meaning", "example"],
+  starterKeys: ["name", "pos", "meaning", "example"],
+  starter: [
+[
+"ambiguous",
+"adjective",
+"having more than one possible meaning; not clear",
+"The instructions were ambiguous, so we asked for clarification."
+],
+[
+"mitigate",
+"verb",
+"to make something less severe or harmful",
+"Planting trees can help mitigate the effects of flooding."
+],
+[
+"reluctant",
+"adjective",
+"unwilling and hesitant to do something",
+"She was reluctant to speak up in the meeting."
+],
+[
+"thrive",
+"verb",
+"to grow or develop well; to be successful",
+"Small businesses thrive when the local economy is strong."
+],
+[
+"inevitable",
+"adjective",
+"certain to happen and impossible to avoid",
+"With so much traffic, a delay was inevitable."
+],
+[
+"substantial",
+"adjective",
+"large in amount, size or importance",
+"They made a substantial investment in new equipment."
+],
+[
+"meticulous",
+"adjective",
+"very careful and precise about details",
+"He is meticulous about checking every figure."
+],
+[
+"scrutinize",
+"verb",
+"to examine something very carefully",
+"Auditors scrutinize the accounts every year."
+],
+[
+"elaborate",
+"verb",
+"to give more details about something",
+"Could you elaborate on your second point?"
+],
+[
+"inherent",
+"adjective",
+"existing as a natural and permanent part of something",
+"Some risk is inherent in any new venture."
+],
+[
+"feasible",
+"adjective",
+"possible and practical to do",
+"The team decided the plan was feasible within the budget."
+],
+[
+"persuade",
+"verb",
+"to convince someone to do or believe something",
+"I managed to persuade my manager to approve the trip."
+],
+[
+"negotiate",
+"verb",
+"to discuss something in order to reach an agreement",
+"They negotiated a better price with the supplier."
+],
+[
+"collaborate",
+"verb",
+"to work together with others on something",
+"Our two departments collaborate on every product launch."
+],
+[
+"prioritize",
+"verb",
+"to treat something as more important than other things",
+"You need to prioritize your tasks before the deadline."
+],
+[
+"consistent",
+"adjective",
+"always behaving or happening in the same way; steady",
+"Her results have been consistent all year."
+],
+[
+"perspective",
+"noun",
+"a particular way of thinking about something; a point of view",
+"Living abroad gave me a new perspective on my own country."
+],
+[
+"obstacle",
+"noun",
+"something that blocks your way or makes progress difficult",
+"The biggest obstacle to the project was a lack of funding."
+],
+[
+"leverage",
+"verb",
+"to use something you have to get the best possible result",
+"We can leverage our existing customers to find new ones."
+],
+[
+"streamline",
+"verb",
+"to make a process simpler and more efficient",
+"The new software streamlines the approval process."
+],
+[
+"resilient",
+"adjective",
+"able to recover quickly from difficulties",
+"Children are often more resilient than adults expect."
+],
+[
+"compelling",
+"adjective",
+"very convincing or interesting; hard to resist",
+"She made a compelling argument for changing the schedule."
+],
+[
+"concise",
+"adjective",
+"giving a lot of information in a few words",
+"Please keep your summary concise."
+],
+[
+"tangible",
+"adjective",
+"clear and real enough to be seen or measured",
+"We need tangible results, not just promises."
+],
+[
+"overwhelm",
+"verb",
+"to affect someone so strongly that they cannot cope",
+"The number of emails overwhelmed him after the holiday."
+],
+[
+"delegate",
+"verb",
+"to give part of your work or authority to someone else",
+"Good managers know when to delegate."
+],
+[
+"commitment",
+"noun",
+"a promise to do something; dedication to a cause or task",
+"Learning a language takes time and commitment."
+],
+[
+"reliable",
+"adjective",
+"able to be trusted to do what is expected",
+"Our supplier is fast and reliable."
+],
+[
+"adapt",
+"verb",
+"to change in order to fit a new situation",
+"It took a few weeks to adapt to the new schedule."
+],
+[
+"diligent",
+"adjective",
+"careful and hard-working",
+"A diligent student, she reviewed her notes every night."
+],
+[
+"outcome",
+"noun",
+"the result or effect of an action or event",
+"We were pleased with the outcome of the meeting."
+],
+[
+"insight",
+"noun",
+"a clear, deep understanding of something",
+"The report offers valuable insight into customer behaviour."
+],
+[
+"hinder",
+"verb",
+"to make it harder for something to happen or develop",
+"Heavy rain hindered the rescue effort."
+],
+[
+"acknowledge",
+"verb",
+"to accept or admit that something is true; to recognise",
+"He acknowledged that he had made a mistake."
+],
+[
+"anticipate",
+"verb",
+"to expect something and prepare for it",
+"We anticipate a rise in demand this winter."
+],
+[
+"clarify",
+"verb",
+"to make something easier to understand",
+"Let me clarify what I meant."
+],
+[
+"crucial",
+"adjective",
+"extremely important; essential to success",
+"Good communication is crucial in any team."
+],
+[
+"undermine",
+"verb",
+"to weaken something gradually",
+"Constant criticism can undermine confidence."
+],
+[
+"evaluate",
+"verb",
+"to judge the quality or value of something carefully",
+"We will evaluate each proposal before deciding."
+],
+[
+"contribute",
+"verb",
+"to give something (time, money, ideas) to a shared effort",
+"Everyone contributed ideas to the plan."
+],
+[
+"endeavor",
+"noun",
+"a serious attempt to achieve something",
+"Starting a company is a challenging endeavor."
+],
+[
+"coincide",
+"verb",
+"to happen at the same time; to be the same",
+"My holiday coincides with the school break."
+],
+[
+"convey",
+"verb",
+"to communicate an idea or feeling; to carry something",
+"A good chart conveys the main message at a glance."
+],
+[
+"curious",
+"adjective",
+"eager to know or learn something",
+"Children are naturally curious about the world."
+],
+[
+"deadline",
+"noun",
+"the latest time by which something must be done",
+"The deadline for applications is Friday."
+],
+[
+"emerge",
+"verb",
+"to come out or become known",
+"New evidence emerged during the investigation."
+],
+[
+"enhance",
+"verb",
+"to improve the quality or value of something",
+"Good lighting can enhance the look of a room."
+],
+[
+"fluctuate",
+"verb",
+"to rise and fall irregularly",
+"Prices fluctuate depending on the season."
+],
+[
+"genuine",
+"adjective",
+"real and sincere; not fake",
+"She showed genuine concern for her colleagues."
+],
+[
+"hesitate",
+"verb",
+"to pause before doing something because you are unsure",
+"Don't hesitate to ask if you need help."
+],
+[
+"implement",
+"verb",
+"to put a plan or decision into action",
+"The company will implement the new policy in January."
+],
+[
+"pursue",
+"verb",
+"to follow or work towards something over time",
+"She decided to pursue a career in medicine."
+],
+[
+"sustain",
+"verb",
+"to keep something going over a period of time",
+"It's hard to sustain that level of effort for long."
+],
+[
+"trivial",
+"adjective",
+"of little importance or value",
+"Don't worry about such a trivial mistake."
+],
+[
+"vague",
+"adjective",
+"not clear or detailed",
+"His answer was vague, so we asked again."
+],
+[
+"thorough",
+"adjective",
+"complete and careful; including every detail",
+"The inspector made a thorough check of the building."
+],
+[
+"revise",
+"verb",
+"to change something to improve it; to review for an exam",
+"I need to revise my report before sending it."
+]
+]
+});
+</script>
+</body>
+</html>

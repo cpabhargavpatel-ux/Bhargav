@@ -164,18 +164,31 @@ const MODULE_CSS = `<style>
 #modtabs a.on{background:#fff;color:#10182b;cursor:default}
 #modtabs a:not(.on):hover{background:#27345c;color:#fff}
 #modbuild{margin-left:auto;align-self:center;color:#6f7fa8;font:500 11px system-ui,sans-serif}
+#modtabs .mt-drop{position:relative;display:inline-flex}
+#modtabs .mt-drop>a i{font-style:normal;font-size:10px;opacity:.7;margin-left:5px}
+#modtabs .mt-menu{display:none;position:absolute;top:100%;left:0;min-width:176px;background:#10182b;border:1px solid #27345c;border-radius:0 8px 8px 8px;box-shadow:0 12px 30px rgba(8,22,40,.5);padding:6px;z-index:1002;flex-direction:column;gap:2px}
+#modtabs .mt-drop:hover .mt-menu,#modtabs .mt-drop:focus-within .mt-menu{display:flex}
+#modtabs .mt-menu a{padding:8px 14px;border-radius:6px;background:transparent;color:#c9d2ea;white-space:nowrap}
+#modtabs .mt-menu a:hover{background:#27345c;color:#fff}
+#modtabs .mt-menu a.cur{background:#1b2542;color:#fff;cursor:default}
 @media print{#modtabs{display:none}}
 </style>`;
-const moduleBar = active => MODULE_CSS + (active === "goal" ? "<style>header{top:40px !important}@media print{header{top:0 !important}}</style>" : "") + `<nav id="modtabs">`
+const moduleBar = (active, sub) => MODULE_CSS + (active === "goal" ? "<style>header{top:40px !important}@media print{header{top:0 !important}}</style>" : "") + `<nav id="modtabs">`
   + `<a href="/"${active === "goal" ? ' class="on"' : ""}>Goal Setting</a>`
   + `<a href="/french-ipa.html"${active === "french" ? ' class="on"' : ""}>French</a>`
-  + `<a href="/english.html"${active === "english" ? ' class="on"' : ""}>English</a><span id="modbuild">build 10-10-t</span></nav>\n<script src="/timer.js"></script>\n`;
-function withModuleBar(html, active) {
+  + `<span class="mt-drop"><a href="/english.html"${active === "english" ? ' class="on"' : ""}>English <i>&#9662;</i></a><span class="mt-menu">`
+  + [["Idioms", "/english.html", "idioms"], ["Vocabulary", "/vocabulary.html", "vocabulary"], ["Grammar", "/grammar.html", "grammar"]]
+      .map(([t, h, k]) => `<a href="${h}"${active === "english" && sub === k ? ' class="cur" aria-current="page"' : ""}>${t}</a>`).join("")
+  + `</span></span><span id="modbuild">build 10-10-u</span></nav>\n<script src="/timer.js"></script>\n`;
+function withModuleBar(html, active, sub) {
   const m = /<body[^>]*>/i.exec(html);
-  return m ? html.slice(0, m.index + m[0].length) + "\n" + moduleBar(active) + html.slice(m.index + m[0].length)
-           : moduleBar(active) + html;
+  return m ? html.slice(0, m.index + m[0].length) + "\n" + moduleBar(active, sub) + html.slice(m.index + m[0].length)
+           : moduleBar(active, sub) + html;
 }
 
+/* pages and assets that need no sign-in (they hold no server data) */
+const ENGLISH_SUB = { "english.html": "idioms", "vocabulary.html": "vocabulary", "grammar.html": "grammar" };
+const PUBLIC_PAGES = new Set(["login.html", "server-shim.js", "french-ipa.html", "timer.js", "study.js", "study.css", ...Object.keys(ENGLISH_SUB)]);
 const SHIM_TAG = `<script src="/server-shim.js"></script>\n`;
 function serveApp(res) {
   const f = join(PUBLIC, "app.html");
@@ -209,10 +222,10 @@ const server = createServer(async (req, res) => {
       const file = join(PUBLIC, rel);
       if (!file.startsWith(PUBLIC + sep) || !existsSync(file) || statSync(file).isDirectory()) { res.writeHead(404).end("Not found"); return; }
       const isFont = rel.startsWith("fonts/") && extname(file) === ".woff2";   // public, cacheable
-      if (rel !== "login.html" && rel !== "server-shim.js" && rel !== "french-ipa.html" && rel !== "english.html" && rel !== "timer.js" && !isFont && !u) { res.writeHead(302, { location: "/login.html" }); res.end(); return; }
+      if (rel !== "login.html" && rel !== "server-shim.js" && !PUBLIC_PAGES.has(rel) && !isFont && !u) { res.writeHead(302, { location: "/login.html" }); res.end(); return; }
       let b = readFileSync(file);
       if (rel === "french-ipa.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "french"));
-      if (rel === "english.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "english"));
+      if (ENGLISH_SUB[rel]) b = Buffer.from(withModuleBar(b.toString("utf8"), "english", ENGLISH_SUB[rel]));
       res.writeHead(200, { "content-type": MIME[extname(file)] || "application/octet-stream", "cache-control": isFont ? "public, max-age=31536000, immutable" : "no-store" });
       res.end(b); return;
     }
