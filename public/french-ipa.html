@@ -301,7 +301,10 @@
   .nbtn.has { background: #fff3c4; }
   div.vwrap .wk, div.vwrap .nbtn { top: 16px; transform: none; }
   div.vwrap .nbtn { right: 40px; }
-  .nline { font: italic 0.88rem var(--serif); color: #6b5300; background: rgba(255, 214, 0, 0.14); border-left: 3px solid #e0b400; padding: 4px 8px; margin: 4px 0 2px; cursor: text; white-space: pre-wrap; overflow-wrap: anywhere; border-radius: 0 6px 6px 0; }
+  /* the note itself stays hidden; hover the 📝 (or the note) and the whole text pops up over the page, it hides again when you move away */
+  .nline { display: none; position: absolute; z-index: 40; top: 22px; left: 0; width: max-content; max-width: min(340px, 86vw); font: italic 0.95rem/1.4 var(--serif); color: #5a4500; background: #fff3c4; border: 1px solid #e0b400; border-radius: 8px; padding: 8px 11px; box-shadow: 0 8px 24px rgba(0,0,0,.22); cursor: text; white-space: pre-wrap; overflow-wrap: anywhere; text-align: left; }
+  div.vwrap .nline { left: auto; right: 36px; top: 38px; }
+  .nbtn:hover + .nline:not([hidden]), .nbtn:focus-visible + .nline:not([hidden]), .nline:not([hidden]):hover, .nline:not([hidden]):focus { display: block; }
   .nline[hidden], .nedit[hidden] { display: none; }
   .nedit { width: 100%; box-sizing: border-box; font: 0.95rem var(--serif); color: var(--ink, #222); background: #fffbe6; border: 1px solid #ecd98a; border-radius: 6px; padding: 5px 8px; margin: 4px 0 2px; resize: vertical; }
   /* ---------- French sub-tabs: Sounds | Vocabulary & Sentences ---------- */
@@ -737,6 +740,12 @@ function attachNote(wrap, key, what) {
   };
   const start = e => { if (e) e.stopPropagation(); editing = true; ta.value = FRNOTES[key] || ""; paint(); ta.focus(); };
   const done = () => { if (!editing) return; editing = false; const v = ta.value.trim(); if ((FRNOTES[key] || "") !== v) setNote(key, v); else paint(); };
+  const place = () => {                 // open towards the side that has room, so the note never runs off the screen
+    if (wrap.classList.contains("vwrap")) return;
+    const r = wrap.getBoundingClientRect(), w = Math.min(340, innerWidth * 0.86);
+    if (r.left + w > innerWidth - 8) { line.style.left = "auto"; line.style.right = "0"; } else { line.style.left = "0"; line.style.right = "auto"; }
+  };
+  btn.addEventListener("mouseenter", place); btn.addEventListener("focus", place);
   btn.addEventListener("mousedown", e => e.preventDefault());     // keep focus in the box so clicking the button saves instead of blurring first
   btn.addEventListener("click", e => { e.stopPropagation(); editing ? done() : start(); });
   line.addEventListener("click", start);
