@@ -56,6 +56,8 @@
   .card.h1 { border-left: 5px solid #e9c77a; } .card.h2 { border-left: 5px solid #f0a56b; } .card.h3 { border-left: 5px solid #e57373; }
   .top { display: flex; align-items: center; gap: 8px; }
   .top input { flex: 1; min-width: 0; font-family: var(--serif); font-size: 1.3rem; font-weight: 700; border: 1px solid transparent; border-radius: 6px; padding: 2px 6px; background: transparent; color: var(--ink); }
+  .card .field.mynote textarea { background: rgba(255, 214, 0, 0.13); border-color: rgba(200, 150, 0, 0.35); font-style: italic; }
+  .card .field.mynote label { color: #8a6a00; }
   .field label { display: block; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--gray); padding-left: 6px; }
   .card input:hover, .card input:focus, .card textarea:hover, .card textarea:focus { border-color: #cfd3dc; background: #fff; }
   .card textarea { width: 100%; resize: none; overflow: hidden; border: 1px solid transparent; border-radius: 6px; padding: 3px 6px; font: inherit; font-family: var(--serif); font-size: 1.08rem; line-height: 1.4; background: transparent; color: var(--ink); }
@@ -223,7 +225,7 @@ function visible() {
   let list = items.filter(it => {
     if (filter === "hard" && !it.hard) return false;
     if (filter === "common" && it.use < 2) return false;
-    return !q || norm(it.idiom + " " + it.meaning + " " + it.example).includes(q);
+    return !q || norm(it.idiom + " " + it.meaning + " " + it.example + " " + (it.mynote || "")).includes(q);
   });
   const s = $("sort").value;
   if (s === "az") list.sort((a, b) => a.idiom.localeCompare(b.idiom));
@@ -253,12 +255,13 @@ function build(it) {
     '<button class="ico restore" type="button" title="Restore the original meaning and example" hidden>&#8634;</button>' +
     '<button class="ico del" type="button" title="Delete this idiom">&#10005;</button></div>' +
     '<div class="field"><label>Meaning</label><textarea class="mean" rows="1" placeholder="What it means…"></textarea></div>' +
-    '<div class="field"><label>Example</label><textarea class="ex" rows="1" placeholder="A sentence that uses it…"></textarea></div>';
-  c.querySelector(".idi").value = it.idiom; c.querySelector(".mean").value = it.meaning; c.querySelector(".ex").value = it.example;
+    '<div class="field"><label>Example</label><textarea class="ex" rows="1" placeholder="A sentence that uses it…"></textarea></div>' +
+    '<div class="field mynote"><label>\uD83D\uDCDD My notes</label><textarea class="mynote-ta" rows="1" placeholder="Your own note \u2014 a memory trick, where you heard it\u2026"></textarea></div>';
+  c.querySelector(".idi").value = it.idiom; c.querySelector(".mean").value = it.meaning; c.querySelector(".ex").value = it.example; c.querySelector(".mynote-ta").value = it.mynote || "";
   const edit = (sel, field) => { const el = c.querySelector(sel);
     el.addEventListener("input", () => { if (el.tagName === "TEXTAREA") grow(el); });
     el.addEventListener("change", () => { it[field] = el.value.trim(); save(); paint(c, it); }); };
-  edit(".idi", "idiom"); edit(".mean", "meaning"); edit(".ex", "example");
+  edit(".idi", "idiom"); edit(".mean", "meaning"); edit(".ex", "example"); edit(".mynote-ta", "mynote");
   c.querySelector(".mk.hard").onclick = () => { it.hard = (it.hard + 1) % 4; save(); paint(c, it); counts(); };
   c.querySelector(".mk.use").onclick = () => { it.use = (it.use + 1) % 4; save(); paint(c, it); };
   c.querySelector(".say").onclick = () => { stopPlay(); speakIdiom(it, $("mode").value); };
@@ -394,9 +397,9 @@ function openDlg() { $("impMsg").textContent = ""; $("dlg").showModal(); }
 function download(name, type, data) { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
 $("imp").onclick = openDlg; $("close").onclick = () => $("dlg").close();
 $("doImport").onclick = () => { const r = importText($("paste").value); $("impMsg").textContent = "Added " + r.added + (r.skipped ? ", skipped " + r.skipped + " (already there or empty)" : "") + "."; if (r.added) $("paste").value = ""; };
-$("expJson").onclick = () => download("english-idioms-" + new Date().toISOString().slice(0, 10) + ".json", "application/json", JSON.stringify(items.map(i => ({ idiom: i.idiom, meaning: i.meaning, example: i.example, hard: i.hard, use: i.use })), null, 2));
+$("expJson").onclick = () => download("english-idioms-" + new Date().toISOString().slice(0, 10) + ".json", "application/json", JSON.stringify(items.map(i => ({ idiom: i.idiom, meaning: i.meaning, example: i.example, mynote: i.mynote || "", hard: i.hard, use: i.use })), null, 2));
 $("expCsv").onclick = () => { const q = s => '"' + String(s || "").replace(/"/g, '""') + '"';
-  download("english-idioms.csv", "text/csv", ["idiom,meaning,example,hard,used_often"].concat(items.map(i => [q(i.idiom), q(i.meaning), q(i.example), i.hard, i.use].join(","))).join("\r\n")); };
+  download("english-idioms.csv", "text/csv", ["idiom,meaning,example,my_notes,hard,used_often"].concat(items.map(i => [q(i.idiom), q(i.meaning), q(i.example), q(i.mynote || ""), i.hard, i.use].join(","))).join("\r\n")); };
 
 /* ---------- controls ---------- */
 $("q").addEventListener("input", render); $("sort").addEventListener("change", render); $("add").onclick = addIdiom;

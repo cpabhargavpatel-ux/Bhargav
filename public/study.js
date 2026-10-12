@@ -52,7 +52,7 @@
       fields.forEach(function (f) { it[f.k] = ""; }); if (cfg.pos) it.pos = "";
       return Object.assign(it, obj || {}, extra || {});
     }
-    var allText = function (it) { return fields.map(function (f) { return it[f.k]; }).join(" ") + " " + (it.pos || ""); };
+    var allText = function (it) { return fields.map(function (f) { return it[f.k]; }).join(" ") + " " + (it.pos || "") + " " + (it.mynote || ""); };
     var keyText = function (it) { return norm(it[first.k]); };
 
     /* ---------- list ---------- */
@@ -89,7 +89,8 @@
         '<button class="ico say" type="button" title="Listen">▶</button>' +
         '<button class="ico restore" type="button" title="Restore the original text" hidden>↺</button>' +
         '<button class="ico del" type="button" title="Delete">✕</button></div>' +
-        rest.map(function (f) { return '<div class="field"><label>' + f.label + '</label><textarea class="f-' + f.k + (f.cls ? " " + f.cls : "") + '" data-k="' + f.k + '" rows="1" placeholder="' + (f.ph || "") + '"></textarea></div>'; }).join("");
+        rest.map(function (f) { return '<div class="field"><label>' + f.label + '</label><textarea class="f-' + f.k + (f.cls ? " " + f.cls : "") + '" data-k="' + f.k + '" rows="1" placeholder="' + (f.ph || "") + '"></textarea></div>'; }).join("") +
+        '<div class="field mynote"><label>\uD83D\uDCDD My notes</label><textarea class="f-mynote" data-k="mynote" rows="1" placeholder="Your own note \u2014 a memory trick, where you heard it\u2026"></textarea></div>';
       var idi = c.querySelector(".idi"); idi.value = it[first.k] || "";
       idi.addEventListener("change", function () { it[first.k] = idi.value.trim(); save(); paint(c, it); });
       if (cfg.pos) { var ps = c.querySelector(".pos"); ps.value = it.pos || ""; ps.addEventListener("change", function () { it.pos = ps.value; save(); }); }
@@ -232,7 +233,7 @@
       rows.forEach(function (r, n) {
         var name = String(r[first.k] || "").trim(); if (!name || have[norm(name)]) { skipped++; return; }
         have[norm(name)] = 1;
-        var o = {}; fields.forEach(function (f) { o[f.k] = r[f.k] || ""; }); if (cfg.pos) o.pos = r.pos || "";
+        var o = {}; fields.forEach(function (f) { o[f.k] = r[f.k] || ""; }); if (cfg.pos) o.pos = r.pos || ""; o.mynote = r.mynote || "";
         items.push(mk(o, { hard: Math.max(0, Math.min(3, +r.hard || 0)), use: Math.max(0, Math.min(3, +r.use || 0)), added: Date.now() + n }));
         added++;
       });
@@ -240,13 +241,13 @@
     }
     function openDlg() { $("impMsg").textContent = ""; $("dlg").showModal(); }
     function download(name, type, data) { var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([data], { type: type })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
-    function exportRow(i) { var o = {}; fields.forEach(function (f) { o[f.k] = i[f.k]; }); if (cfg.pos) o.pos = i.pos || ""; o.hard = i.hard; o.use = i.use; return o; }
+    function exportRow(i) { var o = {}; fields.forEach(function (f) { o[f.k] = i[f.k]; }); if (cfg.pos) o.pos = i.pos || ""; o.mynote = i.mynote || ""; o.hard = i.hard; o.use = i.use; return o; }
     $("imp").onclick = openDlg; $("close").onclick = function () { $("dlg").close(); };
     $("doImport").onclick = function () { var r = importText($("paste").value); $("impMsg").textContent = "Added " + r.added + (r.skipped ? ", skipped " + r.skipped + " (already there or empty)" : "") + "."; if (r.added) $("paste").value = ""; };
     $("expJson").onclick = function () { download(cfg.sub + "-" + new Date().toISOString().slice(0, 10) + ".json", "application/json", JSON.stringify(items.map(exportRow), null, 2)); };
     $("expCsv").onclick = function () {
       var q = function (s) { return '"' + String(s == null ? "" : s).replace(/"/g, '""') + '"'; };
-      var cols = fields.map(function (f) { return f.k; }).concat(cfg.pos ? ["pos"] : [], ["hard", "use"]);
+      var cols = fields.map(function (f) { return f.k; }).concat(cfg.pos ? ["pos"] : [], ["mynote", "hard", "use"]);
       download(cfg.sub + ".csv", "text/csv", [cols.join(",")].concat(items.map(function (i) { var o = exportRow(i); return cols.map(function (c) { return q(o[c]); }).join(","); })).join("\r\n"));
     };
 

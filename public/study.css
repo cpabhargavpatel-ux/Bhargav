@@ -86,3 +86,8 @@
   .subnav a.on { background: var(--blue); border-color: var(--blue); color: #fff; cursor: default; }
   .card .pos { font: inherit; font-size: 0.8rem; padding: 4px 6px; border: 1px solid var(--rule); border-radius: 6px; background: #fff; color: var(--gray); }
   .card textarea.mistake { color: #8a2c1c; }
+
+/* personal notes under every card */
+.card .field.mynote textarea { background: rgba(255, 214, 0, 0.13); border-color: rgba(200, 150, 0, 0.35); font-style: italic; }
+.card .field.mynote label { color: #8a6a00; }
+@media (prefers-color-scheme: dark) { .card .field.mynote label { color: #e8c14a; } }

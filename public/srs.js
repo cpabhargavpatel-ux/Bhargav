@@ -148,6 +148,7 @@
       var c = S.card, it = c.it, q = c.q; c.revealed = true;
       var typed = (dlg.querySelector("#srsTyped") || {}).value || "";
       var sug = typed.trim() && q.target ? suggest(typed, q.target) : null;
+      if (it.mynote) q.a = q.a.concat([["My notes", it.mynote]]);
       q.a = q.a.filter(function (p) { return p[1]; });
       var back = '<div class="a">' + q.a.map(function (p) { return '<span class="lbl">' + esc(p[0]) + '</span><span' + (p[0] === "Example" ? ' class="ex"' : "") + '>' + esc(p[1]) + '</span>'; }).join("") + '</div>' +
         (typed.trim() ? '<div class="mine"><b>You wrote:</b> ' + esc(typed) + '</div>' : "") +

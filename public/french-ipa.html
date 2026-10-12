@@ -56,7 +56,7 @@
     /* compact: sound tile + voice on one row, all controls on the next */
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    grid-template-areas: "info voice" "controls controls" "warn warn";
+    grid-template-areas: "info voice" "controls controls" "note note" "warn warn";
     column-gap: 20px;
     row-gap: 10px;
     align-items: center;
@@ -66,7 +66,7 @@
   .player > .controls   { grid-area: controls; }
   .player > .warn       { grid-area: warn; margin-top: 0; }
   @media (max-width: 700px) {
-    .player { grid-template-columns: minmax(0, 1fr); grid-template-areas: "info" "voice" "controls" "warn"; }
+    .player { grid-template-columns: minmax(0, 1fr); grid-template-areas: "info" "voice" "controls" "note" "warn"; }
     .player > .voice-row { justify-self: start; }
   }
   .player-row {
@@ -283,6 +283,19 @@
     .side { position: sticky; top: 52px; max-height: calc(100vh - 64px); overflow-y: auto; padding: 6px 4px 20px 0; }
     .side .sp-sec:first-child { margin-top: 18px; }
   }
+  /* ---------- My notes (sounds, words, sentences) ---------- */
+  .player > .note-box { grid-area: note; margin-top: 8px; }
+  .note-box[hidden] { display: none; }
+  .note-box label { display: block; font: 700 0.74rem var(--sans); letter-spacing: .05em; text-transform: uppercase; color: #8a6a00; margin-bottom: 3px; }
+  .note-box textarea, .sv-notebox { width: 100%; font: inherit; font-family: var(--serif); font-size: 1rem; color: var(--ink, #222); background: #fffbe6; border: 1px solid #ecd98a; border-radius: 8px; padding: 6px 9px; resize: none; display: block; box-sizing: border-box; }
+  .sv-notebox { font-size: 0.9rem; font-style: italic; margin-top: 6px; background: rgba(255, 214, 0, 0.12); }
+  .sv-notebox:not(:focus):placeholder-shown { background: transparent; border-color: transparent; color: var(--gray); }
+  .notebtn { margin-left: 14px; font: 600 0.88rem var(--sans); color: #8a6a00; background: transparent; border: 1px solid #ecd98a; border-radius: 8px; padding: 3px 10px; cursor: pointer; }
+  .notebtn.has::after { content: " \25CF"; color: #d29a00; }
+  .notebtn[aria-expanded="true"] { background: #fff3c4; }
+  .chipwrap.hasnote::after, .vwrap.hasnote::after { content: "\1F4DD"; position: absolute; font-size: 0.78rem; pointer-events: none; }
+  .chipwrap.hasnote::after { right: 6px; bottom: 4px; }
+  .vwrap.hasnote::after { right: 40px; top: 50%; transform: translateY(-50%); }
   /* ---------- French sub-tabs: Sounds | Vocabulary & Sentences ---------- */
   .frsub { display: flex; gap: 8px; margin: 12px 0 6px; flex-wrap: wrap; }
   .frsub a { text-decoration: none; font: 600 0.95rem var(--sans); color: var(--ink, #222); border: 1px solid var(--rule); background: #fff; border-radius: 999px; padding: 6px 18px; }
@@ -454,6 +467,11 @@
       <label for="voiceSel">Voice</label>
       <select id="voiceSel"></select>
       <label class="enlab" title="Show the closest English IPA next to every French IPA"><input type="checkbox" id="enToggle" checked> English IPA ≈</label>
+      <button class="notebtn" id="noteBtn" type="button" aria-expanded="false" aria-controls="noteBox" title="Write your own note about the sound or word shown above">📝 Notes</button>
+    </div>
+    <div class="note-box" id="noteBox" hidden>
+      <label for="noteText">📝 My notes for <b id="noteFor"></b></label>
+      <textarea id="noteText" rows="1" maxlength="2000" placeholder="Your own note — a memory trick, a tricky spelling, where you heard it…"></textarea>
     </div>
     <div class="warn" id="warn">No French voice found on this device — playback will use the default voice, which may sound wrong. On iPhone: Settings → Accessibility → Spoken Content → Voices → French.</div>
   </div>
@@ -681,6 +699,36 @@ function makeBadge(key, what) {
   b.addEventListener("dblclick", e => e.stopPropagation());
   return b;
 }
+/* ---------- My notes: one short text per sound, word or sentence, saved in your account ---------- */
+const NOTE_STORE = "fr-notes";
+let FRNOTES = Store.cached(NOTE_STORE, {}, null) || {};
+Store.load(NOTE_STORE, {}, null).then(v => { v = v || {}; if (JSON.stringify(v) !== JSON.stringify(FRNOTES)) { FRNOTES = v; refreshNoteMarks(); noteShow(); } });
+function setNote(key, text) {
+  text = String(text || "").trim();
+  if (text) FRNOTES[key] = text; else delete FRNOTES[key];
+  Store.save(NOTE_STORE, FRNOTES);
+  refreshNoteMarks();
+}
+function refreshNoteMarks() {      // little 📝 on the tiles / rows that have a note
+  document.querySelectorAll(".wk").forEach(b => {
+    const wrap = b.parentElement; if (!wrap || !(wrap.classList.contains("chipwrap") || wrap.classList.contains("vwrap"))) return;
+    const n = FRNOTES[b.dataset.k]; wrap.classList.toggle("hasnote", !!n);
+    if (n) wrap.title = "\uD83D\uDCDD " + n; else if (wrap.title.indexOf("\uD83D\uDCDD") === 0) wrap.removeAttribute("title");
+  });
+  const nb = document.getElementById("noteBtn"); if (nb) nb.classList.toggle("has", !!FRNOTES[noteKeyOfCurrent()]);
+}
+function noteKeyOfCurrent() {
+  if (!current) return "";
+  if (current.noteKey) return current.noteKey;
+  if (current.vocab) return "w:" + current.word;
+  return "s:" + current.sym + "|" + current.word;
+}
+function noteShow() {              // fill the notes box for what the player is showing now
+  const box = document.getElementById("noteBox"); if (!box || box.hidden) return;
+  const ta = document.getElementById("noteText"), key = noteKeyOfCurrent();
+  document.getElementById("noteFor").textContent = current ? (current.vocab ? current.word : current.letter ? current.sym : "/" + current.sym + "/ " + (current.word || "")) : "";
+  if (document.activeElement !== ta) ta.value = FRNOTES[key] || "";
+}
 function weakVocab(key) { const w = key.slice(2); return VOCAB.find(e => e[0] === w); }
 function weakItems() {   // [{key,item,lvl}] weakest first
   const out = [];
@@ -723,6 +771,7 @@ function refreshWeak() {
     b.addEventListener("click", () => { applyItem(x.item); if (!looping) playSequence(); });
     (isSentItem(x) ? sbox : box).appendChild(b);
   });
+  refreshNoteMarks();
 }
 
 /* ---------- English IPA: the nearest English sound for each French one ---------- */
@@ -785,6 +834,7 @@ function select(item, chipEl) {
   bigWord.innerHTML = markWord(item.word, item.hit);
   bigHint.textContent = item.hint;
   $("bigEn").innerHTML = enLine(item);
+  noteShow(); refreshNoteMarks();
 }
 
 /* ---------- Voices ---------- */
@@ -1144,7 +1194,7 @@ function makeGroupBtn(items) {
 }
 
 function applyItem(item) {
-  if (item.sentence) selectVocab(item.text, "", item.isWord ? "my word" : "my sentence");   // typed in Sentence practice
+  if (item.sentence) { selectVocab(item.text, "", item.isWord ? "my word" : "my sentence"); current.noteKey = "t:" + item.key; noteShow(); refreshNoteMarks(); }   // typed in Sentence practice
   else if (Array.isArray(item)) selectVocab(item[0], item[1], item[2]);   // vocab entry
   else select(item, item._chip || null);
 }
@@ -1244,6 +1294,7 @@ function selectVocab(w, ipa, m) {
   bigWord.textContent = w;
   bigHint.textContent = m;
   $("bigEn").innerHTML = ipa ? "\u2248 English <b>" + enSlash(FRIPA.word(ipa)) + "</b>" : "";
+  noteShow(); refreshNoteMarks();
 }
 
 let vTimer;
@@ -1252,7 +1303,7 @@ vsearch.addEventListener("input", () => {
   vTimer = setTimeout(() => {
     const q = vsearch.value.trim().toLowerCase();
     vFiltered = q
-      ? VOCAB.filter(e => e[0].includes(q) || e[2].toLowerCase().includes(q))
+      ? VOCAB.filter(e => e[0].includes(q) || e[2].toLowerCase().includes(q) || (FRNOTES["w:" + e[0]] || "").toLowerCase().includes(q))
       : VOCAB;
     vRender(true);
   }, 120);
@@ -1388,7 +1439,7 @@ refreshWeak();
     $("savedCount").textContent = all.length ? "(" + all.length + ")" : "";
     updateSrs(all);
     Object.keys(WEAK_ITEMS).forEach(k => { if (k[0] === "t") delete WEAK_ITEMS[k]; });
-    all.forEach(r => { WEAK_ITEMS["t:" + r.key] = { sentence: true, text: r.text, isWord: isOneWord(r.text) }; });
+    all.forEach(r => { WEAK_ITEMS["t:" + r.key] = { sentence: true, key: r.key, text: r.text, isWord: isOneWord(r.text) }; });
     let gone = false; Object.keys(WEAK).forEach(k => { if (k[0] === "t" && !WEAK_ITEMS[k]) { delete WEAK[k]; gone = true; } });   // the sentence was deleted
     if (gone) Store.save(WEAK_STORE, WEAK);
     const nW = all.filter(r => isOneWord(r.text)).length, nS = all.length - nW;
@@ -1418,8 +1469,12 @@ refreshWeak();
       mk("▶ My recording", async () => { const b = await getRec(r.key); if (b) playBlob(b); }, "", !r.hasRec);
       if (isSentence(r.text)) mk("🎧 Compare", () => { txt.value = r.text; txt.dispatchEvent(new Event("input")); compare(r.text, false); }, "", !r.hasRec);
       if (isSentence(r.text)) mk("🔁 Loop", () => { txt.value = r.text; txt.dispatchEvent(new Event("input")); compare(r.text, true); }, "", !r.hasRec);
-      mk("Delete", async () => { if (confirm("Delete this sentence and its recording?")) { try { await dbDel(r.key); } catch (e) {} renderSaved(); } }, "del");
-      d.append(hd, m, bt); box.appendChild(d);
+      mk("Delete", async () => { if (confirm("Delete this sentence and its recording?")) { try { await dbDel(r.key); } catch (e) {} if (FRNOTES["t:" + r.key]) setNote("t:" + r.key, ""); renderSaved(); } }, "del");
+      const nb = document.createElement("textarea"); nb.className = "sv-notebox"; nb.rows = 1; nb.maxLength = 2000; nb.placeholder = "\uD83D\uDCDD Add a note\u2026"; nb.setAttribute("aria-label", "My note for this sentence");
+      nb.value = FRNOTES["t:" + r.key] || "";
+      const gr = () => { nb.style.height = "auto"; nb.style.height = (nb.scrollHeight + 2) + "px"; };
+      nb.addEventListener("input", gr); nb.addEventListener("change", () => setNote("t:" + r.key, nb.value));
+      d.append(hd, nb, m, bt); box.appendChild(d); gr();
     }
     refreshWeak();
   }
@@ -1758,6 +1813,19 @@ refreshWeak();
   addEventListener("resize", center);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(center);
   center();
+})();
+
+/* ---------- notes box in the player ---------- */
+(function () {
+  const btn = $("noteBtn"), box = $("noteBox"), ta = $("noteText");
+  let open = false; try { open = localStorage.getItem("fr-noteopen") === "1"; } catch (e) {}
+  const grow = () => { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight + 2, 140) + "px"; };
+  function apply() { box.hidden = !open; btn.setAttribute("aria-expanded", String(open)); try { localStorage.setItem("fr-noteopen", open ? "1" : "0"); } catch (e) {} noteShow(); if (open) grow(); }
+  btn.addEventListener("click", () => { open = !open; apply(); if (open) ta.focus(); });
+  let timer;
+  ta.addEventListener("input", () => { grow(); clearTimeout(timer); timer = setTimeout(() => setNote(noteKeyOfCurrent(), ta.value), 500); });
+  ta.addEventListener("blur", () => { clearTimeout(timer); const k = noteKeyOfCurrent(); if ((FRNOTES[k] || "") !== ta.value.trim()) setNote(k, ta.value); });
+  apply(); refreshNoteMarks();
 })();
 
 /* ---------- French sub-tabs: Sounds | Vocabulary & Sentences (#sounds / #vocab, last one used is remembered) ---------- */
