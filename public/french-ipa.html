@@ -293,9 +293,17 @@
   .notebtn { margin-left: 14px; font: 600 0.88rem var(--sans); color: #8a6a00; background: transparent; border: 1px solid #ecd98a; border-radius: 8px; padding: 3px 10px; cursor: pointer; }
   .notebtn.has::after { content: " \25CF"; color: #d29a00; }
   .notebtn[aria-expanded="true"] { background: #fff3c4; }
-  .chipwrap.hasnote::after, .vwrap.hasnote::after { content: "\1F4DD"; position: absolute; font-size: 0.78rem; pointer-events: none; }
-  .chipwrap.hasnote::after { right: 6px; bottom: 4px; }
-  .vwrap.hasnote::after { right: 40px; top: 50%; transform: translateY(-50%); }
+  /* a note on every sound tile and vocabulary row */
+  .chipwrap { flex-direction: column; }
+  .chipwrap .chip { flex: none; width: 100%; }
+  .nbtn { position: absolute; top: 3px; right: 24px; border: 0; background: transparent; font-size: 0.85rem; line-height: 1; opacity: .5; cursor: pointer; padding: 2px 3px; border-radius: 5px; }
+  .chipwrap:hover .nbtn, .vwrap:hover .nbtn, .nbtn.has, .nbtn:focus-visible { opacity: 1; }
+  .nbtn.has { background: #fff3c4; }
+  div.vwrap .wk, div.vwrap .nbtn { top: 16px; transform: none; }
+  div.vwrap .nbtn { right: 40px; }
+  .nline { font: italic 0.88rem var(--serif); color: #6b5300; background: rgba(255, 214, 0, 0.14); border-left: 3px solid #e0b400; padding: 4px 8px; margin: 4px 0 2px; cursor: text; white-space: pre-wrap; overflow-wrap: anywhere; border-radius: 0 6px 6px 0; }
+  .nline[hidden], .nedit[hidden] { display: none; }
+  .nedit { width: 100%; box-sizing: border-box; font: 0.95rem var(--serif); color: var(--ink, #222); background: #fffbe6; border: 1px solid #ecd98a; border-radius: 6px; padding: 5px 8px; margin: 4px 0 2px; resize: vertical; }
   /* ---------- French sub-tabs: Sounds | Vocabulary & Sentences ---------- */
   .frsub { display: flex; gap: 8px; margin: 12px 0 6px; flex-wrap: wrap; }
   .frsub a { text-decoration: none; font: 600 0.95rem var(--sans); color: var(--ink, #222); border: 1px solid var(--rule); background: #fff; border-radius: 999px; padding: 6px 18px; }
@@ -709,13 +717,38 @@ function setNote(key, text) {
   Store.save(NOTE_STORE, FRNOTES);
   refreshNoteMarks();
 }
-function refreshNoteMarks() {      // little 📝 on the tiles / rows that have a note
-  document.querySelectorAll(".wk").forEach(b => {
-    const wrap = b.parentElement; if (!wrap || !(wrap.classList.contains("chipwrap") || wrap.classList.contains("vwrap"))) return;
-    const n = FRNOTES[b.dataset.k]; wrap.classList.toggle("hasnote", !!n);
-    if (n) wrap.title = "\uD83D\uDCDD " + n; else if (wrap.title.indexOf("\uD83D\uDCDD") === 0) wrap.removeAttribute("title");
-  });
+function refreshNoteMarks() {      // repaint the notes shown on the tiles / rows, and the player's Notes button
+  document.querySelectorAll(".chipwrap, .vwrap").forEach(w => { if (w._notePaint) w._notePaint(); });
   const nb = document.getElementById("noteBtn"); if (nb) nb.classList.toggle("has", !!FRNOTES[noteKeyOfCurrent()]);
+  if (typeof noteShow === "function") noteShow();
+}
+/* a note on one sound tile or vocabulary row: 📝 button, the note text under it (click to edit), saved to your account */
+function attachNote(wrap, key, what) {
+  const btn = document.createElement("button"); btn.type = "button"; btn.className = "nbtn"; btn.textContent = "\uD83D\uDCDD";
+  const line = document.createElement("div"); line.className = "nline"; line.tabIndex = 0; line.setAttribute("role", "button");
+  const ta = document.createElement("textarea"); ta.className = "nedit"; ta.rows = 2; ta.maxLength = 2000; ta.hidden = true;
+  ta.placeholder = "Your note for " + what + " \u2014 Enter to save, Shift+Enter for a new line";
+  let editing = false;
+  const paint = () => {
+    const t = FRNOTES[key] || "";
+    line.textContent = t; line.hidden = !t || editing; ta.hidden = !editing;
+    btn.classList.toggle("has", !!t); btn.title = t ? "Edit your note" : "Add a note"; btn.setAttribute("aria-label", btn.title + " for " + what);
+    wrap.classList.toggle("hasnote", !!t);
+  };
+  const start = e => { if (e) e.stopPropagation(); editing = true; ta.value = FRNOTES[key] || ""; paint(); ta.focus(); };
+  const done = () => { if (!editing) return; editing = false; const v = ta.value.trim(); if ((FRNOTES[key] || "") !== v) setNote(key, v); else paint(); };
+  btn.addEventListener("mousedown", e => e.preventDefault());     // keep focus in the box so clicking the button saves instead of blurring first
+  btn.addEventListener("click", e => { e.stopPropagation(); editing ? done() : start(); });
+  line.addEventListener("click", start);
+  line.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); start(); } });
+  ta.addEventListener("click", e => e.stopPropagation());
+  ta.addEventListener("blur", done);
+  ta.addEventListener("keydown", e => {
+    if (e.key === "Escape") { ta.value = FRNOTES[key] || ""; editing = false; paint(); }
+    else if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ta.blur(); }
+  });
+  wrap.appendChild(btn); wrap.appendChild(line); wrap.appendChild(ta);
+  wrap._notePaint = paint; paint();
 }
 function noteKeyOfCurrent() {
   if (!current) return "";
@@ -817,6 +850,7 @@ DATA.forEach(group => {
     wrap.className = "chipwrap";
     wrap.appendChild(b);
     wrap.appendChild(makeBadge("s:" + item.sym + "|" + item.word, item.word ? "this sound" : "this letter"));
+    attachNote(wrap, "s:" + item.sym + "|" + item.word, item.word ? "the sound " + item.sym : "the letter " + item.sym);
     WEAK_ITEMS["s:" + item.sym + "|" + item.word] = item;
     grid.appendChild(wrap);
   });
@@ -1277,6 +1311,7 @@ function vRender(reset) {
     });
     const vw = document.createElement("div"); vw.className = "vwrap";
     vw.appendChild(b); vw.appendChild(makeBadge("w:" + w, "this word"));
+    attachNote(vw, "w:" + w, "the word " + w);
     frag.appendChild(vw);
   }
   vlist.appendChild(frag);
