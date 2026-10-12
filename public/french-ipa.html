@@ -747,7 +747,9 @@ DATA.forEach(group => {
   const sec = document.createElement("section");
   const h = document.createElement("h2");
   const t = document.createElement("span");
-  t.textContent = group.title;
+  t.textContent = group.title + " ";
+  const cnt = document.createElement("span"); cnt.className = "vcount"; cnt.textContent = "(" + group.items.length + ")"; cnt.title = group.items.length + " in this group";
+  t.appendChild(cnt);
   h.appendChild(t);
   h.appendChild(makeGroupBtn(group.items));
   const grid = document.createElement("div");
