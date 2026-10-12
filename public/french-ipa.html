@@ -599,6 +599,7 @@ const DATA = [
     { sym: "e",  word: "été",    hit: "é",   hint: "closed e, no glide" },
     { sym: "ɛ",  word: "mère",   hit: "è",   hint: "open e, like “bed”" },
     { sym: "a",  word: "patte",  hit: "a",   hint: "bright open a" },
+    { sym: "ɑ",  word: "pâte",   hit: "â",   hint: "back a, deeper than /a/ — jaw drops, tongue pulled back (many speakers say /a/)" },
     { sym: "o",  word: "mot",    hit: "o",   hint: "closed o, rounded lips" },
     { sym: "ɔ",  word: "porte",  hit: "o",   hint: "open o, like “sort”" },
     { sym: "u",  word: "vous",   hit: "ou",  hint: "like “food”, lips very round" },
@@ -821,6 +822,7 @@ const SYNTH = {
   "e": { kind: "v", f: [390, 2100, 2700] },
   "ɛ": { kind: "v", f: [550, 1900, 2600] },
   "a": { kind: "v", f: [750, 1400, 2500] },
+  "ɑ": { kind: "v", f: [700, 1100, 2500] },
   "o": { kind: "v", f: [400, 800, 2500] },
   "ɔ": { kind: "v", f: [550, 950, 2500] },
   "u": { kind: "v", f: [300, 750, 2300] },
@@ -1261,7 +1263,7 @@ vGroupBtn.addEventListener("click", () => {
 vRender(true);
 
 /* Default selection: /y/ — the classic hard-for-anglophones sound */
-select(DATA[1].items[7], null);
+select(DATA[1].items.find(i => i.sym === "y"), null);
 
 const weakLoop = $("weakLoop");
 weakLoop.addEventListener("click", () => {
