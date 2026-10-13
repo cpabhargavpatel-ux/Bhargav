@@ -200,7 +200,9 @@ const moduleBar = (active, sub) => MODULE_CSS + (active === "goal" ? "<style>hea
   + `<span class="mt-drop"><a href="/english.html"${active === "english" ? ' class="on"' : ""}>English <i>&#9662;</i></a><span class="mt-menu">`
   + [["Idioms", "/english.html", "idioms"], ["Vocabulary", "/vocabulary.html", "vocabulary"], ["Grammar", "/grammar.html", "grammar"], ["Irregular verbs", "/irregular-verbs.html", "verbs"]]
       .map(([t, h, k]) => `<a href="${h}"${active === "english" && sub === k ? ' class="cur" aria-current="page"' : ""}>${t}</a>`).join("")
-  + `</span></span><span id="modbuild">build 10-12-f</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n`;
+  + `</span></span>`
+  + `<a href="/notes.html"${active === "notes" ? ' class="on"' : ""}>Notes</a>`
+  + `<span id="modbuild">build 10-13-a</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n`;
 function withModuleBar(html, active, sub) {
   const m = /<body[^>]*>/i.exec(html);
   return m ? html.slice(0, m.index + m[0].length) + "\n" + moduleBar(active, sub) + html.slice(m.index + m[0].length)
@@ -246,6 +248,7 @@ const server = createServer(async (req, res) => {
       if (rel !== "login.html" && rel !== "server-shim.js" && !PUBLIC_PAGES.has(rel) && !isFont && !u) { res.writeHead(302, { location: "/login.html?next=" + encodeURIComponent("/" + rel) }); res.end(); return; }
       let b = readFileSync(file);
       if (rel === "french-ipa.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "french"));
+      if (rel === "notes.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "notes"));
       if (ENGLISH_SUB[rel]) b = Buffer.from(withModuleBar(b.toString("utf8"), "english", ENGLISH_SUB[rel]));
       res.writeHead(200, { "content-type": MIME[extname(file)] || "application/octet-stream", "cache-control": isFont ? "public, max-age=31536000, immutable" : "no-store" });
       res.end(b); return;

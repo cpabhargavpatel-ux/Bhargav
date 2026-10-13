@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quick notes</title>
+<script>try{var p=parseInt(localStorage.getItem("en-fontsize"));if(p>=80&&p<=180)document.documentElement.style.fontSize=p+"%"}catch(e){}</script>
+<style>
+  :root {
+    --bg: #f3f5f9; --card: #ffffff; --ink: #1b2433; --mute: #667085; --line: #d9dfeb; --soft: #eef1f8;
+    --accent: #2f4bd8; --accent-ink: #ffffff; --accent-soft: #e4e9ff; --danger: #c0392b;
+    --paper: #fffef9; --paper-ink: #1d2433;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10151f; --card: #19212f; --ink: #e6ebf5; --mute: #98a5bd; --line: #2b3850; --soft: #212c40;
+      --accent: #8199ff; --accent-ink: #0b1230; --accent-soft: #25305a; --danger: #ff8a7a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .nt { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; max-width: 1400px; margin: 0 auto; padding: 14px 16px 40px; align-items: start; }
+  @media (max-width: 860px) { .nt { grid-template-columns: 1fr; } }
+
+  /* ---------- note list ---------- */
+  .side { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; position: sticky; top: 52px; max-height: calc(100vh - 66px); display: flex; flex-direction: column; }
+  @media (max-width: 860px) { .side { position: static; max-height: 340px; } }
+  .side h1 { margin: 0 0 8px; font-size: 1.15rem; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  input[type=search], input[type=text], select { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; min-width: 0; }
+  .side input[type=search] { flex: 1; }
+  .btn { font: 600 0.9rem system-ui, sans-serif; border-radius: 8px; padding: 7px 12px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); }
+  .btn.alt { background: transparent; color: var(--accent); }
+  .btn.danger { border-color: var(--danger); color: var(--danger); background: transparent; }
+  button:focus-visible, input:focus-visible, select:focus-visible, .ed:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .list { overflow: auto; margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .item { text-align: left; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; cursor: pointer; color: inherit; font: inherit; width: 100%; }
+  .item:hover { border-color: var(--accent); }
+  .item.on { background: var(--accent-soft); border-color: var(--accent); }
+  .item b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item small { display: block; color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item .meta { display: flex; justify-content: space-between; gap: 8px; color: var(--mute); font-size: .76rem; margin-top: 2px; }
+  .tag { background: var(--soft); border-radius: 999px; padding: 0 8px; }
+  .none { color: var(--mute); padding: 14px 4px; text-align: center; }
+
+  /* ---------- editor ---------- */
+  .main { background: var(--card); border: 1px solid var(--line); border-radius: 12px; min-width: 0; }
+  .tb { position: sticky; top: 40px; z-index: 6; display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; padding: 8px 10px; background: var(--card); border-bottom: 1px solid var(--line); border-radius: 12px 12px 0 0; }
+  .grp { display: inline-flex; gap: 2px; padding-right: 8px; margin-right: 2px; border-right: 1px solid var(--line); align-items: center; }
+  .grp:last-child { border-right: 0; }
+  .tb button, .tb select { font: 600 0.9rem system-ui, sans-serif; min-width: 32px; height: 32px; padding: 0 7px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--ink); cursor: pointer; }
+  .tb select { border-color: var(--line); background: var(--bg); padding: 0 4px; }
+  .tb button:hover { background: var(--soft); }
+  .tb button.on { background: var(--accent-soft); border-color: var(--accent); }
+  .tb button:disabled { opacity: .4; cursor: default; }
+  .tb .a-u { text-decoration: underline; } .tb .a-s { text-decoration: line-through; }
+  .pal { position: relative; display: inline-block; }
+  .pal > button .bar { display: block; height: 4px; border-radius: 2px; margin-top: 1px; }
+  .pop { position: absolute; top: 36px; left: 0; z-index: 20; background: var(--card); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,.25); padding: 8px; width: 196px; }
+  .pop[hidden] { display: none; }
+  .pop h4 { margin: 0 0 6px; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); }
+  .sw { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+  .sw button { min-width: 0; width: 26px; height: 26px; padding: 0; border-radius: 6px; border: 1px solid rgba(0,0,0,.25); }
+  .sw button.clear { background: repeating-linear-gradient(45deg, #fff, #fff 4px, #f1b0b0 4px, #f1b0b0 6px); }
+  .pop label { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: .84rem; color: var(--mute); }
+  .pop input[type=color] { width: 40px; height: 26px; padding: 0; border: 1px solid var(--line); background: none; cursor: pointer; }
+  .head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 14px 0; }
+  .head label { color: var(--mute); font-size: .84rem; }
+  .head input[type=text] { width: 220px; }
+  .head .sp { flex: 1; }
+  .paper { margin: 10px 14px 0; background: var(--paper); color: var(--paper-ink); border: 1px solid var(--line); border-radius: 10px; }
+  .ed { min-height: 52vh; padding: 20px 26px; outline: none; font: 400 1.05rem/1.6 Georgia, "Times New Roman", serif; overflow-wrap: anywhere; }
+  .ed:empty::before { content: attr(data-ph); color: #9aa3b5; pointer-events: none; }
+  .ed h1 { font-size: 1.7rem; margin: .5em 0 .3em; } .ed h2 { font-size: 1.35rem; margin: .5em 0 .3em; } .ed h3 { font-size: 1.15rem; margin: .5em 0 .3em; }
+  .ed p, .ed div { margin: 0 0 .5em; }
+  .ed blockquote { margin: .5em 0; padding: 4px 14px; border-left: 4px solid #b8c2dd; color: #46506a; background: rgba(0,0,0,.03); }
+  .ed pre { background: #f0f2f7; padding: 10px 12px; border-radius: 8px; font: .92rem/1.4 ui-monospace, Consolas, monospace; white-space: pre-wrap; }
+  .ed ul, .ed ol { margin: .3em 0 .6em; padding-left: 1.6em; }
+  .ed a { color: #1a55d6; }
+  .ed hr { border: 0; border-top: 2px solid #cfd6e6; margin: 1em 0; }
+  .ed .todo { display: flex; gap: 8px; align-items: baseline; }
+  .ed .todo input { transform: scale(1.2); }
+  .foot { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 14px 14px; }
+  .foot .st { color: var(--mute); font-size: .85rem; margin-right: auto; }
+  .empty { padding: 60px 20px; text-align: center; color: var(--mute); }
+  @media print {
+    body { background: #fff; } .side, .tb, .head, .foot, #modtabs { display: none !important; }
+    .nt { display: block; padding: 0; } .main { border: 0; } .paper { border: 0; margin: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="nt">
+  <aside class="side" aria-label="Your notes">
+    <h1>📝 Quick notes</h1>
+    <div class="row"><input type="search" id="q" placeholder="Search notes…" aria-label="Search notes" autocomplete="off"><button class="btn" id="newBtn" title="Start a new note (Ctrl+Alt+N)">+ New</button></div>
+    <div class="row" style="margin-top:8px"><select id="topicSel" aria-label="Filter by topic" style="flex:1"></select></div>
+    <div class="list" id="list"></div>
+    <div class="row" style="margin-top:10px"><button class="btn alt" id="exportAll" style="flex:1">Export all (.json)</button></div>
+  </aside>
+
+  <section class="main" id="main">
+    <div class="tb" id="tb" role="toolbar" aria-label="Formatting">
+      <span class="grp">
+        <button data-c="undo" title="Undo (Ctrl+Z)">↶</button><button data-c="redo" title="Redo (Ctrl+Y)">↷</button>
+      </span>
+      <span class="grp">
+        <select id="blockSel" title="Paragraph style" aria-label="Paragraph style">
+          <option value="p">Normal</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option><option value="blockquote">Quote</option><option value="pre">Code block</option>
+        </select>
+        <select id="sizeSel" title="Text size" aria-label="Text size">
+          <option value="">Size</option><option value="2">Small</option><option value="3">Normal</option><option value="4">Large</option><option value="5">Larger</option><option value="6">Huge</option>
+        </select>
+      </span>
+      <span class="grp">
+        <button data-c="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+        <button data-c="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+        <button data-c="underline" title="Underline (Ctrl+U)"><span class="a-u">U</span></button>
+        <button data-c="strikeThrough" title="Strikethrough"><span class="a-s">S</span></button>
+        <button data-c="subscript" title="Subscript">x<sub>2</sub></button>
+        <button data-c="superscript" title="Superscript">x<sup>2</sup></button>
+      </span>
+      <span class="grp">
+        <span class="pal" id="palText"><button type="button" id="btnText" title="Text colour" aria-haspopup="true" aria-label="Text colour"><span style="font-weight:800">A</span><span class="bar" id="barText" style="background:#d62828"></span></button>
+          <div class="pop" id="popText" hidden><h4>Text colour</h4><div class="sw" id="swText"></div><label>Custom <input type="color" id="colText" value="#d62828"></label></div></span>
+        <span class="pal" id="palHi"><button type="button" id="btnHi" title="Highlighter" aria-haspopup="true" aria-label="Highlighter"><span style="font-weight:800;background:#ffe14d;padding:0 3px;border-radius:3px">ab</span><span class="bar" id="barHi" style="background:#ffe14d"></span></button>
+          <div class="pop" id="popHi" hidden><h4>Highlighter</h4><div class="sw" id="swHi"></div><label>Custom <input type="color" id="colHi" value="#ffe14d"></label></div></span>
+      </span>
+      <span class="grp">
+        <button data-c="insertUnorderedList" title="Bulleted list">•≡</button>
+        <button data-c="insertOrderedList" title="Numbered list">1.≡</button>
+        <button data-c="todo" title="Checklist item">☑</button>
+        <button data-c="outdent" title="Decrease indent">⇤</button>
+        <button data-c="indent" title="Increase indent">⇥</button>
+      </span>
+      <span class="grp">
+        <button data-c="justifyLeft" title="Align left">⯇≡</button>
+        <button data-c="justifyCenter" title="Centre">≡</button>
+        <button data-c="justifyRight" title="Align right">≡⯈</button>
+        <button data-c="justifyFull" title="Justify">☰</button>
+      </span>
+      <span class="grp">
+        <button data-c="link" title="Add link">🔗</button>
+        <button data-c="unlink" title="Remove link">⛓</button>
+        <button data-c="hr" title="Divider line">―</button>
+        <button data-c="removeFormat" title="Clear formatting">Tx</button>
+      </span>
+    </div>
+
+    <div class="head">
+      <label for="topicIn">Topic</label><input type="text" id="topicIn" list="topicList" maxlength="40" placeholder="e.g. Work, French, Ideas…" autocomplete="off"><datalist id="topicList"></datalist>
+      <span class="sp"></span>
+      <button class="btn alt" id="pinBtn" title="Pin this note to the top">☆ Pin</button>
+    </div>
+    <div class="paper"><div class="ed" id="ed" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true" aria-label="Note" data-ph="Start typing your note…"></div></div>
+    <div class="foot">
+      <span class="st" id="st"></span>
+      <button class="btn alt" id="dlBtn" title="Download this note as a web page">Download</button>
+      <button class="btn alt" id="printBtn">Print</button>
+      <button class="btn danger" id="delBtn">Delete note</button>
+    </div>
+  </section>
+</div>
+
+<script src="/store.js"></script>
+<script>
+(function () {
+  "use strict";
+  var KEY = "quick-notes";
+  var $ = function (id) { return document.getElementById(id); };
+  var ed = $("ed");
+  var data = { notes: [] };
+  var cur = null, filter = { q: "", topic: "" }, dirtyTimer = 0;
+  var uid = function () { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); };
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+
+  /* ---------- keep only safe, simple formatting (also used for pasted text) ---------- */
+  var TAGS = { P: 1, DIV: 1, BR: 1, B: 1, STRONG: 1, I: 1, EM: 1, U: 1, S: 1, STRIKE: 1, DEL: 1, H1: 1, H2: 1, H3: 1, UL: 1, OL: 1, LI: 1, BLOCKQUOTE: 1, PRE: 1, CODE: 1, SPAN: 1, FONT: 1, A: 1, HR: 1, SUB: 1, SUP: 1, MARK: 1, INPUT: 1 };
+  var CSSOK = { "color": /^(#[0-9a-f]{3,8}|rgba?\([\d\s.,%]+\)|[a-z]+)$/i, "background-color": /^(#[0-9a-f]{3,8}|rgba?\([\d\s.,%]+\)|[a-z]+)$/i, "font-size": /^[\d.]+(px|pt|em|rem|%)$|^(x-small|small|medium|large|x-large|xx-large|xxx-large)$/i, "text-align": /^(left|right|center|justify)$/i, "font-weight": /^(bold|normal|[1-9]00)$/i, "font-style": /^(italic|normal)$/i, "text-decoration": /^(underline|line-through|none|underline line-through|line-through underline)$/i, "text-decoration-line": /^(underline|line-through|none)$/i };
+  function clean(node, out) {
+    for (var c = node.firstChild; c; c = c.nextSibling) {
+      if (c.nodeType === 3) { out.appendChild(document.createTextNode(c.nodeValue)); continue; }
+      if (c.nodeType !== 1) continue;
+      var tag = c.tagName;
+      if (!TAGS[tag]) { if (!/^(SCRIPT|STYLE|IFRAME|OBJECT|EMBED|HEAD|TEMPLATE|NOSCRIPT|SVG|MATH)$/.test(tag)) clean(c, out); continue; }   // unknown tag: keep its text, drop the tag
+      if (tag === "INPUT") { if ((c.getAttribute("type") || "").toLowerCase() === "checkbox") { var cb = document.createElement("input"); cb.type = "checkbox"; if (c.hasAttribute("checked")) cb.setAttribute("checked", ""); out.appendChild(cb); } continue; }
+      var el = document.createElement(tag.toLowerCase());
+      var st = c.getAttribute("style");
+      if (st) { var keep = []; st.split(";").forEach(function (d) { var i = d.indexOf(":"); if (i < 0) return; var k = d.slice(0, i).trim().toLowerCase(), v = d.slice(i + 1).trim(); if (CSSOK[k] && CSSOK[k].test(v)) keep.push(k + ": " + v); }); if (keep.length) el.setAttribute("style", keep.join("; ")); }
+      if (tag === "FONT") { var sz = c.getAttribute("size"); if (/^[1-7]$/.test(sz || "")) el.setAttribute("size", sz); var col = c.getAttribute("color"); if (col && CSSOK.color.test(col)) el.setAttribute("color", col); }
+      if (tag === "A") { var href = c.getAttribute("href") || ""; if (/^(https?:|mailto:)/i.test(href)) { el.setAttribute("href", href); el.setAttribute("target", "_blank"); el.setAttribute("rel", "noopener noreferrer"); } }
+      if ((tag === "DIV") && c.classList.contains("todo")) el.className = "todo";
+      clean(c, el); out.appendChild(el);
+    }
+  }
+  function sanitize(html) {
+    var doc = new DOMParser().parseFromString("<body>" + html + "</body>", "text/html"), out = document.createElement("div");
+    clean(doc.body, out); return out.innerHTML;
+  }
+
+  function safeData(v) {            // whatever comes from storage is cleaned once before it is ever put on the page
+    if (!v || !Array.isArray(v.notes)) return { notes: [] };
+    v.notes = v.notes.filter(function (n) { return n && typeof n === "object"; }).map(function (n) { n.id = String(n.id || uid()); n.html = sanitize(String(n.html || "")); n.topic = String(n.topic || ""); n.updated = +n.updated || Date.now(); n.created = +n.created || n.updated; return n; });
+    return v;
+  }
+  data = safeData(Store.cached(KEY, null));
+
+  /* ---------- helpers on a note ---------- */
+  function textOf(html) {          // plain text with a line break after every block (html is always sanitized before it gets here)
+    var d = document.createElement("div"); d.innerHTML = String(html).replace(/<br\s*\/?>/gi, "\n").replace(/<\/(p|div|h[1-3]|li|blockquote|pre|ul|ol)>/gi, "\n");
+    return (d.textContent || "").replace(/\u00A0/g, " ");
+  }
+  function titleOf(n) { var t = textOf(n.html).split(/\n/).map(function (s) { return s.trim(); }).filter(Boolean)[0] || ""; return t.slice(0, 70) || "Untitled note"; }
+  function snippetOf(n) { var l = textOf(n.html).split(/\n/).map(function (s) { return s.trim(); }).filter(Boolean); return (l.slice(1).join(" · ") || "").slice(0, 90); }
+  var isBlank = function (n) { return !textOf(n.html).trim() && !/<(input|hr)/i.test(n.html); };
+  function when(t) { var d = new Date(t), now = new Date(); return d.toDateString() === now.toDateString() ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : d.toLocaleDateString([], { month: "short", day: "numeric", year: d.getFullYear() === now.getFullYear() ? undefined : "numeric" }); }
+  function save() { Store.save(KEY, data); }
+
+  /* ---------- the list ---------- */
+  function visible() {
+    var q = filter.q.toLowerCase();
+    return data.notes.filter(function (n) {
+      if (filter.topic && (n.topic || "") !== filter.topic) return false;
+      return !q || (titleOf(n) + " " + textOf(n.html) + " " + (n.topic || "")).toLowerCase().indexOf(q) >= 0;
+    }).sort(function (a, b) { return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || b.updated - a.updated; });
+  }
+  function renderTopics() {
+    var topics = {}; data.notes.forEach(function (n) { if (n.topic) topics[n.topic] = (topics[n.topic] || 0) + 1; });
+    var names = Object.keys(topics).sort();
+    $("topicSel").innerHTML = '<option value="">All topics (' + data.notes.length + ')</option>' + names.map(function (t) { return '<option value="' + esc(t) + '">' + esc(t) + " (" + topics[t] + ")</option>"; }).join("");
+    $("topicSel").value = names.indexOf(filter.topic) >= 0 ? filter.topic : (filter.topic = "");
+    $("topicList").innerHTML = names.map(function (t) { return '<option value="' + esc(t) + '">'; }).join("");
+  }
+  function renderList() {
+    renderTopics();
+    var list = visible(), box = $("list");
+    box.innerHTML = list.length ? list.map(function (n) {
+      return '<button class="item' + (cur && n.id === cur.id ? " on" : "") + '" data-id="' + n.id + '"><b>' + (n.pinned ? "★ " : "") + esc(titleOf(n)) + "</b><small>" + esc(snippetOf(n)) + '</small><span class="meta"><span>' + esc(when(n.updated)) + "</span>" + (n.topic ? '<span class="tag">' + esc(n.topic) + "</span>" : "") + "</span></button>";
+    }).join("") : '<div class="none">' + (data.notes.length ? "No notes match." : "No notes yet.") + "</div>";
+  }
+  box_init();
+  function box_init() {
+    $("list").addEventListener("click", function (e) { var b = e.target.closest(".item"); if (b) open(b.dataset.id); });
+  }
+
+  /* ---------- open / new / delete ---------- */
+  function leave() { if (cur && isBlank(cur)) { data.notes = data.notes.filter(function (n) { return n !== cur; }); save(); } }
+  function open(id) {
+    if (cur && cur.id !== id) leave();
+    cur = data.notes.filter(function (n) { return n.id === id; })[0] || null;
+    showCur(); renderList();
+  }
+  function showCur() {
+    var on = !!cur;
+    ed.contentEditable = on ? "true" : "false";
+    $("topicIn").disabled = $("pinBtn").disabled = $("delBtn").disabled = $("dlBtn").disabled = $("printBtn").disabled = !on;
+    if (!on) { ed.innerHTML = ""; ed.setAttribute("data-ph", "Pick a note on the left, or press + New."); $("topicIn").value = ""; $("st").textContent = ""; pinPaint(); return; }
+    ed.setAttribute("data-ph", "Start typing your note…");
+    ed.innerHTML = cur.html; $("topicIn").value = cur.topic || ""; pinPaint(); stamp();
+  }
+  function pinPaint() { $("pinBtn").textContent = cur && cur.pinned ? "★ Pinned" : "☆ Pin"; $("pinBtn").classList.toggle("on", !!(cur && cur.pinned)); }
+  function stamp(txt) { $("st").textContent = txt || (cur ? "Saved " + when(cur.updated) + " · " + textOf(cur.html).trim().split(/\s+/).filter(Boolean).length + " words" : ""); }
+  function newNote() {
+    if (cur) leave();
+    var n = { id: uid(), topic: filter.topic || "", html: "", created: Date.now(), updated: Date.now(), pinned: false };
+    data.notes.push(n); cur = n; showCur(); renderList(); ed.focus();
+  }
+  function touch() {            // the editor changed
+    if (!cur) return;
+    cur.html = sanitize(ed.innerHTML); cur.updated = Date.now();
+    stamp("Saving…"); save(); clearTimeout(dirtyTimer); dirtyTimer = setTimeout(function () { stamp(); renderList(); }, 700);
+  }
+  $("newBtn").onclick = newNote;
+  $("delBtn").onclick = function () {
+    if (!cur || !confirm("Delete “" + titleOf(cur) + "”?")) return;
+    data.notes = data.notes.filter(function (n) { return n !== cur; }); cur = null; save(); showCur(); renderList();
+  };
+  $("pinBtn").onclick = function () { if (!cur) return; cur.pinned = !cur.pinned; save(); pinPaint(); renderList(); };
+  $("topicIn").addEventListener("input", function () { if (cur) { cur.topic = this.value.trim(); cur.updated = Date.now(); save(); } });
+  $("topicIn").addEventListener("change", renderList);
+  $("q").addEventListener("input", function () { filter.q = this.value.trim(); renderList(); });
+  $("topicSel").onchange = function () { filter.topic = this.value; renderList(); };
+  window.addEventListener("beforeunload", function () { if (cur && isBlank(cur)) leave(); });
+  document.addEventListener("keydown", function (e) { if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "n") { e.preventDefault(); newNote(); } });
+
+  /* ---------- formatting toolbar ---------- */
+  var saved = null;
+  document.addEventListener("selectionchange", function () { var s = getSelection(); if (s.rangeCount && ed.contains(s.anchorNode)) saved = s.getRangeAt(0).cloneRange(); updateState(); });
+  function restore() { if (!saved) { ed.focus(); return; } ed.focus(); var s = getSelection(); s.removeAllRanges(); s.addRange(saved); }
+  function exec(cmd, val) { restore(); document.execCommand("styleWithCSS", false, true); document.execCommand(cmd, false, val == null ? null : val); touch(); updateState(); }
+  var tb = $("tb");
+  tb.addEventListener("mousedown", function (e) { if (!e.target.closest("select, input")) e.preventDefault(); });   // keep the text selection while clicking buttons
+  tb.addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-c]"); if (!b || !cur) return;
+    var c = b.dataset.c;
+    if (c === "link") {
+      restore(); var url = prompt("Link address (https://…):", "https://"); if (!url || !/^(https?:|mailto:)/i.test(url)) return; var s = getSelection();
+      if (s.isCollapsed) { document.execCommand("insertHTML", false, '<a href="' + esc(url) + '">' + esc(url) + "</a>"); touch(); } else exec("createLink", url);
+    } else if (c === "hr") exec("insertHorizontalRule");
+    else if (c === "todo") { restore(); document.execCommand("insertHTML", false, '<div class="todo"><input type="checkbox">&nbsp;<span>Task</span></div><div><br></div>'); touch(); }
+    else exec(c);
+  });
+  $("blockSel").onchange = function () { if (!cur) return; exec("formatBlock", this.value === "p" ? "div" : this.value); };
+  $("sizeSel").onchange = function () { if (!cur || !this.value) return; exec("fontSize", this.value); this.value = ""; };
+  var COLORS = ["#1d2433", "#6b7280", "#d62828", "#e8590c", "#e0a800", "#2b9348", "#0b7285", "#1c64f2", "#6741d9", "#c2255c", "#7f5539", "#ffffff"];
+  var HILITES = ["#ffe14d", "#b8f2a1", "#a5e8ff", "#ffc8e0", "#ffd0a1", "#d9c9ff", "#e5e7eb", "#fff3b0", "#c3f0ca", "#bfdcff", "#fecaca", "#ffffff"];
+  function palette(prefix, colors, apply, clearTitle) {
+    var box = $("sw" + prefix);
+    box.innerHTML = colors.map(function (c) { return '<button type="button" style="background:' + c + '" data-col="' + c + '" title="' + c + '" aria-label="' + c + '"></button>'; }).join("") + '<button type="button" class="clear" data-col="" title="' + clearTitle + '" aria-label="' + clearTitle + '"></button>';
+    box.addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b || !cur) return; apply(b.dataset.col); pop("");  });
+    $("col" + prefix).addEventListener("input", function () { if (cur) apply(this.value, true); });
+    $("col" + prefix).addEventListener("change", function () { pop(""); });
+  }
+  function setText(c, keep) { if (c === "") exec("foreColor", "#1d2433"); else { exec("foreColor", c); $("barText").style.background = c; } }
+  function setHi(c, keep) { if (c === "") exec("hiliteColor", "transparent"); else { exec("hiliteColor", c); $("barHi").style.background = c; $("btnHi").firstChild.style.background = c; } }
+  palette("Text", COLORS, setText, "Default text colour"); palette("Hi", HILITES, setHi, "Remove highlight");
+  function pop(which) { $("popText").hidden = which !== "Text"; $("popHi").hidden = which !== "Hi"; }
+  $("btnText").onclick = function (e) { e.stopPropagation(); pop($("popText").hidden ? "Text" : ""); };
+  $("btnHi").onclick = function (e) { e.stopPropagation(); pop($("popHi").hidden ? "Hi" : ""); };
+  document.addEventListener("click", function (e) { if (!e.target.closest(".pal")) pop(""); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") pop(""); });
+  /* clicking the coloured bar of the toolbar button applies the last colour again — handled by opening the palette; custom colours use the picker */
+
+  function updateState() {         // light up B / I / U / lists for the text at the cursor
+    ["bold", "italic", "underline", "strikeThrough", "subscript", "superscript", "insertUnorderedList", "insertOrderedList", "justifyLeft", "justifyCenter", "justifyRight", "justifyFull"].forEach(function (c) {
+      var b = tb.querySelector('[data-c="' + c + '"]'); if (!b) return; var on = false; try { on = document.queryCommandState(c); } catch (e) {} b.classList.toggle("on", on);
+    });
+  }
+
+  /* ---------- typing, pasting, checklists ---------- */
+  ed.addEventListener("input", touch);
+  ed.addEventListener("change", function (e) { if (e.target.type === "checkbox") { if (e.target.checked) e.target.setAttribute("checked", ""); else e.target.removeAttribute("checked"); touch(); } });
+  ed.addEventListener("paste", function (e) {
+    var cd = e.clipboardData; if (!cd) return; e.preventDefault();
+    var html = cd.getData("text/html"), text = cd.getData("text/plain");
+    if (html) document.execCommand("insertHTML", false, sanitize(html)); else document.execCommand("insertText", false, text);
+  });
+  ed.addEventListener("drop", function (e) { e.preventDefault(); });          // no dropped files / images
+
+  /* ---------- download / print / export ---------- */
+  function download(name, mime, body) { var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([body], { type: mime })); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+  $("dlBtn").onclick = function () { if (!cur) return; touch(); download((titleOf(cur).replace(/[^\w\- ]+/g, "").trim() || "note") + ".html", "text/html", '<!doctype html><meta charset="utf-8"><title>' + esc(titleOf(cur)) + '</title><body style="font:17px/1.6 Georgia,serif;max-width:760px;margin:30px auto;padding:0 16px">' + cur.html + "</body>"); };
+  $("printBtn").onclick = function () { window.print(); };
+  $("exportAll").onclick = function () { download("quick-notes-" + new Date().toISOString().slice(0, 10) + ".json", "application/json", JSON.stringify(data.notes.map(function (n) { return { topic: n.topic || "", title: titleOf(n), text: textOf(n.html), html: n.html, pinned: !!n.pinned, created: n.created, updated: n.updated }; }), null, 2)); };
+
+  /* ---------- text size control in the top bar ---------- */
+  var KEYF = "en-fontsize", pct = 100;
+  try { var sv = parseInt(localStorage.getItem(KEYF), 10); if (sv >= 80 && sv <= 180) pct = sv; } catch (e) {}
+  var ctl = document.createElement("span"); ctl.id = "fontctl"; ctl.style.cssText = "display:inline-flex;gap:4px;margin-left:auto;align-self:center";
+  var mkb = function (t, title, fn) { var x = document.createElement("button"); x.type = "button"; x.textContent = t; x.title = title; x.style.cssText = "background:#2a3a66;color:#fff;border:0;border-radius:6px;padding:3px 8px;font:600 12px system-ui,sans-serif;cursor:pointer"; x.onclick = fn; ctl.appendChild(x); return x; };
+  var dec = mkb("A−", "Smaller text", function () { setPct(pct - 10); }), lab = mkb("100%", "Reset to 100%", function () { setPct(100); }), inc = mkb("A+", "Bigger text", function () { setPct(pct + 10); });
+  function setPct(v) { pct = Math.max(80, Math.min(180, v)); document.documentElement.style.fontSize = pct + "%"; lab.textContent = pct + "%"; dec.disabled = pct <= 80; inc.disabled = pct >= 180; try { localStorage.setItem(KEYF, String(pct)); } catch (e) {} }
+  var bar = $("modtabs"), build = $("modbuild"); if (bar) bar.insertBefore(ctl, build || null); setPct(pct);
+
+  /* ---------- go ---------- */
+  renderList();
+  if (data.notes.length) { var first = visible()[0]; if (first) { cur = first; } }
+  showCur(); renderList();
+  Store.load(KEY, null).then(function (v) {
+    if (!v || !Array.isArray(v.notes)) { if (data.notes.length) save(); return; }
+    var editing = document.activeElement === ed, sv2 = safeData(JSON.parse(JSON.stringify(v)));
+    if (JSON.stringify(sv2) === JSON.stringify(data)) return;
+    var curId = cur && cur.id; data = safeData(v); cur = data.notes.filter(function (n) { return n.id === curId; })[0] || visible()[0] || null;
+    if (!editing) showCur(); renderList();
+  });
+})();
+</script>
+</body>
+</html>
