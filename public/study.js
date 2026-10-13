@@ -3,7 +3,7 @@
    Data is saved to your account on the server (see store.js). Each page passes a config; see vocabulary.html and grammar.html. */
 (function () {
   "use strict";
-  var NAV = [["Idioms", "/english.html", "idioms"], ["Vocabulary", "/vocabulary.html", "vocabulary"], ["Grammar", "/grammar.html", "grammar"]];
+  var NAV = [["Idioms", "/english.html", "idioms"], ["Vocabulary", "/vocabulary.html", "vocabulary"], ["Grammar", "/grammar.html", "grammar"], ["Irregular verbs", "/irregular-verbs.html", "verbs"], ["Notes", "/english-notes.html", "notes"]];
   var MARK = ["↻", "↻", "↻↻", "↻↻↻"], STAR = ["☆", "★", "★★", "★★★"];
   var HARD_NAME = ["not marked", "hard", "harder", "hardest — repeated most"];
 

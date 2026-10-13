@@ -195,14 +195,13 @@ const MODULE_CSS = `<style>
 const moduleBar = (active, sub) => MODULE_CSS + (active === "goal" ? "<style>header{top:40px !important}@media print{header{top:0 !important}}</style>" : "") + `<nav id="modtabs">`
   + `<a href="/"${active === "goal" ? ' class="on"' : ""}>Goal Setting</a>`
   + `<span class="mt-drop"><a href="/french-ipa.html"${active === "french" ? ' class="on"' : ""}>French <i>&#9662;</i></a><span class="mt-menu">`
-  + [["Sounds", "sounds"], ["Vocabulary &amp; Sentences", "vocab"]].map(([t, k]) => `<a href="/french-ipa.html#${k}" data-fr="${k}">${t}</a>`).join("")
+  + [["Sounds", "sounds", "/french-ipa.html#sounds"], ["Vocabulary &amp; Sentences", "vocab", "/french-ipa.html#vocab"], ["Notes", "notes", "/french-notes.html"]].map(([t, k, h]) => `<a href="${h}" data-fr="${k}"${active === "french" && sub === "notes" && k === "notes" ? ' class="cur" aria-current="page"' : ""}>${t}</a>`).join("")
   + `</span></span>`
   + `<span class="mt-drop"><a href="/english.html"${active === "english" ? ' class="on"' : ""}>English <i>&#9662;</i></a><span class="mt-menu">`
-  + [["Idioms", "/english.html", "idioms"], ["Vocabulary", "/vocabulary.html", "vocabulary"], ["Grammar", "/grammar.html", "grammar"], ["Irregular verbs", "/irregular-verbs.html", "verbs"]]
+  + [["Idioms", "/english.html", "idioms"], ["Vocabulary", "/vocabulary.html", "vocabulary"], ["Grammar", "/grammar.html", "grammar"], ["Irregular verbs", "/irregular-verbs.html", "verbs"], ["Notes", "/english-notes.html", "notes"]]
       .map(([t, h, k]) => `<a href="${h}"${active === "english" && sub === k ? ' class="cur" aria-current="page"' : ""}>${t}</a>`).join("")
   + `</span></span>`
-  + `<a href="/notes.html"${active === "notes" ? ' class="on"' : ""}>Notes</a>`
-  + `<span id="modbuild">build 10-13-a</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n`;
+  + `<span id="modbuild">build 10-13-b</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n`;
 function withModuleBar(html, active, sub) {
   const m = /<body[^>]*>/i.exec(html);
   return m ? html.slice(0, m.index + m[0].length) + "\n" + moduleBar(active, sub) + html.slice(m.index + m[0].length)
@@ -210,7 +209,7 @@ function withModuleBar(html, active, sub) {
 }
 
 /* pages and assets that need no sign-in (they hold no server data) */
-const ENGLISH_SUB = { "english.html": "idioms", "vocabulary.html": "vocabulary", "grammar.html": "grammar", "irregular-verbs.html": "verbs" };
+const ENGLISH_SUB = { "english.html": "idioms", "vocabulary.html": "vocabulary", "grammar.html": "grammar", "irregular-verbs.html": "verbs", "english-notes.html": "notes" };
 const PUBLIC_PAGES = new Set(["login.html", "server-shim.js", "timer.js", "reminders.js", "store.js", "fr-en-ipa.js", "study.js", "study.css", "srs.js"]);   // assets only; the French / English pages need a sign-in because their data lives in your account
 const SHIM_TAG = `<script src="/server-shim.js"></script>\n`;
 function serveApp(res) {
@@ -242,13 +241,18 @@ const server = createServer(async (req, res) => {
         return serveApp(res);
       }
       const rel = p.replace(/^\/+/, "");
-      const file = join(PUBLIC, rel);
+      if (rel === "notes.html" || rel === "quick-notes.html") { res.writeHead(302, { location: "/french-notes.html" }); res.end(); return; }   // the notes live under French and English now
+      const NOTES_PAGES = { "french-notes.html": "fr", "english-notes.html": "en" };               // one page file, two separate note books
+      const file = join(PUBLIC, NOTES_PAGES[rel] ? "quick-notes.html" : rel);
       if (!file.startsWith(PUBLIC + sep) || !existsSync(file) || statSync(file).isDirectory()) { res.writeHead(404).end("Not found"); return; }
       const isFont = rel.startsWith("fonts/") && extname(file) === ".woff2";   // public, cacheable
       if (rel !== "login.html" && rel !== "server-shim.js" && !PUBLIC_PAGES.has(rel) && !isFont && !u) { res.writeHead(302, { location: "/login.html?next=" + encodeURIComponent("/" + rel) }); res.end(); return; }
       let b = readFileSync(file);
       if (rel === "french-ipa.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "french"));
-      if (rel === "notes.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "notes"));
+      if (NOTES_PAGES[rel]) {
+        const html = b.toString("utf8").replace("<head>", `<head>\n<script>window.NOTES_LANG=${JSON.stringify(NOTES_PAGES[rel])}</script>`);
+        b = Buffer.from(withModuleBar(html, NOTES_PAGES[rel] === "fr" ? "french" : "english", "notes"));
+      }
       if (ENGLISH_SUB[rel]) b = Buffer.from(withModuleBar(b.toString("utf8"), "english", ENGLISH_SUB[rel]));
       res.writeHead(200, { "content-type": MIME[extname(file)] || "application/octet-stream", "cache-control": isFont ? "public, max-age=31536000, immutable" : "no-store" });
       res.end(b); return;

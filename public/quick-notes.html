@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quick notes</title>
+<title>Notes</title>
 <script>try{var p=parseInt(localStorage.getItem("en-fontsize"));if(p>=80&&p<=180)document.documentElement.style.fontSize=p+"%"}catch(e){}</script>
 <style>
   :root {
@@ -19,6 +19,12 @@
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .pills { display: flex; gap: 8px; flex-wrap: wrap; max-width: 1400px; margin: 0 auto; padding: 12px 16px 0; }
+  .pills a { text-decoration: none; font: 600 0.92rem system-ui, sans-serif; color: var(--mute); border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 6px 16px; }
+  .pills a:hover { background: var(--accent-soft); color: var(--accent); }
+  .pills a.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); cursor: default; }
+  .legacy { max-width: 1400px; margin: 10px auto 0; padding: 10px 14px; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 10px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .legacy[hidden] { display: none; }
   .nt { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; max-width: 1400px; margin: 0 auto; padding: 14px 16px 40px; align-items: start; }
   @media (max-width: 860px) { .nt { grid-template-columns: 1fr; } }
 
@@ -90,9 +96,11 @@
 </style>
 </head>
 <body>
+<nav class="pills" id="pills" aria-label="Sections"></nav>
+<div class="legacy" id="legacy" hidden><span id="legacyTxt"></span><button class="btn" id="legacyMove">Move them here</button><button class="btn alt" id="legacyHide">Not now</button></div>
 <div class="nt">
   <aside class="side" aria-label="Your notes">
-    <h1>📝 Quick notes</h1>
+    <h1 id="ttl">📝 Notes</h1>
     <div class="row"><input type="search" id="q" placeholder="Search notes…" aria-label="Search notes" autocomplete="off"><button class="btn" id="newBtn" title="Start a new note (Ctrl+Alt+N)">+ New</button></div>
     <div class="row" style="margin-top:8px"><select id="topicSel" aria-label="Filter by topic" style="flex:1"></select></div>
     <div class="list" id="list"></div>
@@ -166,7 +174,12 @@
 <script>
 (function () {
   "use strict";
-  var KEY = "quick-notes";
+  var LANG = window.NOTES_LANG === "en" ? "en" : "fr", KEY = "quick-notes-" + LANG, LEGACY = "quick-notes";   // French notes and English notes are two separate note books
+  var NAMES = LANG === "en" ? { title: "\uD83D\uDCDD English notes", ph: "e.g. Work, Idioms, Writing\u2026" } : { title: "\uD83D\uDCDD French notes", ph: "e.g. Verbs, Pronunciation, Travel\u2026" };
+  var PILLS = LANG === "en"
+    ? [["Idioms", "/english.html"], ["Vocabulary", "/vocabulary.html"], ["Grammar", "/grammar.html"], ["Irregular verbs", "/irregular-verbs.html"], ["Notes", "/english-notes.html", 1]]
+    : [["Sounds", "/french-ipa.html#sounds"], ["Vocabulary & Sentences", "/french-ipa.html#vocab"], ["Notes", "/french-notes.html", 1]];
+  document.title = LANG === "en" ? "English notes" : "French notes";
   var $ = function (id) { return document.getElementById(id); };
   var ed = $("ed");
   var data = { notes: [] };
@@ -352,7 +365,23 @@
   function setPct(v) { pct = Math.max(80, Math.min(180, v)); document.documentElement.style.fontSize = pct + "%"; lab.textContent = pct + "%"; dec.disabled = pct <= 80; inc.disabled = pct >= 180; try { localStorage.setItem(KEYF, String(pct)); } catch (e) {} }
   var bar = $("modtabs"), build = $("modbuild"); if (bar) bar.insertBefore(ctl, build || null); setPct(pct);
 
+  /* ---------- notes written in the earlier single Notes tab: offer to move them into this note book ---------- */
+  Store.load(LEGACY, null).then(function (v) {
+    var old = v && Array.isArray(v.notes) ? v.notes.filter(function (n) { return n && typeof n === "object"; }) : [];
+    if (!old.length) return;
+    $("legacyTxt").textContent = "You have " + old.length + " note" + (old.length === 1 ? "" : "s") + " from the earlier Notes tab. Move " + (old.length === 1 ? "it" : "them") + " into your " + (LANG === "en" ? "English" : "French") + " notes?";
+    $("legacy").hidden = false;
+    $("legacyMove").onclick = function () {
+      var have = {}; data.notes.forEach(function (n) { have[n.id] = 1; });
+      safeData({ notes: old }).notes.forEach(function (n) { if (!have[n.id]) data.notes.push(n); });
+      save(); Store.save(LEGACY, { notes: [] }); $("legacy").hidden = true; renderList(); if (!cur) { cur = visible()[0] || null; showCur(); renderList(); }
+    };
+    $("legacyHide").onclick = function () { $("legacy").hidden = true; };
+  });
+
   /* ---------- go ---------- */
+  $("pills").innerHTML = PILLS.map(function (p) { return '<a href="' + p[0 + 1] + '"' + (p[2] ? ' class="on" aria-current="page"' : "") + ">" + esc(p[0]) + "</a>"; }).join("");
+  $("ttl").textContent = NAMES.title; $("topicIn").placeholder = NAMES.ph;
   renderList();
   if (data.notes.length) { var first = visible()[0]; if (first) { cur = first; } }
   showCur(); renderList();
