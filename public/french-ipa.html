@@ -283,6 +283,23 @@
     .side { position: sticky; top: calc(52px + var(--subh, 0px)); max-height: calc(100vh - 64px - var(--subh, 0px)); overflow-y: auto; padding: 6px 4px 20px 0; }
     .side .sp-sec:first-child { margin-top: 18px; }
   }
+  /* ---------- example words for the selected sound ---------- */
+  .xpanel { margin-top: 12px; padding: 10px 12px 12px; border: 1px solid var(--rule); border-radius: 10px; background: #fff; }
+  .xpanel[hidden] { display: none; }
+  .xh { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; font-family: var(--serif); }
+  .xh .xs { color: var(--blue, #2540d9); }
+  .xh .xbtns { margin-left: auto; display: flex; gap: 8px; }
+  .xgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+  .xwrap { position: relative; }
+  .xw { display: block; width: 100%; text-align: left; font: inherit; background: #fff; border: 1px solid var(--rule); border-radius: 8px; padding: 7px 34px 7px 10px; cursor: pointer; }
+  .xw:hover { background: var(--blue-tint); }
+  .xw .xw1 { font-family: var(--serif); font-size: 1.1rem; }
+  .xw .xi { color: var(--blue, #2540d9); font-family: var(--serif); margin-left: 8px; }
+  .xw .xi b { background: #ffe9a8; border-radius: 3px; padding: 0 1px; font-weight: 700; }
+  .xw .xe { color: #8a5a00; font-family: var(--serif); font-size: 0.88rem; margin-left: 6px; }
+  .xw .xm { display: block; color: var(--gray); font-size: 0.82rem; }
+  body.no-en .xw .xe { display: none; }
+  .xwrap .wk { top: 8px; right: 6px; }
   /* ---------- My notes (sounds, words, sentences) ---------- */
   .player > .note-box { grid-area: note; margin-top: 8px; }
   .note-box[hidden] { display: none; }
@@ -594,6 +611,7 @@
 <script src="/store.js"></script>
 <script src="/fr-en-ipa.js"></script>
 <script src="/fr-vocab-more.js"></script>
+<script src="/fr-sound-words.js"></script>
 <script>
 const DATA = [
   { title: "The alphabet — letter names", items: [
@@ -771,7 +789,7 @@ function noteShow() {              // fill the notes box for what the player is 
   document.getElementById("noteFor").textContent = current ? (current.vocab ? current.word : current.letter ? current.sym : "/" + current.sym + "/ " + (current.word || "")) : "";
   if (document.activeElement !== ta) ta.value = FRNOTES[key] || "";
 }
-function weakVocab(key) { const w = key.slice(2); return VOCAB.find(e => e[0] === w); }
+function weakVocab(key) { const w = key.slice(2); return VOCAB.find(e => e[0] === w) || (typeof SOUND_LOOKUP !== "undefined" ? SOUND_LOOKUP[w] : null); }
 function weakItems() {   // [{key,item,lvl}] weakest first
   const out = [];
   Object.keys(WEAK).forEach(k => { const item = (k[0] === "s" || k[0] === "t") ? WEAK_ITEMS[k] : weakVocab(k); if (item) out.push({ key: k, item, lvl: WEAK[k] }); });
@@ -865,9 +883,47 @@ DATA.forEach(group => {
   });
   sec.appendChild(h);
   sec.appendChild(grid);
+  const xp = document.createElement("div"); xp.className = "xpanel"; xp.hidden = true;
+  group.items.forEach(it => { if (!it.letter) it._xp = xp; });
+  sec.appendChild(xp);
   sections.appendChild(sec);
 });
 
+/* ---------- 12 example words for the selected sound, to practise and review ---------- */
+const soundWords = sym => (window.SOUND_WORDS && (SOUND_WORDS[sym] || SOUND_WORDS[sym.normalize("NFD")] || SOUND_WORDS[sym.normalize("NFC")])) || null;
+const SOUND_LOOKUP = (() => { const m = {}; Object.values(window.SOUND_WORDS || {}).forEach(l => l.forEach(e => { if (!m[e[0]]) m[e[0]] = e; })); return m; })();
+function hiIpa(ipa, sym) {         // blue-highlight the sound inside the word's IPA
+  const T = "\u0303", nasal = sym.length === 2 && sym[1] === T;
+  for (let i = 0; i < ipa.length; i++) {
+    if (!ipa.startsWith(sym, i)) continue;
+    if (!nasal && ipa[i + sym.length] === T) continue;
+    return esc(ipa.slice(0, i)) + "<b>" + esc(sym) + "</b>" + esc(ipa.slice(i + sym.length));
+  }
+  return esc(ipa);
+}
+let xpShown = null;
+function showExamples(item) {
+  const words = !item.letter && item._xp && soundWords(item.sym);
+  if (xpShown && (!words || xpShown !== item._xp)) { xpShown.hidden = true; xpShown = null; }
+  if (!words) return;
+  const xp = item._xp; xp.hidden = false; xpShown = xp;
+  xp.innerHTML = '<div class="xh"><b>Words with <span class="xs">/' + esc(item.sym) + '/</span></b><span class="vcount">(' + words.length + ')</span>' +
+    '<span class="xbtns"><button class="gloop" data-x="all" data-label="\u25B6 Play all">\u25B6 Play all</button><button class="gloop" data-x="loop" data-label="\uD83D\uDD01 Loop">\uD83D\uDD01 Loop</button></span></div><div class="xgrid"></div>';
+  const grid = xp.querySelector(".xgrid");
+  words.forEach(e => {
+    const wrap = document.createElement("div"); wrap.className = "xwrap";
+    const b = document.createElement("button"); b.type = "button"; b.className = "xw";
+    b.innerHTML = '<span class="xw1">' + esc(e[0]) + '</span><span class="xi">/' + hiIpa(e[1], item.sym) + '/</span><span class="xe">\u2248 /' + esc(FRIPA.word(e[1])) + '/</span><span class="xm">' + esc(e[2]) + "</span>";
+    b.addEventListener("click", () => { selectVocab(e[0], e[1], e[2]); if (!looping) playSequence(); });
+    wrap.appendChild(b); wrap.appendChild(makeBadge("w:" + e[0], "this word"));
+    grid.appendChild(wrap);
+  });
+  xp.querySelectorAll("[data-x]").forEach(btn => btn.addEventListener("click", () => {
+    if (looping && groupBtnActive === btn) { stopLoop(); return; }
+    startGroupLoop(words, btn, btn.dataset.x === "all");
+  }));
+  refreshWeak();
+}
 function select(item, chipEl) {
   current = item;
   document.querySelectorAll(".chip.active").forEach(c => c.classList.remove("active"));
@@ -878,6 +934,7 @@ function select(item, chipEl) {
   bigHint.textContent = item.hint;
   $("bigEn").innerHTML = enLine(item);
   noteShow(); refreshNoteMarks();
+  showExamples(item);
 }
 
 /* ---------- Voices ---------- */
@@ -1242,7 +1299,7 @@ function applyItem(item) {
   else select(item, item._chip || null);
 }
 
-async function startGroupLoop(items, btn) {
+async function startGroupLoop(items, btn, once) {
   if (!items || items.length === 0) return;
   stopLoop();
   looping = true;
@@ -1273,6 +1330,7 @@ async function startGroupLoop(items, btn) {
       }
     }
     i = (i + 1) % items.length;
+    if (once && i === 0) break;               // "Play all": one pass, then stop
   }
   if (token === playToken) stopLoop();
 }
