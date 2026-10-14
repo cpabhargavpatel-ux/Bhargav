@@ -294,6 +294,11 @@
   .xw { display: block; width: 100%; text-align: left; font: inherit; background: #fff; border: 1px solid var(--rule); border-radius: 8px; padding: 7px 34px 7px 10px; cursor: pointer; }
   .xw:hover { background: var(--blue-tint); }
   .xw .xw1 { font-family: var(--serif); font-size: 1.1rem; }
+  .xw .xw1 b { color: #b54708; background: #ffe9a8; border-radius: 3px; padding: 0 1px; font-weight: 700; }
+  .xsp { display: flex; align-items: baseline; gap: 10px; margin: 12px 0 6px; padding-bottom: 3px; border-bottom: 1px dashed var(--rule); }
+  .xsp:first-child { margin-top: 0; }
+  .xsp .xl { font: 700 1.15rem var(--serif); color: #b54708; background: #fff3d6; border-radius: 6px; padding: 0 10px; }
+  .xsp .xn { color: var(--gray); font-size: 0.84rem; }
   .xw .xi { color: var(--blue, #2540d9); font-family: var(--serif); margin-left: 8px; }
   .xw .xi b { background: #ffe9a8; border-radius: 3px; padding: 0 1px; font-weight: 700; }
   .xw .xe { color: #8a5a00; font-family: var(--serif); font-size: 0.88rem; margin-left: 6px; }
@@ -890,8 +895,8 @@ DATA.forEach(group => {
 });
 
 /* ---------- 12 example words for the selected sound, to practise and review ---------- */
-const soundWords = sym => (window.SOUND_WORDS && (SOUND_WORDS[sym] || SOUND_WORDS[sym.normalize("NFD")] || SOUND_WORDS[sym.normalize("NFC")])) || null;
-const SOUND_LOOKUP = (() => { const m = {}; Object.values(window.SOUND_WORDS || {}).forEach(l => l.forEach(e => { if (!m[e[0]]) m[e[0]] = e; })); return m; })();
+const spellGroups = sym => (window.SOUND_SPELLINGS && (SOUND_SPELLINGS[sym] || SOUND_SPELLINGS[sym.normalize("NFD")] || SOUND_SPELLINGS[sym.normalize("NFC")])) || null;
+const SOUND_LOOKUP = (() => { const m = {}; Object.values(window.SOUND_SPELLINGS || {}).forEach(gs => gs.forEach(g => g[2].forEach(e => { if (!m[e[0]]) m[e[0]] = e; }))); return m; })();
 function hiIpa(ipa, sym) {         // blue-highlight the sound inside the word's IPA
   const T = "\u0303", nasal = sym.length === 2 && sym[1] === T;
   for (let i = 0; i < ipa.length; i++) {
@@ -901,22 +906,38 @@ function hiIpa(ipa, sym) {         // blue-highlight the sound inside the word's
   }
   return esc(ipa);
 }
+function hiWord(word, spelling) {  // orange-highlight the letters that make the sound in the word
+  const base = spelling.split(/\s+(?:\+|before)\s*/)[0];
+  for (const cand of base.split(" / ")) {
+    if (!cand || /\s/.test(cand)) continue;
+    const i = word.toLowerCase().indexOf(cand.toLowerCase());
+    if (i >= 0) return esc(word.slice(0, i)) + "<b>" + esc(word.slice(i, i + cand.length)) + "</b>" + esc(word.slice(i + cand.length));
+  }
+  return esc(word);
+}
 let xpShown = null;
 function showExamples(item) {
-  const words = !item.letter && item._xp && soundWords(item.sym);
-  if (xpShown && (!words || xpShown !== item._xp)) { xpShown.hidden = true; xpShown = null; }
-  if (!words) return;
+  const groups = !item.letter && item._xp && spellGroups(item.sym);
+  if (xpShown && (!groups || xpShown !== item._xp)) { xpShown.hidden = true; xpShown = null; }
+  if (!groups) return;
+  const words = groups.flatMap(g => g[2]);
   const xp = item._xp; xp.hidden = false; xpShown = xp;
-  xp.innerHTML = '<div class="xh"><b>Words with <span class="xs">/' + esc(item.sym) + '/</span></b><span class="vcount">(' + words.length + ')</span>' +
-    '<span class="xbtns"><button class="gloop" data-x="all" data-label="\u25B6 Play all">\u25B6 Play all</button><button class="gloop" data-x="loop" data-label="\uD83D\uDD01 Loop">\uD83D\uDD01 Loop</button></span></div><div class="xgrid"></div>';
-  const grid = xp.querySelector(".xgrid");
-  words.forEach(e => {
-    const wrap = document.createElement("div"); wrap.className = "xwrap";
-    const b = document.createElement("button"); b.type = "button"; b.className = "xw";
-    b.innerHTML = '<span class="xw1">' + esc(e[0]) + '</span><span class="xi">/' + hiIpa(e[1], item.sym) + '/</span><span class="xe">\u2248 /' + esc(FRIPA.word(e[1])) + '/</span><span class="xm">' + esc(e[2]) + "</span>";
-    b.addEventListener("click", () => { selectVocab(e[0], e[1], e[2]); if (!looping) playSequence(); });
-    wrap.appendChild(b); wrap.appendChild(makeBadge("w:" + e[0], "this word"));
-    grid.appendChild(wrap);
+  xp.innerHTML = '<div class="xh"><b>Every way to write <span class="xs">/' + esc(item.sym) + '/</span></b><span class="vcount">(' + groups.length + ' spelling' + (groups.length === 1 ? "" : "s") + " \u00B7 " + words.length + ' words)</span>' +
+    '<span class="xbtns"><button class="gloop" data-x="all" data-label="\u25B6 Play all">\u25B6 Play all</button><button class="gloop" data-x="loop" data-label="\uD83D\uDD01 Loop">\uD83D\uDD01 Loop</button></span></div><div class="xbody"></div>';
+  const body = xp.querySelector(".xbody");
+  groups.forEach(g => {
+    const head = document.createElement("div"); head.className = "xsp";
+    head.innerHTML = '<span class="xl">' + esc(g[0]) + "</span>" + (g[1] ? '<span class="xn">' + esc(g[1]) + "</span>" : "");
+    const grid = document.createElement("div"); grid.className = "xgrid";
+    g[2].forEach(e => {
+      const wrap = document.createElement("div"); wrap.className = "xwrap";
+      const b = document.createElement("button"); b.type = "button"; b.className = "xw";
+      b.innerHTML = '<span class="xw1">' + hiWord(e[0], g[0]) + '</span><span class="xi">/' + hiIpa(e[1], item.sym) + '/</span><span class="xe">\u2248 /' + esc(FRIPA.word(e[1])) + '/</span><span class="xm">' + esc(e[2]) + "</span>";
+      b.addEventListener("click", () => { selectVocab(e[0], e[1], e[2]); if (!looping) playSequence(); });
+      wrap.appendChild(b); wrap.appendChild(makeBadge("w:" + e[0], "this word"));
+      grid.appendChild(wrap);
+    });
+    body.appendChild(head); body.appendChild(grid);
   });
   xp.querySelectorAll("[data-x]").forEach(btn => btn.addEventListener("click", () => {
     if (looping && groupBtnActive === btn) { stopLoop(); return; }
