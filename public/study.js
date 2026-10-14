@@ -45,6 +45,7 @@
       '<div class="row"><button class="play alt" id="expJson">Export backup (.json)</button><button class="play alt" id="expCsv">Export CSV</button><button class="play alt" id="close">Close</button><button class="play" id="doImport">Import</button></div>' +
       '<p id="impMsg" style="margin:10px 0 0"></p></dialog>';
     document.title = cfg.title;
+    (function () { var sn = document.querySelector(".subnav"); if (!sn) return; var set = function () { document.documentElement.style.setProperty("--subh", sn.offsetHeight + "px"); }; set(); window.addEventListener("resize", set); if (window.ResizeObserver) new ResizeObserver(set).observe(sn); })();
 
     var save = function () { Store.save(cfg.key, items); };
     function mk(obj, extra) {

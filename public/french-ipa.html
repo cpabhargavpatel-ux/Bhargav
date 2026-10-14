@@ -48,7 +48,7 @@
   /* ---------- Player panel ---------- */
   .player {
     position: sticky;
-    top: 40px;            /* sits just under the pinned Goal Setting | French IPA tabs */
+    top: calc(40px + var(--subh, 0px));   /* just under the pinned tabs and the Sounds | Vocabulary | Notes buttons */
     z-index: 10;
     background: var(--paper);
     border-bottom: 1px solid var(--rule);
@@ -280,7 +280,7 @@
     .layout { display: grid; grid-template-columns: minmax(0, 1fr) 27.5rem; gap: 32px; align-items: start; }
     @media (max-width: 1450px) { .layout { grid-template-columns: minmax(0, 1fr) 21rem; gap: 24px; } }
     .main { display: block; }
-    .side { position: sticky; top: 52px; max-height: calc(100vh - 64px); overflow-y: auto; padding: 6px 4px 20px 0; }
+    .side { position: sticky; top: calc(52px + var(--subh, 0px)); max-height: calc(100vh - 64px - var(--subh, 0px)); overflow-y: auto; padding: 6px 4px 20px 0; }
     .side .sp-sec:first-child { margin-top: 18px; }
   }
   /* ---------- My notes (sounds, words, sentences) ---------- */
@@ -308,7 +308,7 @@
   .nline[hidden], .nedit[hidden] { display: none; }
   .nedit { width: 100%; box-sizing: border-box; font: 0.95rem var(--serif); color: var(--ink, #222); background: #fffbe6; border: 1px solid #ecd98a; border-radius: 6px; padding: 5px 8px; margin: 4px 0 2px; resize: vertical; }
   /* ---------- French sub-tabs: Sounds | Vocabulary & Sentences ---------- */
-  .frsub { display: flex; gap: 8px; margin: 12px 0 6px; flex-wrap: wrap; }
+  .frsub { display: flex; gap: 8px; margin: 0; padding: 10px 0 8px; flex-wrap: wrap; position: sticky; top: 40px; z-index: 12; background: var(--paper); }   /* frozen under the top bar */
   .frsub a { text-decoration: none; font: 600 0.95rem var(--sans); color: var(--ink, #222); border: 1px solid var(--rule); background: #fff; border-radius: 999px; padding: 6px 18px; }
   .frsub a:hover { background: var(--blue-tint); }
   .frsub a.on { background: var(--blue, #2540d9); border-color: var(--blue, #2540d9); color: #fff; }
@@ -1857,6 +1857,14 @@ refreshWeak();
   addEventListener("resize", center);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(center);
   center();
+})();
+
+/* ---------- keep the frozen Sounds | Vocabulary | Notes row's height known, so everything else freezes right under it ---------- */
+(function () {
+  const bar = $("frSub"); if (!bar) return;
+  const set = () => document.documentElement.style.setProperty("--subh", bar.offsetHeight + "px");
+  set(); window.addEventListener("resize", set); window.addEventListener("load", set);
+  if (window.ResizeObserver) new ResizeObserver(set).observe(bar);
 })();
 
 /* ---------- notes box in the player ---------- */
