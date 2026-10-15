@@ -386,6 +386,8 @@
   .sv-due.now { color: #C62828; }
   /* ---------- English IPA equivalents (the nearest English sounds) ---------- */
   .chip { flex-wrap: wrap; }
+  .chip .sp { flex-basis: 100%; font-family: var(--sans); font-size: 0.8rem; color: #3b5bdb; margin-top: 2px; line-height: 1.35; }
+  .current-sp { color: #3b5bdb; font-size: 0.9rem; margin-top: 3px; }
   .chip .en { flex-basis: 100%; font-family: var(--sans); font-size: 0.78rem; color: #8a5a00; margin-top: 2px; }
   .chip .en b { font-family: var(--serif); font-weight: 400; font-size: 0.95rem; }
   .current-en { color: #8a5a00; font-size: 0.9rem; margin-top: 3px; }
@@ -485,6 +487,7 @@
         <div class="current-word" id="bigWord"></div>
         <div class="current-hint" id="bigHint"></div>
         <div class="current-en" id="bigEn"></div>
+        <div class="current-sp" id="bigSp"></div>
         <div class="status" id="status"></div>
       </div>
     </div>
@@ -856,6 +859,19 @@ function refreshWeak() {
 
 /* ---------- English IPA: the nearest English sound for each French one ---------- */
 const enSlash = s => "/" + s + "/";
+/* every way to write the sound, e.g. /i/ -> i \u00B7 \u00EE \u00B7 y \u00B7 \u00EF \u00B7 ie  (from the spelling data) */
+function spellList(item) {
+  if (item.letter || !window.SOUND_SPELLINGS) return [];
+  const gs = SOUND_SPELLINGS[item.sym] || SOUND_SPELLINGS[item.sym.normalize("NFD")] || SOUND_SPELLINGS[item.sym.normalize("NFC")];
+  if (!gs) return [];
+  const out = [];
+  gs.forEach(g => g[0].split(/\s+(?:\+|before)\s*/)[0].split(" / ").forEach(s => { s = s.trim(); if (s && !out.includes(s)) out.push(s); }));
+  return out;
+}
+function spellChip(item) {
+  const l = spellList(item); if (!l.length) return "";
+  return '<span class="sp" title="Every way this sound is written: ' + esc(l.join(", ")) + '">\u270E ' + l.map(esc).join(" \u00B7 ") + "</span>";
+}
 function enChip(item) {                   // the small amber line on each sound / letter chip
   const e = FRIPA.forItem(item); if (!e || !e.en) return "";
   return '<span class="en" title="Closest English IPA' + (e.ex ? ": as in \u201C" + e.ex + "\u201D" : "") + (e.note ? ". " + e.note : "") + '">\u2248 <b>' + enSlash(e.en) + "</b>" + (e.ex ? " " + e.ex : "") + "</span>";
@@ -887,7 +903,7 @@ DATA.forEach(group => {
   group.items.forEach(item => {
     const b = document.createElement("button");
     b.className = "chip";
-    b.innerHTML = '<span class="sym">' + item.sym + '</span><span class="word">' + markWord(item.word, item.hit) + "</span>" + enChip(item);
+    b.innerHTML = '<span class="sym">' + item.sym + '</span><span class="word">' + markWord(item.word, item.hit) + "</span>" + enChip(item) + spellChip(item);
     b.addEventListener("click", () => {
       select(item, b);
       if (!looping) playSequence();   // while looping, the loop picks up the new word
@@ -1003,6 +1019,7 @@ function select(item, chipEl) {
   bigWord.innerHTML = markWord(item.word, item.hit);
   bigHint.textContent = item.hint;
   $("bigEn").innerHTML = enLine(item);
+  { const sl = spellList(item); $("bigSp").textContent = sl.length ? "\u270E Written: " + sl.join(" \u00B7 ") : ""; }
   noteShow(); refreshNoteMarks();
   showExamples(item);
 }
@@ -1466,6 +1483,7 @@ function selectVocab(w, ipa, m) {
   bigWord.textContent = w;
   bigHint.textContent = m;
   $("bigEn").innerHTML = ipa ? "\u2248 English <b>" + enSlash(FRIPA.word(ipa)) + "</b>" : "";
+  $("bigSp").textContent = "";
   noteShow(); refreshNoteMarks();
 }
 
