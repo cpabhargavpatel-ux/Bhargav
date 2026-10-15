@@ -386,6 +386,7 @@
   .sv-due.now { color: #C62828; }
   /* ---------- English IPA equivalents (the nearest English sounds) ---------- */
   .chip { flex-wrap: wrap; }
+  .chip .alt { flex-basis: 100%; font-family: var(--serif); font-size: 1.05rem; color: #7a1f8c; font-weight: 700; margin-top: 2px; }
   .chip .sp { flex-basis: 100%; font-family: var(--serif); font-size: 1.05rem; font-weight: 700; color: #1b2f9e; margin-top: 4px; line-height: 1.35; }
   .current-sp { color: #1b2f9e; font-family: var(--serif); font-size: 1.1rem; font-weight: 700; margin-top: 4px; }
   .chip .en { flex-basis: 100%; font-family: var(--sans); font-size: 0.78rem; color: #8a5a00; margin-top: 2px; }
@@ -680,9 +681,9 @@ const DATA = [
     { sym: "ə",  word: "le",     hit: "e",   hint: "weak schwa, often dropped" },
   ]},
   { title: "Nasal vowels", items: [
-    { sym: "ɛ̃", word: "vin",    hit: "in",  hint: "air through the nose, no final n" },
-    { sym: "ɑ̃", word: "blanc",  hit: "an",  hint: "open and nasal, jaw drops" },
-    { sym: "ɔ̃", word: "bon",    hit: "on",  hint: "rounded and nasal" },
+    { sym: "ɛ̃", alt: "ẽ", word: "vin",    hit: "in",  hint: "air through the nose, no final n" },
+    { sym: "ɑ̃", alt: "ã", word: "blanc",  hit: "an",  hint: "open and nasal, jaw drops" },
+    { sym: "ɔ̃", alt: "õ", word: "bon",    hit: "on",  hint: "rounded and nasal" },
     { sym: "œ̃", word: "brun",   hit: "un",  hint: "merging with /ɛ̃/ for many speakers" },
   ]},
   { title: "Semi-vowels", items: [
@@ -868,9 +869,10 @@ function spellList(item) {
   gs.forEach(g => g[0].split(/\s+(?:\+|before)\s*/)[0].split(" / ").forEach(s => { s = s.trim(); if (s && !out.includes(s)) out.push(s); }));
   return out;
 }
+const altNote = item => item.alt ? "also written " + item.alt + " in many textbooks" : "";
 function spellChip(item) {
   const l = spellList(item); if (!l.length) return "";
-  return '<span class="sp" title="Every way this sound is written: ' + esc(l.join(", ")) + '">\u270E ' + l.map(esc).join(" \u00B7 ") + "</span>";
+  return (item.alt ? '<span class="alt" title="' + altNote(item) + '">= ' + esc(item.alt) + "</span>" : "") + '<span class="sp" title="Every way this sound is written: ' + esc(l.join(", ")) + '">\u270E ' + l.map(esc).join(" \u00B7 ") + "</span>";
 }
 function enChip(item) {                   // the small amber line on each sound / letter chip
   const e = FRIPA.forItem(item); if (!e || !e.en) return "";
@@ -1019,7 +1021,7 @@ function select(item, chipEl) {
   bigWord.innerHTML = markWord(item.word, item.hit);
   bigHint.textContent = item.hint;
   $("bigEn").innerHTML = enLine(item);
-  { const sl = spellList(item); $("bigSp").textContent = sl.length ? "\u270E Written: " + sl.join(" \u00B7 ") : ""; }
+  { const sl = spellList(item); $("bigSp").textContent = (item.alt ? item.alt + " (" + altNote(item) + ")   " : "") + (sl.length ? "\u270E Written: " + sl.join(" \u00B7 ") : ""); }
   noteShow(); refreshNoteMarks();
   showExamples(item);
 }
