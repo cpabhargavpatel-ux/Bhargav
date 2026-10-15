@@ -295,6 +295,21 @@
   .xw:hover { background: var(--blue-tint); }
   .xw .xw1 { font-family: var(--serif); font-size: 1.1rem; }
   .xw .xw1 b { color: #b54708; background: #ffe9a8; border-radius: 3px; padding: 0 1px; font-weight: 700; }
+  .xmore { margin-top: 8px; font: 600 0.88rem var(--sans); color: var(--blue, #2540d9); background: transparent; border: 1px solid var(--rule); border-radius: 8px; padding: 5px 12px; cursor: pointer; }
+  .xmore:hover { background: var(--blue-tint); }
+  .xall { margin-top: 8px; padding: 8px; border: 1px solid var(--rule); border-radius: 8px; background: #fbfaf5; }
+  .xall[hidden] { display: none; }
+  .xfind { width: 100%; box-sizing: border-box; font: inherit; padding: 6px 9px; border: 1px solid var(--rule); border-radius: 8px; margin-bottom: 8px; }
+  .xlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 2px 10px; }
+  .xa { display: flex; align-items: baseline; gap: 8px; text-align: left; font: inherit; background: transparent; border: 0; border-bottom: 1px solid var(--rule); padding: 4px 6px; cursor: pointer; min-width: 0; }
+  .xa:hover { background: var(--blue-tint); }
+  .xa .xa1 { font-family: var(--serif); font-size: 1.02rem; }
+  .xa .xa1 b { color: #b54708; background: #ffe9a8; border-radius: 3px; padding: 0 1px; }
+  .xa .xai { color: var(--blue, #2540d9); font-family: var(--serif); font-size: 0.9rem; white-space: nowrap; }
+  .xa .xai b { background: #ffe9a8; border-radius: 3px; }
+  .xa .xam { color: var(--gray); font-size: 0.78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .xnext { margin-top: 8px; }
+  .xnone { color: var(--gray); margin: 6px; }
   .xsp { display: flex; align-items: baseline; gap: 10px; margin: 12px 0 6px; padding-bottom: 3px; border-bottom: 1px dashed var(--rule); }
   .xsp:first-child { margin-top: 0; }
   .xsp .xl { font: 700 1.15rem var(--serif); color: #b54708; background: #fff3d6; border-radius: 6px; padding: 0 10px; }
@@ -915,6 +930,39 @@ function hiWord(word, spelling) {  // orange-highlight the letters that make the
   }
   return esc(word);
 }
+/* EVERY vocabulary word that spells the sound this way (word regex + IPA regex from the data), listed on request */
+function allWords(body, item, g) {
+  let re, ire; try { re = new RegExp(g[3], "i"); ire = new RegExp(g[4]); } catch (e) { return; }
+  const nasalSym = item.sym.length === 2;                     // for oral sounds, nasal vowels must not count (the \u0303 mark)
+  const all = VOCAB.filter(e => re.test(e[0]) && ire.test(nasalSym ? e[1] : e[1].replace(/.\u0303/g, "N")));
+  const shown = new Set(g[2].map(e => e[0]));
+  const more = all.filter(e => !shown.has(e[0]));
+  if (!more.length) return;
+  const btn = document.createElement("button"); btn.type = "button"; btn.className = "xmore";
+  const label = open => (open ? "\u25BE Hide" : "\u25B8 Show") + " all " + all.length.toLocaleString() + " words spelled \u201C" + g[0] + "\u201D";
+  btn.textContent = label(false); btn.setAttribute("aria-expanded", "false");
+  const box = document.createElement("div"); box.className = "xall"; box.hidden = true;
+  box.innerHTML = '<input type="search" class="xfind" placeholder="Filter these words\u2026" aria-label="Filter these words"><div class="xlist"></div><button type="button" class="xnext gloop"></button>';
+  let list = more, n = 0; const PAGE = 60;
+  const lst = box.querySelector(".xlist"), nxt = box.querySelector(".xnext"), find = box.querySelector(".xfind");
+  const hit = w => { const m = re.exec(w); return m && m[0] ? esc(w.slice(0, m.index)) + "<b>" + esc(m[0]) + "</b>" + esc(w.slice(m.index + m[0].length)) : esc(w); };
+  function render(reset) {
+    if (reset) { lst.textContent = ""; n = 0; }
+    list.slice(n, n + PAGE).forEach(e => {
+      const r = document.createElement("button"); r.type = "button"; r.className = "xa";
+      r.innerHTML = '<span class="xa1">' + hit(e[0]) + '</span><span class="xai">/' + hiIpa(e[1], item.sym) + '/</span><span class="xam">' + esc(e[2]) + "</span>";
+      r.addEventListener("click", () => { selectVocab(e[0], e[1], e[2]); if (!looping) playSequence(); });
+      lst.appendChild(r);
+    });
+    n = Math.min(list.length, n + PAGE);
+    nxt.hidden = n >= list.length; nxt.textContent = "Show " + Math.min(PAGE, list.length - n) + " more (" + (list.length - n).toLocaleString() + " left)";
+    if (!list.length) lst.innerHTML = '<p class="xnone">No words match.</p>';
+  }
+  btn.addEventListener("click", () => { const open = box.hidden; box.hidden = !open; btn.textContent = label(open); btn.setAttribute("aria-expanded", String(open)); if (open && !lst.firstChild) render(true); });
+  nxt.addEventListener("click", () => render(false));
+  find.addEventListener("input", () => { const q = find.value.trim().toLowerCase(); list = q ? more.filter(e => e[0].toLowerCase().includes(q) || e[2].toLowerCase().includes(q)) : more; render(true); });
+  body.appendChild(btn); body.appendChild(box);
+}
 let xpShown = null;
 function showExamples(item) {
   const groups = !item.letter && item._xp && spellGroups(item.sym);
@@ -938,6 +986,7 @@ function showExamples(item) {
       grid.appendChild(wrap);
     });
     body.appendChild(head); body.appendChild(grid);
+    if (g[3]) allWords(body, item, g);
   });
   xp.querySelectorAll("[data-x]").forEach(btn => btn.addEventListener("click", () => {
     if (looping && groupBtnActive === btn) { stopLoop(); return; }
