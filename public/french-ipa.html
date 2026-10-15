@@ -69,12 +69,29 @@
     .player { grid-template-columns: minmax(0, 1fr); grid-template-areas: "info" "voice" "controls" "note" "warn"; }
     .player > .voice-row { justify-self: start; }
   }
+  /* wide screens: two slim rows - [sound tile | word | letters->sounds map] and [controls | voice + options] */
+  @media (min-width: 1100px) {
+    .player { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "info voice" "controls controls" "note note" "warn warn"; column-gap: 18px; row-gap: 6px; padding: 8px 0 8px; align-items: center; }
+    .player > .player-row { width: 100%; flex-wrap: nowrap; align-items: flex-start; }
+    .player > .voice-row { align-self: start; max-width: 19rem; }
+    .player .current-info { flex: 0 1 19rem; }
+    .player .lmap { flex: 1 1 auto; min-width: 0; overflow-x: auto; }
+    .player > .controls { gap: 6px 10px; }
+    .player > .voice-row { justify-self: end; flex-direction: row; flex-wrap: wrap; justify-content: flex-end; gap: 4px 12px; margin-top: 0; }
+    .player > .voice-row select { max-width: 13rem; }
+    .player button.play { padding: 8px 16px; }
+    .player .mode-toggle button { padding: 7px 10px; }
+    .player .slider-group input[type="range"] { width: 44px; }
+    .player .slider-group { gap: 5px; font-size: 0.84rem; }
+    .player .current-phoneme { font-size: 2.2rem; min-width: 70px; padding: 6px 8px; }
+  }
   .player-row {
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 14px;
     width: 19rem;
     max-width: 100%;
+    flex-wrap: wrap;
   }
   .current-phoneme {
     font-family: var(--serif);
@@ -93,14 +110,17 @@
     transition: transform 0.12s ease;
   }
   .current-phoneme.speaking { transform: scale(1.06); }
-  .current-info { flex: 1; min-width: 0; }
+  .current-info { flex: 1 1 14rem; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; }
+  .current-info > * { grid-column: 1 / -1; }
+  .current-info > .current-word { grid-column: 1; }
+  .current-info > .status { grid-column: 2; grid-row: 1; margin: 0; align-self: center; }
   .current-word {
     font-family: var(--serif);
     font-size: 1.5rem;
     font-style: italic;
   }
   .current-word .hit { color: var(--blue); font-style: normal; font-weight: 700; }
-  .current-hint { color: var(--gray); font-size: 0.92rem; margin-top: 2px; }
+  .current-hint { color: var(--gray); font-size: 0.88rem; margin-top: 1px; line-height: 1.3; }
   .status {
     font-size: 0.8rem;
     color: var(--blue);
@@ -283,6 +303,23 @@
     .side { position: sticky; top: calc(52px + var(--subh, 0px)); max-height: calc(100vh - 64px - var(--subh, 0px)); overflow-y: auto; padding: 6px 4px 20px 0; }
     .side .sp-sec:first-child { margin-top: 18px; }
   }
+  /* ---------- letters -> sounds map (beside the word in the player) ---------- */
+  .lmap { display: flex; align-items: flex-start; gap: 3px; flex: 0 1 auto; padding: 2px 4px; }
+  .lmap[hidden] { display: none; }
+  body.no-map .lmap { display: none; }
+  .lm-u { display: flex; flex-direction: column; align-items: center; flex: none; }
+  .lm-l { font: 600 1.25rem/1.1 var(--serif); color: var(--ink, #222); padding: 0 4px; border-bottom: 2px solid var(--blue, #2540d9); }
+  .lm-u.sil .lm-l { color: #aab0bd; border-bottom-color: #d4d8e2; text-decoration: line-through; text-decoration-color: #c4c9d6; font-weight: 400; }
+  .lm-a { display: block; height: 15px; width: 100%; max-width: 100%; overflow: visible; }
+  .lm-a line { stroke: var(--blue, #2540d9); stroke-width: 1.5; }
+  .lm-a path { fill: var(--blue, #2540d9); }
+  .lm-u.sil .lm-a line { stroke: #d4d8e2; stroke-dasharray: 2 2; } .lm-u.sil .lm-a path { fill: #d4d8e2; }
+  .lm-s { display: flex; gap: 3px; justify-content: center; }
+  .lm-s i { font: normal 700 1.02rem/1.2 var(--serif); padding: 0 6px; border-radius: 6px; cursor: default; }
+  .lm-s i.v { background: #e3e9ff; color: #1b2f9e; } .lm-s i.s { background: #e1f4e6; color: #17653a; } .lm-s i.c { background: #fff0d9; color: #8a4b00; }
+  .lm-s i.none { background: transparent; color: #c4c9d6; font-weight: 400; }
+  .lm-s i:hover { outline: 2px solid var(--blue, #2540d9); }
+  .chip.link, .chipwrap.link .chip { outline: 3px solid #f0a020; outline-offset: 1px; background: #fff6e0; }
   /* ---------- example words for the selected sound ---------- */
   .xpanel { margin-top: 12px; padding: 10px 12px 12px; border: 1px solid var(--rule); border-radius: 10px; background: #fff; }
   .xpanel[hidden] { display: none; }
@@ -391,10 +428,11 @@
   .current-sp { color: #1b2f9e; font-family: var(--serif); font-size: 1.1rem; font-weight: 700; margin-top: 4px; }
   .chip .en { flex-basis: 100%; font-family: var(--sans); font-size: 0.78rem; color: #8a5a00; margin-top: 2px; }
   .chip .en b { font-family: var(--serif); font-weight: 400; font-size: 0.95rem; }
-  .current-en { color: #8a5a00; font-size: 0.9rem; margin-top: 3px; }
+  .current-en { color: #8a5a00; font-size: 0.86rem; margin-top: 1px; line-height: 1.3; }
   .current-en b { font-family: var(--serif); font-weight: 400; font-size: 1.05rem; }
   .vrow .ven { color: #8a5a00; font-family: var(--serif); font-size: 0.95rem; margin-left: 8px; }
   .wk-item .wk-en { font: 400 0.8rem var(--serif); color: #8a5a00; }
+  .voice-row .enlab, .voice-row .notebtn { margin-left: 0; }
   .enlab { display: inline-flex; align-items: center; gap: 6px; margin-left: 14px; color: #8a5a00; font-size: 0.88rem; cursor: pointer; }
   body.no-en .en, body.no-en .ven, body.no-en .current-en, body.no-en .wk-en { display: none !important; }
   /* ---------- Weak-spot marks (repeat sign) ---------- */
@@ -488,9 +526,9 @@
         <div class="current-word" id="bigWord"></div>
         <div class="current-hint" id="bigHint"></div>
         <div class="current-en" id="bigEn"></div>
-        <div class="current-sp" id="bigSp"></div>
         <div class="status" id="status"></div>
       </div>
+      <div class="lmap" id="lmap" hidden aria-label="Which letters make which sounds"></div>
     </div>
     <div class="controls">
       <div class="mode-toggle" role="group" aria-label="Playback mode">
@@ -519,6 +557,7 @@
       <label for="voiceSel">Voice</label>
       <select id="voiceSel"></select>
       <label class="enlab" title="Show the closest English IPA next to every French IPA"><input type="checkbox" id="enToggle" checked> English IPA ≈</label>
+      <label class="enlab" title="Show which letters make which sound, with arrows"><input type="checkbox" id="mapToggle" checked> Letters → sounds</label>
       <button class="notebtn" id="noteBtn" type="button" aria-expanded="false" aria-controls="noteBox" title="Write your own note about the sound or word shown above">📝 Notes</button>
     </div>
     <div class="note-box" id="noteBox" hidden>
@@ -636,6 +675,7 @@
 <script src="/fr-en-ipa.js"></script>
 <script src="/fr-vocab-more.js"></script>
 <script src="/fr-sound-words.js"></script>
+<script src="/fr-align.js"></script>
 <script>
 const DATA = [
   { title: "The alphabet — letter names", items: [
@@ -858,6 +898,45 @@ function refreshWeak() {
   refreshNoteMarks();
 }
 
+/* ---------- letters -> sounds map: which letters make which sound, with arrows (silent letters greyed) ---------- */
+let _wordIpa = null;
+function wordIpa(w) {
+  if (!_wordIpa) { _wordIpa = {}; VOCAB.forEach(e => { if (!_wordIpa[e[0]]) _wordIpa[e[0]] = e[1]; }); Object.keys(SOUND_LOOKUP || {}).forEach(k => { if (!_wordIpa[k]) _wordIpa[k] = SOUND_LOOKUP[k][1]; }); }
+  return _wordIpa[String(w || "").toLowerCase()] || "";
+}
+function tileFor(sym) {
+  for (const g of DATA) for (const it of g.items) if (!it.letter && (it.sym === sym || it.sym.normalize("NFC") === sym.normalize("NFC"))) return it;
+  return null;
+}
+function renderMap(word, ipa) {
+  const box = document.getElementById("lmap"); if (!box) return;
+  box.textContent = "";
+  const units = word && ipa && window.FRALIGN ? FRALIGN.align(word, ipa) : null;
+  if (!units) { box.hidden = true; return; }
+  units.forEach(un => {
+    const k = Math.max(1, un.p.length), cell = document.createElement("div");
+    cell.className = "lm-u" + (un.silent ? " sil" : ""); cell.style.width = Math.max(30, k * 30) + "px";
+    let svg = '<svg class="lm-a" viewBox="0 0 100 15" preserveAspectRatio="none" aria-hidden="true">';
+    if (un.silent) svg += '<line x1="50" y1="0" x2="50" y2="12"/>';
+    else un.p.forEach((s, i) => { const x = (i + 0.5) / k * 100; svg += '<line x1="50" y1="0" x2="' + x + '" y2="11"/><path d="M' + (x - 5) + ' 9 L' + (x + 5) + ' 9 L' + x + ' 15 Z"/>'; });
+    svg += "</svg>";
+    cell.innerHTML = '<span class="lm-l">' + esc(un.l) + "</span>" + svg + '<span class="lm-s">' + (un.silent ? '<i class="none" title="silent letter">\u00B7</i>' : un.p.map(s => '<i class="' + FRALIGN.kind(s) + '" data-s="' + esc(s) + '">' + esc(s) + "</i>").join("")) + "</span>";
+    cell.title = un.silent ? "\u201C" + un.l + "\u201D is silent here" : "\u201C" + un.l + "\u201D \u2192 /" + un.p.join("") + "/";
+    box.appendChild(cell);
+  });
+  box.hidden = false;
+}
+(function () {                                  // hovering a sound in the map outlines its tile in the grid below
+  const box = document.getElementById("lmap"); if (!box) return;
+  let last = null;
+  const off = () => { if (last) { last.classList.remove("link"); last = null; } };
+  box.addEventListener("mouseover", e => { const i = e.target.closest("i[data-s]"); off(); if (!i) return; const it = tileFor(i.dataset.s); if (it && it._chip) { last = it._chip.closest(".chipwrap") || it._chip; last.classList.add("link"); } });
+  box.addEventListener("mouseleave", off);
+  const tg = document.getElementById("mapToggle");
+  try { if (localStorage.getItem("fr-showmap") === "0") { tg.checked = false; document.body.classList.add("no-map"); } } catch (e) {}
+  tg.addEventListener("change", () => { document.body.classList.toggle("no-map", !tg.checked); try { localStorage.setItem("fr-showmap", tg.checked ? "1" : "0"); } catch (e) {} });
+})();
+
 /* ---------- English IPA: the nearest English sound for each French one ---------- */
 const enSlash = s => "/" + s + "/";
 /* every way to write the sound, e.g. /i/ -> i \u00B7 \u00EE \u00B7 y \u00B7 \u00EF \u00B7 ie  (from the spelling data) */
@@ -1021,7 +1100,7 @@ function select(item, chipEl) {
   bigWord.innerHTML = markWord(item.word, item.hit);
   bigHint.textContent = item.hint;
   $("bigEn").innerHTML = enLine(item);
-  { const sl = spellList(item); $("bigSp").textContent = (item.alt ? item.alt + " (" + altNote(item) + ")   " : "") + (sl.length ? "\u270E Written: " + sl.join(" \u00B7 ") : ""); }
+  if (item.letter) renderMap("", ""); else renderMap(item.word, wordIpa(item.word));
   noteShow(); refreshNoteMarks();
   showExamples(item);
 }
@@ -1485,7 +1564,7 @@ function selectVocab(w, ipa, m) {
   bigWord.textContent = w;
   bigHint.textContent = m;
   $("bigEn").innerHTML = ipa ? "\u2248 English <b>" + enSlash(FRIPA.word(ipa)) + "</b>" : "";
-  $("bigSp").textContent = "";
+  renderMap(/\s/.test(w) ? "" : w, ipa);
   noteShow(); refreshNoteMarks();
 }
 
