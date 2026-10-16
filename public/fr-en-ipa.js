@@ -59,6 +59,19 @@
     "f": "voiceless labiodental fricative", "v": "voiced labiodental fricative", "s": "voiceless alveolar fricative", "z": "voiced alveolar fricative", "ʃ": "voiceless postalveolar fricative", "ʒ": "voiced postalveolar fricative",
     "m": "bilabial nasal", "n": "dental / alveolar nasal", "ɲ": "palatal nasal", "ŋ": "velar nasal", "l": "alveolar lateral approximant", "ʁ": "voiced uvular fricative"
   };
+  /* the everyday NAME of each pure sound - how you would say it, spelled the English way: /i/ "ee", /ʃ/ "sh" */
+  var SAY = {
+    "i": "ee", "e": "ay", "ɛ": "eh", "a": "ah", "ɑ": "ah", "o": "oh", "ɔ": "aw", "u": "oo", "y": "ü", "ø": "euh", "œ": "euh", "ə": "uh",
+    ["ɛ" + T]: "an", ["ɑ" + T]: "ahn", ["ɔ" + T]: "on", ["œ" + T]: "un",
+    "j": "y", "w": "w", "ɥ": "wü",
+    "p": "p", "b": "b", "t": "t", "d": "d", "k": "k", "g": "g", "ɡ": "g", "f": "f", "v": "v", "s": "s", "z": "z", "ʃ": "sh", "ʒ": "zh", "m": "m", "n": "n", "ɲ": "ny", "ŋ": "ng", "l": "l", "ʁ": "r"
+  };
+  var SAYNOTE = {
+    "ɑ": "a deeper “ah”, jaw dropped", "y": "say “ee” with your lips rounded as for “oo”", "ø": "say “ay” with rounded lips", "œ": "say “eh” with rounded lips",
+    ["ɛ" + T]: "a nasal “eh” — air through the nose, no n", ["ɑ" + T]: "a nasal “ah” — air through the nose, no n", ["ɔ" + T]: "a nasal “oh” — air through the nose, no n", ["œ" + T]: "a nasal “euh” — air through the nose, no n",
+    "ɥ": "a quick “w” with the lips rounded as for ü", "ʁ": "a soft gargle in the throat, not an English r", "ə": "the weak, often dropped “e”"
+  };
+
   var PASS = { "ˈ": 1, "ˌ": 1, ".": 1, "ː": 1 };   // stress marks, syllable dots and length marks carry over
 
   /* one French IPA symbol (vowel + tilde allowed) -> { en, ex, note } or null */
@@ -89,5 +102,7 @@
   }
 
   function nameOf(sym) { return NAMES[sym] || NAMES[String(sym || "").normalize("NFD")] || ""; }
-  window.FRIPA = { name: nameOf, sound: sound, word: word, forItem: forItem, fromHint: fromHint };
+  function sayOf(sym) { return SAY[sym] || SAY[String(sym || "").normalize("NFD")] || ""; }
+  function sayNote(sym) { return SAYNOTE[sym] || SAYNOTE[String(sym || "").normalize("NFD")] || ""; }
+  window.FRIPA = { sayNote: sayNote, say: sayOf, name: nameOf, sound: sound, word: word, forItem: forItem, fromHint: fromHint };
 })();

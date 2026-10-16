@@ -120,6 +120,7 @@
     font-style: italic;
   }
   .current-word .hit { color: var(--blue); font-style: normal; font-weight: 700; }
+  .current-hint .psay { color: #0a6b5f; font-size: 1rem; }
   .current-hint .pname { color: #2b3b66; font-weight: 600; }
   .current-hint { color: var(--gray); font-size: 0.88rem; margin-top: 1px; line-height: 1.3; }
   .status {
@@ -329,6 +330,7 @@
   .xpanel[hidden] { display: none; }
   .xh { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; font-family: var(--serif); }
   .xh .xs { color: var(--blue, #2540d9); }
+  .xh .xsay { color: #0a6b5f; font-weight: 700; }
   .xh .xnm { color: #5b6475; font-style: italic; font-size: 0.9rem; }
   .xh .xbtns { margin-left: auto; display: flex; gap: 8px; }
   .xgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
@@ -429,6 +431,8 @@
   /* ---------- English IPA equivalents (the nearest English sounds) ---------- */
   .chip { flex-wrap: wrap; }
   .chip .alt { flex-basis: 100%; font-family: var(--serif); font-size: 1.05rem; color: #7a1f8c; font-weight: 700; margin-top: 2px; }
+  .chip .pn { font: 700 0.8rem var(--sans); color: #0a6b5f; background: #dff5f0; border-radius: 6px; padding: 0 5px; align-self: center; white-space: nowrap; }
+  .chip:has(.pn) { gap: 6px; }
   .chip .nm { flex-basis: 100%; padding-right: 22px; font-family: var(--sans); font-size: 0.74rem; font-style: italic; color: #5b6475; margin-top: 3px; line-height: 1.25; }
   .chip .sp { flex-basis: 100%; font-family: var(--serif); font-size: 1.05rem; font-weight: 700; color: #1b2f9e; margin-top: 4px; line-height: 1.35; }
   .current-sp { color: #1b2f9e; font-family: var(--serif); font-size: 1.1rem; font-weight: 700; margin-top: 4px; }
@@ -977,6 +981,9 @@ function spellList(item) {
   return out;
 }
 const altNote = item => item.alt ? "also written " + item.alt + " in many textbooks" : "";
+function sayChip(item) {                  // the everyday name of the pure sound, e.g. \u201Cee\u201D / \u201Csh\u201D
+  const n = !item.letter && FRIPA.say ? FRIPA.say(item.sym) : ""; return n ? '<span class="pn" title="Say it like this' + (FRIPA.sayNote(item.sym) ? ": " + esc(FRIPA.sayNote(item.sym)) : "") + '">\u201C' + esc(n) + "\u201D</span>" : "";
+}
 function nameChip(item) {                 // the technical name of the sound, small and grey
   const n = !item.letter && FRIPA.name ? FRIPA.name(item.sym) : ""; return n ? '<span class="nm" title="The name of this sound on the IPA chart">' + esc(n) + "</span>" : "";
 }
@@ -1037,7 +1044,7 @@ DATA.forEach(group => {
   group.items.forEach(item => {
     const b = document.createElement("button");
     b.className = "chip";
-    b.innerHTML = '<span class="sym">' + item.sym + '</span><span class="word">' + markWord(item.word, item.hit) + "</span>" + enChip(item) + spellChip(item) + nameChip(item);
+    b.innerHTML = '<span class="sym">' + item.sym + "</span>" + sayChip(item) + '<span class="word">' + markWord(item.word, item.hit) + "</span>" + enChip(item) + spellChip(item) + nameChip(item);
     b.addEventListener("click", () => {
       select(item, b);
       if (!looping) playSequence();   // while looping, the loop picks up the new word
@@ -1121,7 +1128,7 @@ function showExamples(item) {
   if (!groups) return;
   const words = groups.flatMap(g => g[2]);
   const xp = item._xp; xp.hidden = false; xpShown = xp;
-  xp.innerHTML = '<div class="xh"><b>Every way to write <span class="xs">/' + esc(item.sym) + '/</span></b>' + (FRIPA.name && FRIPA.name(item.sym) ? '<span class="xnm">' + esc(FRIPA.name(item.sym)) + "</span>" : "") + '<span class="vcount">(' + groups.length + ' spelling' + (groups.length === 1 ? "" : "s") + " \u00B7 " + words.length + ' words)</span>' +
+  xp.innerHTML = '<div class="xh"><b>Every way to write <span class="xs">/' + esc(item.sym) + '/</span></b>' + (FRIPA.say && FRIPA.say(item.sym) ? '<span class="xsay">\u201C' + esc(FRIPA.say(item.sym)) + "\u201D</span>" : "") + (FRIPA.name && FRIPA.name(item.sym) ? '<span class="xnm">' + esc(FRIPA.name(item.sym)) + "</span>" : "") + '<span class="vcount">(' + groups.length + ' spelling' + (groups.length === 1 ? "" : "s") + " \u00B7 " + words.length + ' words)</span>' +
     '<span class="xbtns"><button class="gloop" data-x="all" data-label="\u25B6 Play all">\u25B6 Play all</button><button class="gloop" data-x="loop" data-label="\uD83D\uDD01 Loop">\uD83D\uDD01 Loop</button></span></div><div class="xbody"></div>';
   const body = xp.querySelector(".xbody");
   groups.forEach(g => {
@@ -1152,7 +1159,7 @@ function select(item, chipEl) {
   bigSym.textContent = item.letter ? item.sym : "/" + item.sym + "/";
   bigSym.classList.remove("longsym");
   bigWord.innerHTML = markWord(item.word, item.hit);
-  { const nm = !item.letter && FRIPA.name ? FRIPA.name(item.sym) : ""; bigHint.innerHTML = (nm ? '<i class="pname">' + esc(nm) + "</i> \u00B7 " : "") + esc(item.hint); }
+  { const nm = !item.letter && FRIPA.name ? FRIPA.name(item.sym) : ""; const sy = !item.letter && FRIPA.say ? FRIPA.say(item.sym) : ""; bigHint.innerHTML = (sy ? '<b class="psay">\u201C' + esc(sy) + "\u201D</b> \u00B7 " : "") + (nm ? '<i class="pname">' + esc(nm) + "</i> \u00B7 " : "") + esc(item.hint); }
   $("bigEn").innerHTML = enLine(item);
   if (item.letter) renderMap("", ""); else renderMap(item.word, wordIpa(item.word));
   noteShow(); refreshNoteMarks();
