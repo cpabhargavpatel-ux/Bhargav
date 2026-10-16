@@ -53,36 +53,32 @@
     background: var(--paper);
     border-bottom: 1px solid var(--rule);
     padding: 12px 0 10px;
-    /* compact: sound tile + voice on one row, all controls on the next */
+    /* optimum use of space: [tile | word | letters->sounds map | sliders] on top, [buttons ........ voice + options] below */
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    grid-template-areas: "info voice" "controls controls" "note note" "warn warn";
-    column-gap: 20px;
-    row-gap: 10px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "info" "bar2" "sliders" "note" "warn";
+    row-gap: 6px;
     align-items: center;
   }
   .player > .player-row { grid-area: info; }
-  .player > .voice-row  { grid-area: voice; justify-self: end; margin-top: 0; }
-  .player > .controls   { grid-area: controls; }
+  .player > .sliders    { grid-area: sliders; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+  .player > .bar2       { grid-area: bar2; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+  .player > .note-box   { grid-area: note; }
   .player > .warn       { grid-area: warn; margin-top: 0; }
-  @media (max-width: 700px) {
-    .player { grid-template-columns: minmax(0, 1fr); grid-template-areas: "info" "voice" "controls" "note" "warn"; }
-    .player > .voice-row { justify-self: start; }
-  }
-  /* wide screens: two slim rows - [sound tile | word | letters->sounds map] and [controls | voice + options] */
+  .bar2 .controls { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; margin: 0; }
+  .bar2 .voice-row { margin: 0 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 4px 12px; }
   @media (min-width: 1100px) {
-    .player { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "info voice" "controls controls" "note note" "warn warn"; column-gap: 18px; row-gap: 6px; padding: 8px 0 8px; align-items: center; }
+    .player { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "info sliders" "bar2 bar2" "note note" "warn warn"; column-gap: 18px; padding: 8px 0; }
+    .player > .sliders { flex-direction: column; flex-wrap: nowrap; gap: 3px; align-self: center; }
     .player > .player-row { width: 100%; flex-wrap: nowrap; align-items: flex-start; }
-    .player > .voice-row { align-self: start; max-width: 19rem; }
-    .player .current-info { flex: 0 1 19rem; }
-    .player .lmap { flex: 1 1 auto; min-width: 0; overflow-x: auto; }
-    .player > .controls { gap: 6px 10px; }
-    .player > .voice-row { justify-self: end; flex-direction: row; flex-wrap: wrap; justify-content: flex-end; gap: 4px 12px; margin-top: 0; }
-    .player > .voice-row select { max-width: 13rem; }
+    .player .current-info { flex: 1 1 19rem; }
+    .player .lmap { flex: 0 1 auto; margin-left: auto; min-width: 0; overflow-x: auto; justify-content: flex-end; }
+    .bar2 .voice-row { flex-wrap: nowrap; }
     .player button.play { padding: 8px 16px; }
     .player .mode-toggle button { padding: 7px 10px; }
-    .player .slider-group input[type="range"] { width: 44px; }
-    .player .slider-group { gap: 5px; font-size: 0.84rem; }
+    .player .slider-group { gap: 6px; font-size: 0.84rem; justify-content: space-between; }
+    .player .slider-group label { min-width: 3.6em; }
+    .player .slider-group input[type="range"] { width: 90px; }
     .player .current-phoneme { font-size: 2.2rem; min-width: 70px; padding: 6px 8px; }
   }
   .player-row {
@@ -546,13 +542,7 @@
       </div>
       <div class="lmap" id="lmap" hidden aria-label="Which letters make which sounds"></div>
     </div>
-    <div class="controls">
-      <div class="mode-toggle" role="group" aria-label="Playback mode">
-        <button id="modeWord" class="active">Word</button>
-        <button id="modeSound">Pure sound</button>
-      </div>
-      <button class="play" id="playBtn">Play</button>
-      <button class="play loop" id="loopBtn">Loop</button>
+    <div class="sliders">
       <div class="slider-group">
         <label for="reps">Repeats</label>
         <input type="range" id="reps" min="1" max="6" step="1" value="2">
@@ -569,12 +559,22 @@
         <output id="rateOut" for="rate">0.85×</output>
       </div>
     </div>
-    <div class="voice-row">
-      <label for="voiceSel">Voice</label>
-      <select id="voiceSel"></select>
-      <label class="enlab" title="Show the closest English IPA next to every French IPA"><input type="checkbox" id="enToggle" checked> English IPA ≈</label>
-      <label class="enlab" title="Show which letters make which sound, with arrows"><input type="checkbox" id="mapToggle" checked> Letters → sounds</label>
-      <button class="notebtn" id="noteBtn" type="button" aria-expanded="false" aria-controls="noteBox" title="Write your own note about the sound or word shown above">📝 Notes</button>
+    <div class="bar2">
+      <div class="controls">
+        <div class="mode-toggle" role="group" aria-label="Playback mode">
+          <button id="modeWord" class="active">Word</button>
+          <button id="modeSound">Pure sound</button>
+        </div>
+        <button class="play" id="playBtn">Play</button>
+        <button class="play loop" id="loopBtn">Loop</button>
+      </div>
+      <div class="voice-row">
+        <label for="voiceSel">Voice</label>
+        <select id="voiceSel"></select>
+        <label class="enlab" title="Show the closest English IPA next to every French IPA"><input type="checkbox" id="enToggle" checked> English IPA ≈</label>
+        <label class="enlab" title="Show which letters make which sound, with arrows"><input type="checkbox" id="mapToggle" checked> Letters → sounds</label>
+        <button class="notebtn" id="noteBtn" type="button" aria-expanded="false" aria-controls="noteBox" title="Write your own note about the sound or word shown above">📝 Notes</button>
+      </div>
     </div>
     <div class="note-box" id="noteBox" hidden>
       <label for="noteText">📝 My notes for <b id="noteFor"></b></label>
