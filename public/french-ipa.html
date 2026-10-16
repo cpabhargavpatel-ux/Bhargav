@@ -323,6 +323,16 @@
   .lm-an:hover { outline: 2px solid #1f5f8b; }
   body:not(.show-anc) .chip .anc, body:not(.show-anc) .chip .pn, body:not(.show-anc) .anbtn, body:not(.show-anc) .anplay, body:not(.show-anc) .anline,
   body:not(.show-anc) .current-hint .psay, body:not(.show-anc) .xh .xsay { display: none !important; }
+  .lmap.spmap { flex-wrap: wrap; gap: 10px 10px; margin: 12px 0 2px; padding: 8px 6px; border: 1px solid var(--rule); border-radius: 8px; background: #fff; }
+  .lm-w { display: flex; gap: 3px; align-items: flex-start; padding: 5px 8px; border-radius: 8px; background: #f4f6fb; }
+  .lm-w.miss { align-self: flex-start; }
+  .lm-w.miss .lm-l { color: #8a8f99; font-style: italic; border-bottom: 1px dashed #c8ccd4; }
+  /* highlighted sounds: the ones in the word / sentence you just played */
+  .lmap i.hot { background: #1f9d55 !important; color: #fff !important; border-color: #1f9d55 !important; box-shadow: 0 0 0 3px #bfe8cf; }
+  .chipwrap.hot .chip { outline: 3px solid #1f9d55; outline-offset: 1px; background: #e5f7ec; }
+  .hotnote { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 6px 0 0; padding: 8px 12px; border: 1px solid #bfe8cf; border-radius: 8px; background: #effaf3; color: #14532d; font: 0.9rem var(--sans); }
+  .hotnote[hidden], body:not(.tab-sounds) .hotnote { display: none; }
+  .hotnote button { font: inherit; font-size: 0.8rem; padding: 3px 10px; border-radius: 6px; border: 1px solid #1f9d55; color: #14532d; background: #fff; cursor: pointer; }
   body.show-anc .lm-ar, body.show-anc .lm-an { display: block; }
   body.show-anc .lm-an { display: inline-block; }
   .lm-s i { font: normal 700 1.02rem/1.2 var(--serif); padding: 0 6px; border-radius: 6px; cursor: default; }
@@ -396,14 +406,15 @@
   .nbtn:hover + .nline:not([hidden]), .nbtn:focus-visible + .nline:not([hidden]), .nline:not([hidden]):hover, .nline:not([hidden]):focus { display: block; }
   .nline[hidden], .nedit[hidden] { display: none; }
   .nedit { width: 100%; box-sizing: border-box; font: 0.95rem var(--serif); color: var(--ink, #222); background: #fffbe6; border: 1px solid #ecd98a; border-radius: 6px; padding: 5px 8px; margin: 4px 0 2px; resize: vertical; }
-  /* ---------- French sub-tabs: Sounds | Vocabulary & Sentences ---------- */
+  /* ---------- French sub-tabs: Sounds | Vocabulary | Sentences ---------- */
   .frsub { display: flex; gap: 8px; margin: 0; padding: 10px 0 8px; flex-wrap: wrap; position: sticky; top: 40px; z-index: 12; background: var(--paper); }   /* frozen under the top bar */
   .frsub a { text-decoration: none; font: 600 0.95rem var(--sans); color: var(--ink, #222); border: 1px solid var(--rule); background: #fff; border-radius: 999px; padding: 6px 18px; }
   .frsub a:hover { background: var(--blue-tint); }
   .frsub a.on { background: var(--blue, #2540d9); border-color: var(--blue, #2540d9); color: #fff; }
   body.tab-sounds .vocab-sec, body.tab-sounds .side { display: none; }
-  body.tab-vocab #sections { display: none; }
-  @media (min-width: 1100px) { body.tab-sounds .layout { grid-template-columns: minmax(0, 1fr); } }
+  body.tab-vocab #sections, body.tab-vocab .side { display: none; }
+  body.tab-sentences #sections, body.tab-sentences .vocab-sec { display: none; }
+  @media (min-width: 1100px) { body.tab-sounds .layout, body.tab-vocab .layout, body.tab-sentences .layout { grid-template-columns: minmax(0, 1fr); } }
   .sp-need { color: #B54708; font-size: 0.86rem; margin: 6px 0 0; }
   /* ---------- Saved sentences ---------- */
   .sv { padding: 10px 0; border-top: 1px solid var(--rule); }
@@ -540,7 +551,7 @@
 </head>
 <body class="tab-sounds">
 <div class="wrap">
-  <nav class="frsub" id="frSub" aria-label="French sections"><a href="#sounds" data-t="sounds">Sounds</a><a href="#vocab" data-t="vocab">Vocabulary &amp; Sentences</a><a href="/french-notes.html">Notes</a></nav>
+  <nav class="frsub" id="frSub" aria-label="French sections"><a href="#sounds" data-t="sounds">Sounds</a><a href="#vocab" data-t="vocab">Vocabulary</a><a href="#sentences" data-t="sentences">Sentences</a><a href="/french-notes.html">Notes</a></nav>
   <div class="layout">
     <div class="main">
   <div class="player">
@@ -607,6 +618,7 @@
     <div class="wk-items" id="weakSent"></div>
   </section>
 
+  <p class="hotnote" id="hotNote" hidden></p>
   <div id="sections"></div>
 
   <section class="vocab-sec">
@@ -621,6 +633,7 @@
   <section class="sp-sec" id="spSec">
     <h2>Sentence practice</h2>
     <textarea id="spText" lang="fr" placeholder="Où est la gare, s’il vous plaît ?" aria-label="French sentence"></textarea>
+    <div class="lmap spmap" id="spMap" hidden aria-label="Letters to sounds, word by word"></div>
     <div class="sp-row">
       <button class="play" id="spSay">▶ Say it</button>
       <button class="play loop" id="spLoop">Loop</button>
@@ -636,7 +649,7 @@
         <output id="spGapOut" for="spGap">3 s</output>
       </div>
     </div>
-    <p class="sp-need" id="spNeed" hidden>A sentence needs two or more words. For a single word, use the Vocabulary list on the left.</p>
+    <p class="sp-need" id="spNeed" hidden>A sentence needs two or more words. For a single word, use the Vocabulary tab.</p>
     <p class="sp-status" id="spStatus"></p>
     <p class="sp-note" style="margin:2px 0 0">Uses the Voice and Speed set in the player above.</p>
 
@@ -937,11 +950,7 @@ function tileFor(sym) {
   for (const g of DATA) for (const it of g.items) if (!it.letter && (it.sym === sym || it.sym.normalize("NFC") === sym.normalize("NFC"))) return it;
   return null;
 }
-function renderMap(word, ipa) {
-  const box = document.getElementById("lmap"); if (!box) return;
-  box.textContent = "";
-  const units = word && ipa && window.FRALIGN ? FRALIGN.align(word, ipa) : null;
-  if (!units) { box.hidden = true; return; }
+function drawUnits(parent, units) {
   units.forEach(un => {
     const k = Math.max(1, un.p.length), cell = document.createElement("div");
     cell.className = "lm-u" + (un.silent ? " sil" : ""); cell.style.width = "calc(" + k + " * var(--cw))";
@@ -951,14 +960,74 @@ function renderMap(word, ipa) {
     svg += "</svg>";
     cell.innerHTML = '<span class="lm-l">' + esc(un.l) + "</span>" + svg + '<span class="lm-s">' + (un.silent ? '<span class="lm-sc"><i class="none" title="silent letter">\u00B7</i></span>' : un.p.map(s => { const a = FRIPA.sound(s); return '<span class="lm-sc"><i class="' + FRALIGN.kind(s) + '" data-s="' + esc(s) + '" tabindex="0" role="button" title="Hear /' + esc(s) + '/">' + esc(s) + "</i>" + (a && a.ex ? '<span class="lm-ar" aria-hidden="true"></span><span class="lm-an" data-w="' + esc(a.ex) + '" title="English sound: like the ' + esc(a.hit || "") + ' in \u201C' + esc(a.ex) + '\u201D \u2014 click to hear it">' + esc((FRIPA.say && FRIPA.say(s)) || a.hit || a.ex) + "</span>" : "") + "</span>"; }).join("")) + "</span>";
     cell.title = un.silent ? "\u201C" + un.l + "\u201D is silent here" : "\u201C" + un.l + "\u201D \u2192 /" + un.p.join("") + "/  \u2014 click to hear it";
-    box.appendChild(cell);
+    parent.appendChild(cell);
   });
+}
+function renderMap(word, ipa) {
+  const box = document.getElementById("lmap"); if (!box) return;
+  box.textContent = "";
+  const units = word && ipa && window.FRALIGN ? FRALIGN.align(word, ipa) : null;
+  if (!units) { box.hidden = true; return; }
+  drawUnits(box, units);
   box.hidden = false;
 }
+/* a whole sentence: every word gets its own letters -> sounds map, looked up in the vocabulary lists (l\u2019homme and est-ce are split at the ' or -) */
+const CLITIC = { l: "l", d: "d", s: "s", j: "\u0292", m: "m", t: "t", n: "n", c: "s", qu: "k", jusqu: "\u0292ysk", lorsqu: "l\u0254\u0281sk", puisqu: "p\u0265isk" };   // the short words before an apostrophe
+function lookupLoose(w) {                       // exact word, else the same word without a circumflex (plait for pla\u00EEt: same sound)
+  const e = vocabLookup(w); if (e && e[1]) return e;
+  const t = w.normalize("NFD").replace(/\u0302/g, "").normalize("NFC");
+  if (t !== w.normalize("NFC")) { const f = vocabLookup(t); if (f && f[1]) return f; }
+  return null;
+}
+const alignPart = pt => pt.e && window.FRALIGN ? (FRALIGN.align(pt.w, pt.e[1]) || FRALIGN.align(pt.e[0], pt.e[1])) : null;
+function sentenceParts(text) {
+  const out = [];
+  String(text || "").trim().split(/\s+/).filter(Boolean).forEach(tok => {
+    const clean = tok.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, ""); if (!clean) return;
+    const whole = lookupLoose(clean);
+    if (whole) { out.push({ w: clean, e: whole }); return; }
+    const bits = clean.split(/[\u2019'\-]/).filter(Boolean);
+    if (bits.length > 1) bits.forEach((b, i) => { const lc = b.toLowerCase(), e = (i < bits.length - 1 && CLITIC[lc] != null && /[\u2019']/.test(clean.charAt(clean.indexOf(b) + b.length))) ? [lc, CLITIC[lc], ""] : lookupLoose(b); out.push({ w: b, e: e && e[1] ? e : null }); });
+    else out.push({ w: clean, e: null });
+  });
+  return out;
+}
+function renderSentenceMap(box, text) {
+  if (!box) return;
+  box.textContent = "";
+  const parts = window.FRALIGN ? sentenceParts(text) : [];
+  let any = false;
+  parts.forEach(pt => {
+    const g = document.createElement("div"), units = alignPart(pt);
+    if (units) { g.className = "lm-w"; drawUnits(g, units); any = true; if (pt.e[2]) g.title = pt.w + " \u2014 " + pt.e[2]; }
+    else { g.className = "lm-w miss"; g.title = "No pronunciation data for \u201C" + pt.w + "\u201D"; g.innerHTML = '<span class="lm-l">' + esc(pt.w) + "</span>"; }
+    box.appendChild(g);
+  });
+  box.hidden = !any;
+}
+function sentenceSyms(text) {              // the distinct sounds in a sentence
+  const set = new Set();
+  sentenceParts(text).forEach(pt => { const u = alignPart(pt); if (u) u.forEach(x => x.p.forEach(q => set.add(q))); });
+  return [...set];
+}
+/* HIGHLIGHT: pressing a play button lights up the sounds of what is playing, in the maps and on the French sound tiles */
+let hotLabel = "";
+function setHot(syms, label) {
+  document.querySelectorAll(".chipwrap.hot, .lmap i.hot").forEach(e => e.classList.remove("hot"));
+  const set = new Set(syms || []);
+  set.forEach(sy => { const it = tileFor(sy); if (it && it._chip) (it._chip.closest(".chipwrap") || it._chip).classList.add("hot"); });
+  document.querySelectorAll(".lmap i[data-s]").forEach(i => { if (set.has(i.dataset.s)) i.classList.add("hot"); });
+  const n = document.getElementById("hotNote"); if (!n) return;
+  if (!set.size) { n.hidden = true; return; }
+  n.innerHTML = '<span><b>Highlighted:</b> the ' + set.size + ' sound' + (set.size === 1 ? "" : "s") + ' in \u201C' + esc(label || "") + '\u201D \u2014 ' + [...set].map(x => "/" + esc(x) + "/").join(" ") + '</span><button type="button" id="hotJump" style="margin-left:auto">Jump to first</button><button type="button" id="hotClear" style="margin-left:0">Clear</button>';
+  n.hidden = false; document.getElementById("hotClear").onclick = () => setHot([]);
+  document.getElementById("hotJump").onclick = () => { const w = document.querySelector(".chipwrap.hot"); if (w) w.scrollIntoView({ behavior: "smooth", block: "center" }); };
+}
+const hotFromMap = (box, label) => { const set = new Set(); box && box.querySelectorAll("i[data-s]").forEach(i => set.add(i.dataset.s)); setHot([...set], label); };
 (function () {                                  // hovering a sound in the map outlines its tile in the grid below
-  const box = document.getElementById("lmap"); if (!box) return;
   let last = null;
   const off = () => { if (last) { last.classList.remove("link"); last = null; } };
+  [document.getElementById("lmap"), document.getElementById("spMap")].forEach(box => { if (!box) return;
   box.addEventListener("mouseover", e => { const i = e.target.closest("i[data-s]"); off(); if (!i) return; const it = tileFor(i.dataset.s); if (it && it._chip) { last = it._chip.closest(".chipwrap") || it._chip; last.classList.add("link"); } });
   box.addEventListener("mouseleave", off);
   /* click a sound (or its letters) to hear it */
@@ -977,6 +1046,7 @@ function renderMap(word, ipa) {
     if (syms.length) hear(cell, syms);
   });
   box.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target.matches("i[data-s]")) { e.preventDefault(); hear(e.target, [e.target.dataset.s]); } });
+  });
   const tg = document.getElementById("mapToggle");
   try { if (localStorage.getItem("fr-showmap") === "0") { tg.checked = false; document.body.classList.add("no-map"); } } catch (e) {}
   tg.addEventListener("change", () => { document.body.classList.toggle("no-map", !tg.checked); try { localStorage.setItem("fr-showmap", tg.checked ? "1" : "0"); } catch (e) {} });
@@ -1170,7 +1240,7 @@ function showExamples(item) {
   refreshWeak();
 }
 function select(item, chipEl) {
-  current = item;
+  current = item; setHot([]);
   document.querySelectorAll(".chip.active").forEach(c => c.classList.remove("active"));
   if (chipEl) chipEl.classList.add("active");
   bigSym.textContent = item.letter ? item.sym : "/" + item.sym + "/";
@@ -1475,6 +1545,7 @@ async function playSequence() {
 }
 
 playBtn.addEventListener("click", playSequence);
+playBtn.addEventListener("click", () => { if (current && current.vocab) { if (/\s/.test(current.word.trim())) setHot(sentenceSyms(current.word), current.word); else hotFromMap($("lmap"), current.word); } });
 
 /* ---------- Loop until stopped ---------- */
 async function startLoop() {
@@ -1522,7 +1593,7 @@ function stopLoop() {
   playBtn.disabled = false;
 }
 
-loopBtn.addEventListener("click", () => { looping ? stopLoop() : startLoop(); });
+loopBtn.addEventListener("click", () => { if (!looping && current && current.vocab) { if (/\s/.test(current.word.trim())) setHot(sentenceSyms(current.word), current.word); else hotFromMap($("lmap"), current.word); } looping ? stopLoop() : startLoop(); });
 
 /* ---------- Group loop: cycle through every item in a section ---------- */
 let groupBtnActive = null;
@@ -1651,6 +1722,7 @@ function selectVocab(w, ipa, m) {
   bigHint.textContent = m;
   $("bigEn").innerHTML = ipa ? "\u2248 English <b>" + enSlash(FRIPA.word(ipa)) + "</b>" : "";
   renderMap(mapWord, ipa);
+  if (/\s/.test(w.trim())) setHot(sentenceSyms(w), w); else hotFromMap($("lmap"), w);
   noteShow(); refreshNoteMarks();
 }
 
@@ -1701,7 +1773,7 @@ refreshWeak();
   const txt = $("spText"), reps = $("spReps"), gp = $("spGap"), st = $("spStatus");
   /* Sentence practice takes sentences only: two or more words. Single words are learned in the Vocabulary list. */
   const isSentence = t => String(t || "").trim().split(/\s+/).filter(Boolean).length >= 2;
-  const NEED = "A sentence needs two or more words. For a single word, use the Vocabulary list on the left.";
+  const NEED = "A sentence needs two or more words. For a single word, use the Vocabulary tab.";
   const needHint = () => { const v = txt.value.trim(); $("spNeed").hidden = !v || isSentence(v); };
   const sayB = $("spSay"), loopB = $("spLoop"), stopB = $("spStop");
   try { txt.value = localStorage.getItem("fr-sentence") || ""; } catch (e) {}
@@ -1712,7 +1784,10 @@ refreshWeak();
     txt.style.height = Math.min(want, max) + "px";
     txt.style.overflowY = want > max ? "auto" : "hidden";
   }
-  txt.addEventListener("input", () => { grow(); needHint(); try { localStorage.setItem("fr-sentence", txt.value); } catch (e) {} });
+  const spMap = $("spMap"); let mapT;
+  const drawSpMap = () => renderSentenceMap(spMap, isSentence(txt.value) ? txt.value : "");
+  txt.addEventListener("input", () => { grow(); needHint(); try { localStorage.setItem("fr-sentence", txt.value); } catch (e) {} clearTimeout(mapT); mapT = setTimeout(drawSpMap, 250); });
+  drawSpMap();
   grow();
   addEventListener("resize", grow);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(grow);
@@ -1851,6 +1926,7 @@ refreshWeak();
     if (!isSentence(text)) { st.textContent = NEED; txt.focus(); return; }
     const my = ++tok, total = forever ? Infinity : parseInt(reps.value, 10), gapMs = parseFloat(gp.value) * 1000;
     touchSentence(text);
+    drawSpMap(); setHot(sentenceSyms(text), text);       // light up the sounds of this sentence
     speechSynthesis.cancel();
     setBusy(true);
     for (let n = 1; n <= total; n++) {
@@ -2193,9 +2269,9 @@ refreshWeak();
   apply(); refreshNoteMarks();
 })();
 
-/* ---------- French sub-tabs: Sounds | Vocabulary & Sentences (#sounds / #vocab, last one used is remembered) ---------- */
+/* ---------- French sub-tabs: Sounds | Vocabulary | Sentences (#sounds / #vocab / #sentences, last one used is remembered) ---------- */
 (function () {
-  const TABS = ["sounds", "vocab"], KEY = "fr-subtab";
+  const TABS = ["sounds", "vocab", "sentences"], KEY = "fr-subtab";
   function current() {
     const t = location.hash.replace("#", ""); if (TABS.includes(t)) return t;
     try { const s = localStorage.getItem(KEY); if (TABS.includes(s)) return s; } catch (e) {}
@@ -2203,7 +2279,7 @@ refreshWeak();
   }
   function apply() {
     const t = current();
-    document.body.classList.toggle("tab-sounds", t === "sounds"); document.body.classList.toggle("tab-vocab", t === "vocab");
+    document.body.classList.toggle("tab-sounds", t === "sounds"); document.body.classList.toggle("tab-vocab", t === "vocab"); document.body.classList.toggle("tab-sentences", t === "sentences");
     document.querySelectorAll("#frSub a").forEach(a => { const on = a.dataset.t === t; a.classList.toggle("on", on); if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
     document.querySelectorAll("#modtabs .mt-menu a[data-fr]").forEach(a => a.classList.toggle("cur", a.dataset.fr === t));
     try { localStorage.setItem(KEY, t); } catch (e) {}
