@@ -321,6 +321,8 @@
   .lm-an { display: none; font: 600 0.92rem/1.2 var(--serif); color: #1f5f8b; padding: 0 4px; border-radius: 6px; background: #eef6fc; cursor: pointer; white-space: nowrap; }
   .lm-an b { color: #0b4f7c; background: #cfe6f6; border-radius: 3px; padding: 0 1px; }
   .lm-an:hover { outline: 2px solid #1f5f8b; }
+  body:not(.show-anc) .chip .anc, body:not(.show-anc) .chip .pn, body:not(.show-anc) .anbtn, body:not(.show-anc) .anplay, body:not(.show-anc) .anline,
+  body:not(.show-anc) .current-hint .psay, body:not(.show-anc) .xh .xsay { display: none !important; }
   body.show-anc .lm-ar, body.show-anc .lm-an { display: block; }
   body.show-anc .lm-an { display: inline-block; }
   .lm-s i { font: normal 700 1.02rem/1.2 var(--serif); padding: 0 6px; border-radius: 6px; cursor: default; }
@@ -1018,7 +1020,7 @@ function enChip(item) {                   // the amber lines on each sound tile:
 }
 function enLine(item) {                   // the line under the big sound in the player
   const e = FRIPA.forItem(item); if (!e || !e.en) return "";
-  return "\u2248 English <b>" + enSlash(e.en) + "</b>" + (e.ex ? " \u2014 like " + (e.hit ? "<b>" + esc(e.hit) + "</b> in " : "") + "\u201C" + anchorWord(e) + "\u201D" + ' <button type="button" class="anplay" data-w="' + esc(e.ex) + '" title="Hear the English word">\uD83D\uDD0A</button>' : "") + (e.note ? ". " + e.note : "");
+  return "\u2248 English <b>" + enSlash(e.en) + "</b>" + (e.ex ? '<span class="anline"> \u2014 like ' + (e.hit ? "<b>" + esc(e.hit) + "</b> in " : "") + "\u201C" + anchorWord(e) + "\u201D" + ' <button type="button" class="anplay" data-w="' + esc(e.ex) + '" title="Hear the English word">\uD83D\uDD0A</button></span>' : "") + (e.note ? ". " + e.note : "");
 }
 /* hear the English anchor word */
 function speakEn(text) {
