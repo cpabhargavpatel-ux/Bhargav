@@ -992,7 +992,7 @@ function spellList(item) {
   const gs = SOUND_SPELLINGS[item.sym] || SOUND_SPELLINGS[item.sym.normalize("NFD")] || SOUND_SPELLINGS[item.sym.normalize("NFC")];
   if (!gs) return [];
   const out = [];
-  gs.forEach(g => g[0].split(/\s+(?:\+|before)\s*/)[0].split(" / ").forEach(s => { s = s.trim(); if (s && !out.includes(s)) out.push(s); }));
+  gs.forEach(g => g[0].split(/\s+(?:\+|before)\s*/)[0].split(" / ").forEach(s => { s = s.trim(); if (/^the word /.test(g[1] || "")) s += " (word)"; else if (g[1] === "at the end") s = "-" + s; if (s && !out.includes(s)) out.push(s); }));
   return out;
 }
 const altNote = item => item.alt ? "also written " + item.alt + " in many textbooks" : "";
