@@ -318,7 +318,10 @@
   .lm-s i { font: normal 700 1.02rem/1.2 var(--serif); padding: 0 6px; border-radius: 6px; cursor: default; }
   .lm-s i.v { background: #e3e9ff; color: #1b2f9e; } .lm-s i.s { background: #e1f4e6; color: #17653a; } .lm-s i.c { background: #fff0d9; color: #8a4b00; }
   .lm-s i.none { background: transparent; color: #c4c9d6; font-weight: 400; }
-  .lm-s i:hover { outline: 2px solid var(--blue, #2540d9); }
+  .lm-s i[data-s] { cursor: pointer; }
+  .lm-s i:hover, .lm-s i:focus-visible { outline: 2px solid var(--blue, #2540d9); }
+  .lm-s i.hear, .lm-u.hear .lm-s i { background: #2540d9; color: #fff; }
+  .lm-l { cursor: pointer; }
   .chip.link, .chipwrap.link .chip { outline: 3px solid #f0a020; outline-offset: 1px; background: #fff6e0; }
   /* ---------- example words for the selected sound ---------- */
   .xpanel { margin-top: 12px; padding: 10px 12px 12px; border: 1px solid var(--rule); border-radius: 10px; background: #fff; }
@@ -920,8 +923,8 @@ function renderMap(word, ipa) {
     if (un.silent) svg += '<line x1="50" y1="0" x2="50" y2="12"/>';
     else un.p.forEach((s, i) => { const x = (i + 0.5) / k * 100; svg += '<line x1="50" y1="0" x2="' + x + '" y2="11"/><path d="M' + (x - 5) + ' 9 L' + (x + 5) + ' 9 L' + x + ' 15 Z"/>'; });
     svg += "</svg>";
-    cell.innerHTML = '<span class="lm-l">' + esc(un.l) + "</span>" + svg + '<span class="lm-s">' + (un.silent ? '<i class="none" title="silent letter">\u00B7</i>' : un.p.map(s => '<i class="' + FRALIGN.kind(s) + '" data-s="' + esc(s) + '">' + esc(s) + "</i>").join("")) + "</span>";
-    cell.title = un.silent ? "\u201C" + un.l + "\u201D is silent here" : "\u201C" + un.l + "\u201D \u2192 /" + un.p.join("") + "/";
+    cell.innerHTML = '<span class="lm-l">' + esc(un.l) + "</span>" + svg + '<span class="lm-s">' + (un.silent ? '<i class="none" title="silent letter">\u00B7</i>' : un.p.map(s => '<i class="' + FRALIGN.kind(s) + '" data-s="' + esc(s) + '" tabindex="0" role="button" title="Hear /' + esc(s) + '/">' + esc(s) + "</i>").join("")) + "</span>";
+    cell.title = un.silent ? "\u201C" + un.l + "\u201D is silent here" : "\u201C" + un.l + "\u201D \u2192 /" + un.p.join("") + "/  \u2014 click to hear it";
     box.appendChild(cell);
   });
   box.hidden = false;
@@ -932,6 +935,22 @@ function renderMap(word, ipa) {
   const off = () => { if (last) { last.classList.remove("link"); last = null; } };
   box.addEventListener("mouseover", e => { const i = e.target.closest("i[data-s]"); off(); if (!i) return; const it = tileFor(i.dataset.s); if (it && it._chip) { last = it._chip.closest(".chipwrap") || it._chip; last.classList.add("link"); } });
   box.addEventListener("mouseleave", off);
+  /* click a sound (or its letters) to hear it */
+  async function hear(el, syms) {
+    if (looping) return;                                  // a loop is playing: don't cut it off
+    speechSynthesis.cancel(); stopSynth();
+    el.classList.add("hear");
+    for (const s of syms) { try { await synthOnce(s); } catch (e) {} if (syms.length > 1) await wait(150); }
+    el.classList.remove("hear");
+  }
+  box.addEventListener("click", e => {
+    const i = e.target.closest("i[data-s]");
+    if (i) { hear(i, [i.dataset.s]); return; }
+    const l = e.target.closest(".lm-l, .lm-a"); if (!l) return;
+    const cell = l.closest(".lm-u"), syms = [...cell.querySelectorAll("i[data-s]")].map(x => x.dataset.s);
+    if (syms.length) hear(cell, syms);
+  });
+  box.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target.matches("i[data-s]")) { e.preventDefault(); hear(e.target, [e.target.dataset.s]); } });
   const tg = document.getElementById("mapToggle");
   try { if (localStorage.getItem("fr-showmap") === "0") { tg.checked = false; document.body.classList.add("no-map"); } } catch (e) {}
   tg.addEventListener("change", () => { document.body.classList.toggle("no-map", !tg.checked); try { localStorage.setItem("fr-showmap", tg.checked ? "1" : "0"); } catch (e) {} });
