@@ -48,6 +48,17 @@
     "l":  { en: "l",  ex: "let", hit: "l", note: "light l, tip of the tongue" },
     "ʁ": { en: "ɹ", ex: "Bach", hit: "ch", note: "no English equivalent — like the ch in Bach (or a soft gargle), but voiced" }
   };
+  /* the technical (IPA chart) name of each sound: vowels by height / backness / rounding, consonants by voicing / place / manner */
+  var NAMES = {
+    "i": "close front unrounded vowel", "e": "close-mid front unrounded vowel", "ɛ": "open-mid front unrounded vowel", "a": "open front unrounded vowel", "ɑ": "open back unrounded vowel",
+    "o": "close-mid back rounded vowel", "ɔ": "open-mid back rounded vowel", "u": "close back rounded vowel", "y": "close front rounded vowel", "ø": "close-mid front rounded vowel",
+    "œ": "open-mid front rounded vowel", "ə": "mid central vowel (schwa)",
+    ["ɛ" + T]: "open-mid front unrounded nasal vowel", ["ɑ" + T]: "open back unrounded nasal vowel", ["ɔ" + T]: "open-mid back rounded nasal vowel", ["œ" + T]: "open-mid front rounded nasal vowel",
+    "j": "palatal approximant (semi-vowel)", "w": "labial-velar approximant (semi-vowel)", "ɥ": "labial-palatal approximant (semi-vowel)",
+    "p": "voiceless bilabial plosive", "b": "voiced bilabial plosive", "t": "voiceless dental plosive", "d": "voiced dental plosive", "k": "voiceless velar plosive", "g": "voiced velar plosive", "ɡ": "voiced velar plosive",
+    "f": "voiceless labiodental fricative", "v": "voiced labiodental fricative", "s": "voiceless alveolar fricative", "z": "voiced alveolar fricative", "ʃ": "voiceless postalveolar fricative", "ʒ": "voiced postalveolar fricative",
+    "m": "bilabial nasal", "n": "dental / alveolar nasal", "ɲ": "palatal nasal", "ŋ": "velar nasal", "l": "alveolar lateral approximant", "ʁ": "voiced uvular fricative"
+  };
   var PASS = { "ˈ": 1, "ˌ": 1, ".": 1, "ː": 1 };   // stress marks, syllable dots and length marks carry over
 
   /* one French IPA symbol (vowel + tilde allowed) -> { en, ex, note } or null */
@@ -77,5 +88,6 @@
     return sound(it.sym) || (it.sym ? { en: word(it.sym), ex: "", note: "" } : null);
   }
 
-  window.FRIPA = { sound: sound, word: word, forItem: forItem, fromHint: fromHint };
+  function nameOf(sym) { return NAMES[sym] || NAMES[String(sym || "").normalize("NFD")] || ""; }
+  window.FRIPA = { name: nameOf, sound: sound, word: word, forItem: forItem, fromHint: fromHint };
 })();
