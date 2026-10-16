@@ -429,6 +429,12 @@
   .chip .alt { flex-basis: 100%; font-family: var(--serif); font-size: 1.05rem; color: #7a1f8c; font-weight: 700; margin-top: 2px; }
   .chip .sp { flex-basis: 100%; font-family: var(--serif); font-size: 1.05rem; font-weight: 700; color: #1b2f9e; margin-top: 4px; line-height: 1.35; }
   .current-sp { color: #1b2f9e; font-family: var(--serif); font-size: 1.1rem; font-weight: 700; margin-top: 4px; }
+  .chip .en .anc { color: #1f5f8b; font-weight: 600; }
+  .chip .en .anc b { color: #0b4f7c; background: #d8ecfa; border-radius: 3px; padding: 0 1px; }
+  .anbtn { position: absolute; bottom: 4px; right: 5px; border: 0; background: transparent; font-size: 0.8rem; line-height: 1; opacity: .55; cursor: pointer; padding: 2px 3px; border-radius: 5px; }
+  .chipwrap:hover .anbtn, .anbtn:focus-visible { opacity: 1; background: #d8ecfa; }
+  .anplay { border: 1px solid #b9d6ea; background: #eef6fc; border-radius: 6px; cursor: pointer; font-size: 0.8rem; padding: 0 5px; margin-left: 4px; }
+  .current-en b { background: #d8ecfa; border-radius: 3px; padding: 0 2px; }
   .chip .en { flex-basis: 100%; font-family: var(--sans); font-size: 0.78rem; color: #8a5a00; margin-top: 2px; }
   .chip .en b { font-family: var(--serif); font-weight: 400; font-size: 0.95rem; }
   .current-en { color: #8a5a00; font-size: 0.86rem; margin-top: 1px; line-height: 1.3; }
@@ -972,13 +978,35 @@ function spellChip(item) {
   const l = spellList(item); if (!l.length) return "";
   return (item.alt ? '<span class="alt" title="' + altNote(item) + '">= ' + esc(item.alt) + "</span>" : "") + '<span class="sp" title="Every way this sound is written: ' + esc(l.join(", ")) + '">\u270E ' + l.map(esc).join(" \u00B7 ") + "</span>";
 }
-function enChip(item) {                   // the small amber line on each sound / letter chip
+/* the ENGLISH ANCHOR of a sound: an English word that has it, with the letters that make it highlighted, e.g. /i/ -> s<b>ee</b> */
+function anchorWord(e) {
+  if (!e || !e.ex) return "";
+  const i = e.hit ? e.ex.toLowerCase().indexOf(e.hit.toLowerCase()) : -1;
+  return i < 0 ? esc(e.ex) : esc(e.ex.slice(0, i)) + "<b>" + esc(e.ex.slice(i, i + e.hit.length)) + "</b>" + esc(e.ex.slice(i + e.hit.length));
+}
+function enChip(item) {                   // the amber lines on each sound tile: English IPA + English anchor word
   const e = FRIPA.forItem(item); if (!e || !e.en) return "";
-  return '<span class="en" title="Closest English IPA' + (e.ex ? ": as in \u201C" + e.ex + "\u201D" : "") + (e.note ? ". " + e.note : "") + '">\u2248 <b>' + enSlash(e.en) + "</b>" + (e.ex ? " " + e.ex : "") + "</span>";
+  return '<span class="en" title="Closest English sound' + (e.ex ? ": the " + (e.hit ? "\u201C" + e.hit + "\u201D in " : "") + "\u201C" + e.ex + "\u201D" : "") + (e.note ? ". " + e.note : "") + '">\u2248 <b>' + enSlash(e.en) + "</b>" + (e.ex ? ' <span class="anc">\u00B7 ' + anchorWord(e) + "</span>" : "") + "</span>";
 }
 function enLine(item) {                   // the line under the big sound in the player
   const e = FRIPA.forItem(item); if (!e || !e.en) return "";
-  return "\u2248 English <b>" + enSlash(e.en) + "</b>" + (e.ex ? " \u2014 as in \u201C" + e.ex + "\u201D" : "") + (e.note ? ". " + e.note : "");
+  return "\u2248 English <b>" + enSlash(e.en) + "</b>" + (e.ex ? " \u2014 like " + (e.hit ? "<b>" + esc(e.hit) + "</b> in " : "") + "\u201C" + anchorWord(e) + "\u201D" + ' <button type="button" class="anplay" data-w="' + esc(e.ex) + '" title="Hear the English word">\uD83D\uDD0A</button>' : "") + (e.note ? ". " + e.note : "");
+}
+/* hear the English anchor word */
+function speakEn(text) {
+  if (!("speechSynthesis" in window)) return;
+  speechSynthesis.cancel(); stopSynth && stopSynth();
+  const u = new SpeechSynthesisUtterance(text); u.lang = "en-US"; u.rate = 0.85;
+  const v = speechSynthesis.getVoices().filter(x => /^en[-_]US/i.test(x.lang))[0] || speechSynthesis.getVoices().filter(x => /^en/i.test(x.lang))[0];
+  if (v) u.voice = v;
+  speechSynthesis.speak(u);
+}
+document.addEventListener("click", e => { const b = e.target.closest && e.target.closest(".anplay, .anbtn"); if (b) { e.stopPropagation(); if (!looping) speakEn(b.dataset.w); } });
+function attachAnchor(wrap, item) {       // a small speaker on the tile: hear the English anchor word
+  const e = FRIPA.forItem(item); if (!e || !e.ex) return;
+  const b = document.createElement("button"); b.type = "button"; b.className = "anbtn"; b.dataset.w = e.ex; b.textContent = "\uD83D\uDD0A";
+  b.title = "Hear the English word \u201C" + e.ex + "\u201D"; b.setAttribute("aria-label", b.title);
+  wrap.appendChild(b);
 }
 const enToggle = $("enToggle");
 try { if (localStorage.getItem("fr-showen") === "0") { enToggle.checked = false; document.body.classList.add("no-en"); } } catch (e) {}
@@ -1014,6 +1042,7 @@ DATA.forEach(group => {
     wrap.appendChild(b);
     wrap.appendChild(makeBadge("s:" + item.sym + "|" + item.word, item.word ? "this sound" : "this letter"));
     attachNote(wrap, "s:" + item.sym + "|" + item.word, item.word ? "the sound " + item.sym : "the letter " + item.sym);
+    if (!item.letter) attachAnchor(wrap, item);
     WEAK_ITEMS["s:" + item.sym + "|" + item.word] = item;
     grid.appendChild(wrap);
   });
