@@ -1632,7 +1632,15 @@ function vRender(reset) {
   vcount.textContent = vFiltered.length.toLocaleString() + " words";
 }
 
+let VIDX = null;   // lower-case word -> [word, ipa, meaning], so a word typed by hand still gets its IPA + map
+function vocabLookup(w) {
+  if (!VIDX) { VIDX = new Map(); VOCAB.forEach(e => { const k = e[0].toLowerCase(); if (!VIDX.has(k)) VIDX.set(k, e); }); }
+  const k = w.trim().toLowerCase().replace(/[.,;:!?\u2026"\u00AB\u00BB]+$/g, "").replace(/^[\u00AB"]+/, "");
+  return VIDX.get(k) || VIDX.get(k.normalize("NFC")) || (typeof SOUND_LOOKUP !== "undefined" && SOUND_LOOKUP[k]) || null;
+}
 function selectVocab(w, ipa, m) {
+  let mapWord = /\s/.test(w) ? "" : w;
+  if (!ipa && !/\s/.test(w.trim())) { const e = vocabLookup(w); if (e && e[1]) { ipa = e[1]; mapWord = e[0]; if (m === "my word" && e[2]) m = "my word \u00B7 " + e[2]; } }
   current = { vocab: true, sym: w, word: w, hit: "", hint: m, speak: w };
   document.querySelectorAll(".chip.active").forEach(c => c.classList.remove("active"));
   bigSym.textContent = ipa ? "/" + ipa + "/" : "•";
@@ -1640,7 +1648,7 @@ function selectVocab(w, ipa, m) {
   bigWord.textContent = w;
   bigHint.textContent = m;
   $("bigEn").innerHTML = ipa ? "\u2248 English <b>" + enSlash(FRIPA.word(ipa)) + "</b>" : "";
-  renderMap(/\s/.test(w) ? "" : w, ipa);
+  renderMap(mapWord, ipa);
   noteShow(); refreshNoteMarks();
 }
 
