@@ -312,7 +312,17 @@
   .lm-a line { stroke: var(--blue, #2540d9); stroke-width: 1.5; }
   .lm-a path { fill: var(--blue, #2540d9); }
   .lm-u.sil .lm-a line { stroke: #d4d8e2; stroke-dasharray: 2 2; } .lm-u.sil .lm-a path { fill: #d4d8e2; }
-  .lm-s { display: flex; gap: 3px; justify-content: center; }
+  .lmap { --cw: 30px; }
+  body.show-anc .lmap { --cw: 56px; }
+  .lm-s { display: flex; gap: 0; justify-content: center; width: 100%; }
+  .lm-sc { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; }
+  .lm-ar { display: none; position: relative; width: 1.5px; height: 11px; background: #1f5f8b; margin: 2px 0 1px; }
+  .lm-ar::after { content: ""; position: absolute; left: -3px; bottom: -3px; border: 3.5px solid transparent; border-top: 5px solid #1f5f8b; border-bottom: 0; }
+  .lm-an { display: none; font: 600 0.92rem/1.2 var(--serif); color: #1f5f8b; padding: 0 4px; border-radius: 6px; background: #eef6fc; cursor: pointer; white-space: nowrap; }
+  .lm-an b { color: #0b4f7c; background: #cfe6f6; border-radius: 3px; padding: 0 1px; }
+  .lm-an:hover { outline: 2px solid #1f5f8b; }
+  body.show-anc .lm-ar, body.show-anc .lm-an { display: block; }
+  body.show-anc .lm-an { display: inline-block; }
   .lm-s i { font: normal 700 1.02rem/1.2 var(--serif); padding: 0 6px; border-radius: 6px; cursor: default; }
   .lm-s i.v { background: #e3e9ff; color: #1b2f9e; } .lm-s i.s { background: #e1f4e6; color: #17653a; } .lm-s i.c { background: #fff0d9; color: #8a4b00; }
   .lm-s i.none { background: transparent; color: #c4c9d6; font-weight: 400; }
@@ -573,6 +583,7 @@
         <select id="voiceSel"></select>
         <label class="enlab" title="Show the closest English IPA next to every French IPA"><input type="checkbox" id="enToggle" checked> English IPA ≈</label>
         <label class="enlab" title="Show which letters make which sound, with arrows"><input type="checkbox" id="mapToggle" checked> Letters → sounds</label>
+        <label class="enlab" title="Under each French sound, show an arrow to an English word that has a similar sound"><input type="checkbox" id="ancToggle" checked> English anchors ↓</label>
         <button class="notebtn" id="noteBtn" type="button" aria-expanded="false" aria-controls="noteBox" title="Write your own note about the sound or word shown above">📝 Notes</button>
       </div>
     </div>
@@ -931,12 +942,12 @@ function renderMap(word, ipa) {
   if (!units) { box.hidden = true; return; }
   units.forEach(un => {
     const k = Math.max(1, un.p.length), cell = document.createElement("div");
-    cell.className = "lm-u" + (un.silent ? " sil" : ""); cell.style.width = Math.max(30, k * 30) + "px";
+    cell.className = "lm-u" + (un.silent ? " sil" : ""); cell.style.width = "calc(" + k + " * var(--cw))";
     let svg = '<svg class="lm-a" viewBox="0 0 100 15" preserveAspectRatio="none" aria-hidden="true">';
     if (un.silent) svg += '<line x1="50" y1="0" x2="50" y2="12"/>';
     else un.p.forEach((s, i) => { const x = (i + 0.5) / k * 100; svg += '<line x1="50" y1="0" x2="' + x + '" y2="11"/><path d="M' + (x - 5) + ' 9 L' + (x + 5) + ' 9 L' + x + ' 15 Z"/>'; });
     svg += "</svg>";
-    cell.innerHTML = '<span class="lm-l">' + esc(un.l) + "</span>" + svg + '<span class="lm-s">' + (un.silent ? '<i class="none" title="silent letter">\u00B7</i>' : un.p.map(s => '<i class="' + FRALIGN.kind(s) + '" data-s="' + esc(s) + '" tabindex="0" role="button" title="Hear /' + esc(s) + '/">' + esc(s) + "</i>").join("")) + "</span>";
+    cell.innerHTML = '<span class="lm-l">' + esc(un.l) + "</span>" + svg + '<span class="lm-s">' + (un.silent ? '<span class="lm-sc"><i class="none" title="silent letter">\u00B7</i></span>' : un.p.map(s => { const a = FRIPA.sound(s); return '<span class="lm-sc"><i class="' + FRALIGN.kind(s) + '" data-s="' + esc(s) + '" tabindex="0" role="button" title="Hear /' + esc(s) + '/">' + esc(s) + "</i>" + (a && a.ex ? '<span class="lm-ar" aria-hidden="true"></span><span class="lm-an" data-w="' + esc(a.ex) + '" title="English anchor: the ' + esc(a.hit || "") + ' in \u201C' + esc(a.ex) + '\u201D \u2014 click to hear it">' + anchorWord(a) + "</span>" : "") + "</span>"; }).join("")) + "</span>";
     cell.title = un.silent ? "\u201C" + un.l + "\u201D is silent here" : "\u201C" + un.l + "\u201D \u2192 /" + un.p.join("") + "/  \u2014 click to hear it";
     box.appendChild(cell);
   });
@@ -967,6 +978,10 @@ function renderMap(word, ipa) {
   const tg = document.getElementById("mapToggle");
   try { if (localStorage.getItem("fr-showmap") === "0") { tg.checked = false; document.body.classList.add("no-map"); } } catch (e) {}
   tg.addEventListener("change", () => { document.body.classList.toggle("no-map", !tg.checked); try { localStorage.setItem("fr-showmap", tg.checked ? "1" : "0"); } catch (e) {} });
+  const an = document.getElementById("ancToggle"); let on = true;
+  try { on = localStorage.getItem("fr-showanc") !== "0"; } catch (e) {}
+  an.checked = on; document.body.classList.toggle("show-anc", on);
+  an.addEventListener("change", () => { document.body.classList.toggle("show-anc", an.checked); try { localStorage.setItem("fr-showanc", an.checked ? "1" : "0"); } catch (e) {} });
 })();
 
 /* ---------- English IPA: the nearest English sound for each French one ---------- */
@@ -1014,7 +1029,7 @@ function speakEn(text) {
   if (v) u.voice = v;
   speechSynthesis.speak(u);
 }
-document.addEventListener("click", e => { const b = e.target.closest && e.target.closest(".anplay, .anbtn"); if (b) { e.stopPropagation(); if (!looping) speakEn(b.dataset.w); } });
+document.addEventListener("click", e => { const b = e.target.closest && e.target.closest(".anplay, .anbtn, .lm-an"); if (b) { e.stopPropagation(); if (!looping) speakEn(b.dataset.w); } });
 function attachAnchor(wrap, item) {       // a small speaker on the tile: hear the English anchor word
   const e = FRIPA.forItem(item); if (!e || !e.ex) return;
   const b = document.createElement("button"); b.type = "button"; b.className = "anbtn"; b.dataset.w = e.ex; b.textContent = "\uD83D\uDD0A";
