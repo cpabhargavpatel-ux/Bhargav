@@ -327,12 +327,11 @@
   .lm-w { display: flex; gap: 3px; align-items: flex-start; padding: 5px 8px; border-radius: 8px; background: #f4f6fb; }
   .lm-w.miss { align-self: flex-start; }
   .lm-w.miss .lm-l { color: #8a8f99; font-style: italic; border-bottom: 1px dashed #c8ccd4; }
-  /* highlighted sounds: the ones in the word / sentence you just played */
-  .lmap i.hot { background: #1f9d55 !important; color: #fff !important; border-color: #1f9d55 !important; box-shadow: 0 0 0 3px #bfe8cf; }
-  .chipwrap.hot .chip { outline: 3px solid #1f9d55; outline-offset: 1px; background: #e5f7ec; }
-  .hotnote { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 6px 0 0; padding: 8px 12px; border: 1px solid #bfe8cf; border-radius: 8px; background: #effaf3; color: #14532d; font: 0.9rem var(--sans); }
-  .hotnote[hidden], body:not(.tab-sounds) .hotnote { display: none; }
-  .hotnote button { font: inherit; font-size: 0.8rem; padding: 3px 10px; border-radius: 6px; border: 1px solid #1f9d55; color: #14532d; background: #fff; cursor: pointer; }
+  /* follow-along: the word / sound being spoken right now */
+  .lm-w.now { background: #fff2c2; box-shadow: 0 0 0 2px #f0b429; }
+  .lm-u.now .lm-l { color: #b45309; }
+  .lmap i.now { background: #1f9d55 !important; color: #fff !important; border-color: #1f9d55 !important; box-shadow: 0 0 0 4px #bfe8cf; transform: scale(1.18); }
+  .chipwrap.now .chip { outline: 3px solid #1f9d55; outline-offset: 1px; background: #e5f7ec; }
   body.show-anc .lm-ar, body.show-anc .lm-an { display: block; }
   body.show-anc .lm-an { display: inline-block; }
   .lm-s i { font: normal 700 1.02rem/1.2 var(--serif); padding: 0 6px; border-radius: 6px; cursor: default; }
@@ -617,7 +616,6 @@
     <div class="wk-items" id="weakSent"></div>
   </section>
 
-  <p class="hotnote" id="hotNote" hidden></p>
   <div id="sections"></div>
 
   <section class="vocab-sec">
@@ -964,7 +962,7 @@ function drawUnits(parent, units) {
 }
 function renderMap(word, ipa) {
   const box = document.getElementById("lmap"); if (!box) return;
-  box.textContent = "";
+  box.textContent = ""; box.dataset.src = word || "";
   const units = word && ipa && window.FRALIGN ? FRALIGN.align(word, ipa) : null;
   if (!units) { box.hidden = true; return; }
   drawUnits(box, units);
@@ -981,48 +979,83 @@ function lookupLoose(w) {                       // exact word, else the same wor
 const alignPart = pt => pt.e && window.FRALIGN ? (FRALIGN.align(pt.w, pt.e[1]) || FRALIGN.align(pt.e[0], pt.e[1])) : null;
 function sentenceParts(text) {
   const out = [];
-  String(text || "").trim().split(/\s+/).filter(Boolean).forEach(tok => {
+  String(text || "").trim().split(/\s+/).filter(Boolean).forEach((tok, ti) => {
     const clean = tok.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, ""); if (!clean) return;
     const whole = lookupLoose(clean);
-    if (whole) { out.push({ w: clean, e: whole }); return; }
+    if (whole) { out.push({ w: clean, e: whole, t: ti }); return; }
     const bits = clean.split(/[\u2019'\-]/).filter(Boolean);
-    if (bits.length > 1) bits.forEach((b, i) => { const lc = b.toLowerCase(), e = (i < bits.length - 1 && CLITIC[lc] != null && /[\u2019']/.test(clean.charAt(clean.indexOf(b) + b.length))) ? [lc, CLITIC[lc], ""] : lookupLoose(b); out.push({ w: b, e: e && e[1] ? e : null }); });
-    else out.push({ w: clean, e: null });
+    if (bits.length > 1) bits.forEach((b, i) => { const lc = b.toLowerCase(), e = (i < bits.length - 1 && CLITIC[lc] != null && /[\u2019']/.test(clean.charAt(clean.indexOf(b) + b.length))) ? [lc, CLITIC[lc], ""] : lookupLoose(b); out.push({ w: b, e: e && e[1] ? e : null, t: ti }); });
+    else out.push({ w: clean, e: null, t: ti });
   });
   return out;
 }
 function renderSentenceMap(box, text) {
   if (!box) return;
-  box.textContent = "";
+  box.textContent = ""; box.dataset.src = text || "";
   const parts = window.FRALIGN ? sentenceParts(text) : [];
   let any = false;
   parts.forEach(pt => {
     const g = document.createElement("div"), units = alignPart(pt);
+    g.dataset.t = pt.t;
     if (units) { g.className = "lm-w"; drawUnits(g, units); any = true; if (pt.e[2]) g.title = pt.w + " \u2014 " + pt.e[2]; }
     else { g.className = "lm-w miss"; g.title = "No pronunciation data for \u201C" + pt.w + "\u201D"; g.innerHTML = '<span class="lm-l">' + esc(pt.w) + "</span>"; }
     box.appendChild(g);
   });
   box.hidden = !any;
 }
-function sentenceSyms(text) {              // the distinct sounds in a sentence
-  const set = new Set();
-  sentenceParts(text).forEach(pt => { const u = alignPart(pt); if (u) u.forEach(x => x.p.forEach(q => set.add(q))); });
-  return [...set];
+/* FOLLOW-ALONG: while the voice speaks, the word (sentences) and the sound (inside each word) being said light up, in the map and on the French sound tiles */
+const normTxt = t => String(t || "").normalize("NFC").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+let kStop = null;
+function karaokeStop() {
+  if (kStop) { kStop(); kStop = null; }
+  document.querySelectorAll(".now").forEach(e => e.classList.remove("now"));
 }
-/* HIGHLIGHT: pressing a play button lights up the sounds of what is playing, in the maps and on the French sound tiles */
-let hotLabel = "";
-function setHot(syms, label) {
-  document.querySelectorAll(".chipwrap.hot, .lmap i.hot").forEach(e => e.classList.remove("hot"));
-  const set = new Set(syms || []);
-  set.forEach(sy => { const it = tileFor(sy); if (it && it._chip) (it._chip.closest(".chipwrap") || it._chip).classList.add("hot"); });
-  document.querySelectorAll(".lmap i[data-s]").forEach(i => { if (set.has(i.dataset.s)) i.classList.add("hot"); });
-  const n = document.getElementById("hotNote"); if (!n) return;
-  if (!set.size) { n.hidden = true; return; }
-  n.innerHTML = '<span><b>Highlighted:</b> the ' + set.size + ' sound' + (set.size === 1 ? "" : "s") + ' in \u201C' + esc(label || "") + '\u201D \u2014 ' + [...set].map(x => "/" + esc(x) + "/").join(" ") + '</span><button type="button" id="hotJump" style="margin-left:auto">Jump to first</button><button type="button" id="hotClear" style="margin-left:0">Clear</button>';
-  n.hidden = false; document.getElementById("hotClear").onclick = () => setHot([]);
-  document.getElementById("hotJump").onclick = () => { const w = document.querySelector(".chipwrap.hot"); if (w) w.scrollIntoView({ behavior: "smooth", block: "center" }); };
+function karaokeStart(text, rate) {
+  karaokeStop();
+  const want = normTxt(text);
+  const box = [document.getElementById("lmap"), document.getElementById("spMap")].find(b => b && !b.hidden && b.dataset.src && normTxt(b.dataset.src) === want && b.offsetParent !== null);
+  if (!box) return null;
+  const sent = box.classList.contains("spmap");
+  const words = (sent ? [...box.querySelectorAll(".lm-w:not(.miss)")] : [box]).map(g => ({
+    g, tok: g.dataset.t == null ? -1 : +g.dataset.t,
+    sounds: [...g.querySelectorAll("i[data-s]")],
+    ms: ([...g.querySelectorAll(".lm-l")].reduce((n, l) => n + l.textContent.length, 0) * 75 + 140) / Math.max(0.3, rate || 1) }));
+  if (!words.some(w => w.sounds.length)) return null;
+  const starts = [];                                  // where each word begins in the spoken text, to match the voice's word events
+  String(text).replace(/\S+/g, (m, i) => { starts.push(i); return m; });
+  let t0 = 0, raf = 0, anchor = null, done = false, lastW = null, lastS = null;
+  const lit = (w, si) => {
+    if (w === lastW && si === lastS) return;
+    document.querySelectorAll(".now").forEach(e => e.classList.remove("now"));
+    lastW = w; lastS = si; if (!w) return;
+    if (sent) w.g.classList.add("now");
+    const el = w.sounds[si]; if (!el) return;
+    el.classList.add("now"); const cell = el.closest(".lm-u"); if (cell) cell.classList.add("now");
+    const it = tileFor(el.dataset.s); if (it && it._chip) (it._chip.closest(".chipwrap") || it._chip).classList.add("now");
+  };
+  const tick = () => {
+    if (done) return;
+    const now = performance.now();
+    let wi = 0, frac = 0;
+    if (anchor) {                                                   // the voice told us which word it is on: follow it, estimating the sounds inside
+      const first = words.findIndex(w => w.tok === anchor.tok); wi = first < 0 ? 0 : first;
+      let el = now - anchor.at;
+      while (wi < words.length - 1 && words[wi + 1].tok === anchor.tok && el > words[wi].ms) { el -= words[wi].ms; wi++; }
+      frac = Math.min(0.999, el / words[wi].ms);
+    } else {                                                        // no word events from this voice: spread the time over the words by their length
+      let el = now - t0; while (wi < words.length - 1 && el > words[wi].ms) { el -= words[wi].ms; wi++; }
+      frac = Math.min(0.999, Math.max(0, el / words[wi].ms));
+    }
+    const w = words[wi]; lit(w, Math.min(w.sounds.length - 1, Math.floor(frac * w.sounds.length)));
+    raf = requestAnimationFrame(tick);
+  };
+  kStop = () => { done = true; cancelAnimationFrame(raf); };
+  return {
+    start() { t0 = performance.now(); raf = requestAnimationFrame(tick); },
+    boundary(ci) { let ti = 0; for (let i = 0; i < starts.length; i++) if (starts[i] <= ci) ti = i; if (words.some(w => w.tok === ti)) anchor = { tok: ti, at: performance.now() }; },
+    end() { karaokeStop(); }
+  };
 }
-const hotFromMap = (box, label) => { const set = new Set(); box && box.querySelectorAll("i[data-s]").forEach(i => set.add(i.dataset.s)); setHot([...set], label); };
 (function () {                                  // hovering a sound in the map outlines its tile in the grid below
   let last = null;
   const off = () => { if (last) { last.classList.remove("link"); last = null; } };
@@ -1239,7 +1272,7 @@ function showExamples(item) {
   refreshWeak();
 }
 function select(item, chipEl) {
-  current = item; setHot([]);
+  current = item;
   document.querySelectorAll(".chip.active").forEach(c => c.classList.remove("active"));
   if (chipEl) chipEl.classList.add("active");
   bigSym.textContent = item.letter ? item.sym : "/" + item.sym + "/";
@@ -1507,8 +1540,11 @@ function speakOnce(text) {
     u.rate = parseFloat(rate.value);
     const v = frVoices[parseInt(voiceSel.value, 10)];
     if (v) u.voice = v;
-    u.onend = resolve;
-    u.onerror = resolve;
+    const k = karaokeStart(text, u.rate);
+    u.onstart = () => { if (k) k.start(); };
+    u.onboundary = e => { if (k && (!e.name || e.name === "word")) k.boundary(e.charIndex || 0); };
+    u.onend = () => { if (k) k.end(); resolve(); };
+    u.onerror = () => { if (k) k.end(); resolve(); };
     speechSynthesis.speak(u);
   });
 }
@@ -1544,7 +1580,6 @@ async function playSequence() {
 }
 
 playBtn.addEventListener("click", playSequence);
-playBtn.addEventListener("click", () => { if (current && current.vocab) { if (/\s/.test(current.word.trim())) setHot(sentenceSyms(current.word), current.word); else hotFromMap($("lmap"), current.word); } });
 
 /* ---------- Loop until stopped ---------- */
 async function startLoop() {
@@ -1592,7 +1627,7 @@ function stopLoop() {
   playBtn.disabled = false;
 }
 
-loopBtn.addEventListener("click", () => { if (!looping && current && current.vocab) { if (/\s/.test(current.word.trim())) setHot(sentenceSyms(current.word), current.word); else hotFromMap($("lmap"), current.word); } looping ? stopLoop() : startLoop(); });
+loopBtn.addEventListener("click", () => { looping ? stopLoop() : startLoop(); });
 
 /* ---------- Group loop: cycle through every item in a section ---------- */
 let groupBtnActive = null;
@@ -1721,7 +1756,6 @@ function selectVocab(w, ipa, m) {
   bigHint.textContent = m;
   $("bigEn").innerHTML = ipa ? "\u2248 English <b>" + enSlash(FRIPA.word(ipa)) + "</b>" : "";
   renderMap(mapWord, ipa);
-  if (/\s/.test(w.trim())) setHot(sentenceSyms(w), w); else hotFromMap($("lmap"), w);
   noteShow(); refreshNoteMarks();
 }
 
@@ -1925,7 +1959,7 @@ refreshWeak();
     if (!isSentence(text)) { st.textContent = NEED; txt.focus(); return; }
     const my = ++tok, total = forever ? Infinity : parseInt(reps.value, 10), gapMs = parseFloat(gp.value) * 1000;
     touchSentence(text);
-    drawSpMap(); setHot(sentenceSyms(text), text);       // light up the sounds of this sentence
+    drawSpMap();
     speechSynthesis.cancel();
     setBusy(true);
     for (let n = 1; n <= total; n++) {
