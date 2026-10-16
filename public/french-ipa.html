@@ -583,7 +583,7 @@
         <select id="voiceSel"></select>
         <label class="enlab" title="Show the closest English IPA next to every French IPA"><input type="checkbox" id="enToggle" checked> English IPA ≈</label>
         <label class="enlab" title="Show which letters make which sound, with arrows"><input type="checkbox" id="mapToggle" checked> Letters → sounds</label>
-        <label class="enlab" title="Under each French sound, show an arrow to an English word that has a similar sound"><input type="checkbox" id="ancToggle" checked> English anchors ↓</label>
+        <label class="enlab" title="Under each French sound, show an arrow to an English word that has a similar sound"><input type="checkbox" id="ancToggle" checked> English sounds ↓</label>
         <button class="notebtn" id="noteBtn" type="button" aria-expanded="false" aria-controls="noteBox" title="Write your own note about the sound or word shown above">📝 Notes</button>
       </div>
     </div>
@@ -947,7 +947,7 @@ function renderMap(word, ipa) {
     if (un.silent) svg += '<line x1="50" y1="0" x2="50" y2="12"/>';
     else un.p.forEach((s, i) => { const x = (i + 0.5) / k * 100; svg += '<line x1="50" y1="0" x2="' + x + '" y2="11"/><path d="M' + (x - 5) + ' 9 L' + (x + 5) + ' 9 L' + x + ' 15 Z"/>'; });
     svg += "</svg>";
-    cell.innerHTML = '<span class="lm-l">' + esc(un.l) + "</span>" + svg + '<span class="lm-s">' + (un.silent ? '<span class="lm-sc"><i class="none" title="silent letter">\u00B7</i></span>' : un.p.map(s => { const a = FRIPA.sound(s); return '<span class="lm-sc"><i class="' + FRALIGN.kind(s) + '" data-s="' + esc(s) + '" tabindex="0" role="button" title="Hear /' + esc(s) + '/">' + esc(s) + "</i>" + (a && a.ex ? '<span class="lm-ar" aria-hidden="true"></span><span class="lm-an" data-w="' + esc(a.ex) + '" title="English anchor: the ' + esc(a.hit || "") + ' in \u201C' + esc(a.ex) + '\u201D \u2014 click to hear it">' + anchorWord(a) + "</span>" : "") + "</span>"; }).join("")) + "</span>";
+    cell.innerHTML = '<span class="lm-l">' + esc(un.l) + "</span>" + svg + '<span class="lm-s">' + (un.silent ? '<span class="lm-sc"><i class="none" title="silent letter">\u00B7</i></span>' : un.p.map(s => { const a = FRIPA.sound(s); return '<span class="lm-sc"><i class="' + FRALIGN.kind(s) + '" data-s="' + esc(s) + '" tabindex="0" role="button" title="Hear /' + esc(s) + '/">' + esc(s) + "</i>" + (a && a.ex ? '<span class="lm-ar" aria-hidden="true"></span><span class="lm-an" data-w="' + esc(a.ex) + '" title="English sound: like the ' + esc(a.hit || "") + ' in \u201C' + esc(a.ex) + '\u201D \u2014 click to hear it">' + esc((FRIPA.say && FRIPA.say(s)) || a.hit || a.ex) + "</span>" : "") + "</span>"; }).join("")) + "</span>";
     cell.title = un.silent ? "\u201C" + un.l + "\u201D is silent here" : "\u201C" + un.l + "\u201D \u2192 /" + un.p.join("") + "/  \u2014 click to hear it";
     box.appendChild(cell);
   });
