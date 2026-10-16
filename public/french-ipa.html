@@ -330,6 +330,8 @@
   /* follow-along: the word / sound being spoken right now */
   .lm-w.now { background: #fff2c2; box-shadow: 0 0 0 2px #f0b429; }
   .lm-u.now .lm-l { color: #b45309; }
+  body.hl-en .lm-an.now { background: #1f9d55; color: #fff; box-shadow: 0 0 0 3px #bfe8cf; transform: scale(1.15); }
+  body.hl-en .lm-an.now b { background: transparent; color: #fff; }
   .lmap i.now { background: #1f9d55 !important; color: #fff !important; border-color: #1f9d55 !important; box-shadow: 0 0 0 4px #bfe8cf; transform: scale(1.18); }
   .chipwrap.now .chip { outline: 3px solid #1f9d55; outline-offset: 1px; background: #e5f7ec; }
   body.show-anc .lm-ar, body.show-anc .lm-an { display: block; }
@@ -388,7 +390,7 @@
   .note-box textarea, .sv-notebox { width: 100%; font: inherit; font-family: var(--serif); font-size: 1rem; color: var(--ink, #222); background: #fffbe6; border: 1px solid #ecd98a; border-radius: 8px; padding: 6px 9px; resize: none; display: block; box-sizing: border-box; }
   .sv-notebox { font-size: 0.9rem; font-style: italic; margin-top: 6px; background: rgba(255, 214, 0, 0.12); }
   .sv-notebox:not(:focus):placeholder-shown { background: transparent; border-color: transparent; color: var(--gray); }
-  .notebtn { margin-left: 14px; font: 600 0.88rem var(--sans); color: #8a6a00; background: transparent; border: 1px solid #ecd98a; border-radius: 8px; padding: 3px 10px; cursor: pointer; }
+  .notebtn { white-space: nowrap; margin-left: 14px; font: 600 0.88rem var(--sans); color: #8a6a00; background: transparent; border: 1px solid #ecd98a; border-radius: 8px; padding: 3px 10px; cursor: pointer; }
   .notebtn.has::after { content: " \25CF"; color: #d29a00; }
   .notebtn[aria-expanded="true"] { background: #fff3c4; }
   /* a note on every sound tile and vocabulary row */
@@ -468,7 +470,7 @@
   .vrow .ven { color: #8a5a00; font-family: var(--serif); font-size: 0.95rem; margin-left: 8px; }
   .wk-item .wk-en { font: 400 0.8rem var(--serif); color: #8a5a00; }
   .voice-row .enlab, .voice-row .notebtn { margin-left: 0; }
-  .enlab { display: inline-flex; align-items: center; gap: 6px; margin-left: 14px; color: #8a5a00; font-size: 0.88rem; cursor: pointer; }
+  .enlab { display: inline-flex; align-items: center; gap: 6px; margin-left: 14px; color: #8a5a00; font-size: 0.88rem; cursor: pointer; white-space: nowrap; }
   body.no-en .en, body.no-en .ven, body.no-en .current-en, body.no-en .wk-en { display: none !important; }
   /* ---------- Weak-spot marks (repeat sign) ---------- */
   .chipwrap, .vwrap { position: relative; }
@@ -598,6 +600,7 @@
         <label class="enlab" title="Under each French sound, show an arrow to an English word that has a similar sound"><input type="checkbox" id="ancToggle" checked> English sounds ↓</label>
         <label class="enlab" title="On each sound tile (and under the player): the English word that has the sound, with a speaker to hear it"><input type="checkbox" id="tancToggle" checked> English anchor words</label>
         <label class="enlab" title="While the voice speaks, light up the word and the sound being said (in the letters-to-sounds map and on the sound tiles)"><input type="checkbox" id="hlToggle" checked> Highlight while speaking</label>
+        <label class="enlab" title="When the French sound is lit while speaking, also light the English sound / anchor under it"><input type="checkbox" id="hlenToggle" checked> Highlight English sounds too</label>
         <button class="notebtn" id="noteBtn" type="button" aria-expanded="false" aria-controls="noteBox" title="Write your own note about the sound or word shown above">📝 Notes</button>
       </div>
     </div>
@@ -1035,6 +1038,7 @@ function karaokeStart(text, rate) {
     if (sent) w.g.classList.add("now");
     const el = w.sounds[si]; if (!el) return;
     el.classList.add("now"); const cell = el.closest(".lm-u"); if (cell) cell.classList.add("now");
+    const col = el.closest(".lm-sc"), en = col && col.querySelector(".lm-an"); if (en) en.classList.add("now");
     const it = tileFor(el.dataset.s); if (it && it._chip) (it._chip.closest(".chipwrap") || it._chip).classList.add("now");
   };
   const tick = () => {
@@ -1096,6 +1100,10 @@ function karaokeStart(text, rate) {
   const hl = document.getElementById("hlToggle");
   try { hlOn = localStorage.getItem("fr-hl") !== "0"; } catch (e) {}
   hl.checked = hlOn;
+  const he = document.getElementById("hlenToggle"); let onE = true;
+  try { onE = localStorage.getItem("fr-hlen") !== "0"; } catch (e) {}
+  he.checked = onE; document.body.classList.toggle("hl-en", onE);
+  he.addEventListener("change", () => { document.body.classList.toggle("hl-en", he.checked); try { localStorage.setItem("fr-hlen", he.checked ? "1" : "0"); } catch (e) {} });
   hl.addEventListener("change", () => { hlOn = hl.checked; if (!hlOn) karaokeStop(); try { localStorage.setItem("fr-hl", hlOn ? "1" : "0"); } catch (e) {} });
   ta.addEventListener("change", () => { document.body.classList.toggle("show-tanc", ta.checked); try { localStorage.setItem("fr-showtanc", ta.checked ? "1" : "0"); } catch (e) {} });
 })();
