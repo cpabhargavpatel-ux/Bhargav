@@ -210,6 +210,10 @@
   }
   .gloop:hover { background: var(--blue-tint); }
   .gloop.stopping { background: #B4331F; border-color: #B4331F; color: var(--paper); }
+  .gloop[hidden] { display: none !important; }
+  .gloop[hidden] + .gplay, .gloop[hidden] + .gplay + .gresume { display: none !important; }   /* the weak-spot loop buttons hide when there is nothing to play */
+  .gctl { display: inline-flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .gresume { border-style: dashed; }
   .gloop:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
   .grid {
     display: grid;
@@ -1394,6 +1398,7 @@ function showExamples(item) {
     body.appendChild(head); body.appendChild(grid);
     if (g[3]) allWords(body, item, g);
   });
+  { const lb = xp.querySelector('[data-x="loop"]'), ab = xp.querySelector('[data-x="all"]'); if (lb && ab) ab._resume = addGroupExtras(lb, () => words, false); }
   xp.querySelectorAll("[data-x]").forEach(btn => btn.addEventListener("click", () => {
     if (looping && groupBtnActive === btn) { stopLoop(); return; }
     startGroupLoop(words, btn, btn.dataset.x === "all");
@@ -1756,6 +1761,7 @@ function stopLoop() {
   }
   status.textContent = "";
   playBtn.disabled = false;
+  showResume();
 }
 
 loopBtn.addEventListener("click", () => { looping ? stopLoop() : startLoop(); });
@@ -1763,7 +1769,27 @@ loopBtn.addEventListener("click", () => { looping ? stopLoop() : startLoop(); })
 /* ---------- Group loop: cycle through every item in a section ---------- */
 let groupBtnActive = null;
 
+const GRP = { items: null, i: 0, once: false, done: true, resume: null };   // the last group loop: where it stopped, so \u23F5 Resume can carry on from there
+function showResume() {
+  const b = GRP.resume; if (!b || !b.isConnected || !GRP.items || GRP.done) return;
+  b.textContent = "\u23F5 Resume (" + (GRP.i + 1) + "/" + GRP.items.length + ")"; b.dataset.label = b.textContent; b.hidden = false; b.classList.remove("stopping");
+}
+/* next to a "Loop \u2026" button: \u25B6 Play all (one pass through the list) and \u23F5 Resume (appears after a stop, continues from the item you stopped at) */
+function addGroupExtras(loopBtn, getItems, withPlayAll) {
+  const mk = (cls, label) => { const b = document.createElement("button"); b.type = "button"; b.className = "gloop " + cls; b.textContent = label; b.dataset.label = label; return b; };
+  const res = mk("gresume", "\u23F5 Resume"); res.hidden = true; res._resume = res; loopBtn._resume = res;
+  let anchor = loopBtn;
+  if (withPlayAll !== false) {
+    const pa = mk("gplay", "\u25B6 Play all"); pa._resume = res;
+    pa.addEventListener("click", () => { if (looping && groupBtnActive === pa) { stopLoop(); return; } const it = getItems(); if (it && it.length) startGroupLoop(it, pa, true); });
+    anchor.after(pa); anchor = pa;
+  }
+  res.addEventListener("click", () => { if (looping && groupBtnActive === res) { stopLoop(); return; } if (GRP.items) startGroupLoop(GRP.items, res, GRP.once, GRP.i); });
+  anchor.after(res);
+  return res;
+}
 function makeGroupBtn(items) {
+  const wrap = document.createElement("span"); wrap.className = "gctl";
   const b = document.createElement("button");
   b.className = "gloop";
   b.textContent = "Loop group";
@@ -1772,7 +1798,8 @@ function makeGroupBtn(items) {
     if (looping && groupBtnActive === b) { stopLoop(); return; }
     startGroupLoop(items, b);
   });
-  return b;
+  wrap.appendChild(b); addGroupExtras(b, () => items);
+  return wrap;
 }
 
 function applyItem(item) {
@@ -1781,10 +1808,12 @@ function applyItem(item) {
   else select(item, item._chip || null);
 }
 
-async function startGroupLoop(items, btn, once) {
+async function startGroupLoop(items, btn, once, from) {
   if (!items || items.length === 0) return;
   haltAll();
   looping = true;
+  GRP.items = items; GRP.once = !!once; GRP.done = false; GRP.i = Math.min(Math.max(0, from || 0), items.length - 1); GRP.resume = btn._resume || null;
+  document.querySelectorAll(".gresume").forEach(b => { b.hidden = b !== btn; });
   const token = ++playToken;
   speechSynthesis.cancel();
   stopSynth();
@@ -1793,8 +1822,9 @@ async function startGroupLoop(items, btn, once) {
   btn.textContent = "Stop";
   btn.classList.add("stopping");
 
-  let i = 0;
+  let i = GRP.i;
   while (looping && token === playToken) {
+    GRP.i = i;
     applyItem(items[i]);
     const total = parseInt(reps.value, 10);
     for (let r = 1; r <= total; r++) {
@@ -1812,7 +1842,7 @@ async function startGroupLoop(items, btn, once) {
       }
     }
     i = (i + 1) % items.length;
-    if (once && i === 0) break;               // "Play all": one pass, then stop
+    if (once && i === 0) { GRP.done = true; break; }               // "Play all": one pass, then stop
   }
   if (token === playToken) stopLoop();
 }
@@ -1913,12 +1943,17 @@ vGroupBtn.addEventListener("click", () => {
   if (looping && groupBtnActive === vGroupBtn) { stopLoop(); return; }
   startGroupLoop(vFiltered, vGroupBtn);   // loops whatever the search currently shows
 });
+{ const w = document.createElement("span"); w.className = "gctl"; vGroupBtn.replaceWith(w); w.appendChild(vGroupBtn); }   // keep Loop / Play all / Resume together at the right
+addGroupExtras(vGroupBtn, () => vFiltered);
 vRender(true);
 
 /* Default selection: /y/ — the classic hard-for-anglophones sound */
 select(DATA[1].items.find(i => i.sym === "y"), null);
 
 const weakLoop = $("weakLoop");
+addGroupExtras(weakLoop, () => weakPlan());
+addGroupExtras($("weakLoopW"), () => weakPlan("w"));
+addGroupExtras($("weakLoopS"), () => weakPlan("s"));
 weakLoop.addEventListener("click", () => {
   if (looping && groupBtnActive === weakLoop) { stopLoop(); return; }
   const plan = weakPlan(); if (plan.length) startGroupLoop(plan, weakLoop);
