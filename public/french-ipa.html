@@ -822,6 +822,13 @@ const bigSym = $("bigSym"), bigWord = $("bigWord"), bigHint = $("bigHint"),
 let current = null;
 let playToken = 0;          // invalidates in-flight sequences
 let looping = false;
+/* ONE PLAYBACK AT A TIME: any play button first stops whatever else is playing (player loops, sentence practice, recordings, sounds, English words) */
+const HALT = { player: () => stopLoop() };        // the sentence panel adds its own below
+function haltAll(except) {
+  karaokeStop();
+  Object.keys(HALT).forEach(k => { if (k !== except) { try { HALT[k](); } catch (e) {} } });
+  speechSynthesis.cancel(); if (typeof stopSynth === "function") stopSynth();
+}
 let frVoices = [];
 const loopBtn = $("loopBtn");
 
@@ -1174,8 +1181,7 @@ function karaokeStart(text, rate) {
   box.addEventListener("mouseleave", off);
   /* click a sound (or its letters) to hear it */
   async function hear(el, syms) {
-    if (looping) return;                                  // a loop is playing: don't cut it off
-    speechSynthesis.cancel(); stopSynth();
+    haltAll();                                            // this sound takes over from whatever was playing
     el.classList.add("hear");
     for (const s of syms) { try { await synthOnce(s); } catch (e) {} if (syms.length > 1) await wait(150); }
     el.classList.remove("hear");
@@ -1255,7 +1261,7 @@ function speakEn(text) {
   if (v) u.voice = v;
   speechSynthesis.speak(u);
 }
-document.addEventListener("click", e => { const b = e.target.closest && e.target.closest(".anplay, .anbtn, .lm-an"); if (b) { e.stopPropagation(); if (!looping) speakEn(b.dataset.w); } });
+document.addEventListener("click", e => { const b = e.target.closest && e.target.closest(".anplay, .anbtn, .lm-an"); if (b) { e.stopPropagation(); haltAll(); speakEn(b.dataset.w); } });
 function attachAnchor(wrap, item) {       // a small speaker on the tile: hear the English anchor word
   const e = FRIPA.forItem(item); if (!e || !e.ex) return;
   const b = document.createElement("button"); b.type = "button"; b.className = "anbtn"; b.dataset.w = e.ex; b.textContent = "\uD83D\uDD0A";
@@ -1675,6 +1681,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 
 async function playSequence() {
   if (!current) return;
+  haltAll();
   const token = ++playToken;
   speechSynthesis.cancel();
   stopSynth();
@@ -1706,6 +1713,7 @@ playBtn.addEventListener("click", playSequence);
 /* ---------- Loop until stopped ---------- */
 async function startLoop() {
   if (!current) return;
+  haltAll();
   looping = true;
   const token = ++playToken;
   speechSynthesis.cancel();
@@ -1774,7 +1782,7 @@ function applyItem(item) {
 
 async function startGroupLoop(items, btn, once) {
   if (!items || items.length === 0) return;
-  stopLoop();
+  haltAll();
   looping = true;
   const token = ++playToken;
   speechSynthesis.cancel();
@@ -2017,6 +2025,7 @@ refreshWeak();
 
   let playing = null;
   function playBlob(blob) {
+    haltAll();
     if (playing) { playing.pause(); URL.revokeObjectURL(playing.src); }
     speechSynthesis.cancel();
     playing = new Audio(URL.createObjectURL(blob)); playing.play();
@@ -2056,7 +2065,7 @@ refreshWeak();
       const bt = document.createElement("div"); bt.className = "sv-b";
       const mk = (label, fn, cls, dis) => { const b = document.createElement("button"); b.textContent = label; if (cls) b.className = cls; b.disabled = !!dis; b.onclick = fn; bt.appendChild(b); };
       if (isSentence(r.text)) mk("Practise", () => { txt.value = r.text; txt.dispatchEvent(new Event("input")); txt.focus(); });
-      mk("▶ Model", () => { tok++; setBusy(false); speakOnce(r.text); });
+      mk("▶ Model", () => { haltAll(); tok++; setBusy(false); speakOnce(r.text); });
       mk("▶ My recording", async () => { const b = await getRec(r.key); if (b) playBlob(b); }, "", !r.hasRec);
       if (isSentence(r.text)) mk("🎧 Compare", () => { txt.value = r.text; txt.dispatchEvent(new Event("input")); compare(r.text, false); }, "", !r.hasRec);
       if (isSentence(r.text)) mk("🔁 Loop", () => { txt.value = r.text; txt.dispatchEvent(new Event("input")); compare(r.text, true); }, "", !r.hasRec);
@@ -2083,6 +2092,7 @@ refreshWeak();
     const text = txt.value.trim();
     if (!text) { st.textContent = "Type a sentence first."; txt.focus(); return; }
     if (!isSentence(text)) { st.textContent = NEED; txt.focus(); return; }
+    haltAll("sentence");
     const my = ++tok, total = forever ? Infinity : parseInt(reps.value, 10), gapMs = parseFloat(gp.value) * 1000;
     touchSentence(text);
     drawSpMap();
@@ -2100,6 +2110,7 @@ refreshWeak();
     }
     st.textContent = ""; setBusy(false);
   }
+  HALT.sentence = () => { if (playing) { try { playing.pause(); } catch (e) {} } try { audio.pause(); } catch (e) {} return stopB.onclick(); };   // ■ Stop does the rest: loops, recording, my-recording playback
   sayB.onclick = () => run(false);
   loopB.onclick = () => run(true);
   stopB.onclick = async () => {
@@ -2129,6 +2140,7 @@ refreshWeak();
     text = (text || "").trim();
     if (!text) { st.textContent = "Type a sentence first."; txt.focus(); return; }
     if (!isSentence(text)) { st.textContent = NEED; txt.focus(); return; }
+    haltAll("sentence");
     const my = ++tok; speechSynthesis.cancel(); stopMine(); looping = false; setBusy(true);
     st.textContent = "Finding your recording…";
     const blob = await myRecordingFor(text); if (my !== tok) return;
@@ -2258,6 +2270,7 @@ refreshWeak();
     const text = txt.value.trim();
     if (!text) { st.textContent = "Type a sentence first."; txt.focus(); return; }
     if (!isSentence(text)) { st.textContent = NEED; txt.focus(); return; }
+    haltAll("sentence");
     const my = ++tok, total = parseInt(reps.value, 10), recMs = parseInt(recT.value, 10) * 1000;
     looping = true; touchSentence(text); speechSynthesis.cancel(); setBusy(true);
     const log = $("spRounds"); log.hidden = false; log.textContent = ""; const scores = [];
@@ -2321,7 +2334,7 @@ refreshWeak();
     document.querySelectorAll("#srsGrades button").forEach(b => {
       b.querySelector("span").textContent = fmtIv(schedule(cur, +b.dataset.g).days); b.classList.remove("sug");
     });
-    tok++; setBusy(false); speechSynthesis.cancel(); speakOnce(cur.text);     // hear the model first
+    haltAll(); tok++; setBusy(false); speakOnce(cur.text);     // hear the model first
   }
   async function startReview() {
     let all; try { all = await dbAll(); } catch (e) { return; }
