@@ -73,7 +73,7 @@
     .player > .player-row { width: auto; flex-wrap: nowrap; align-items: flex-start; gap: 16px; }
     .player .current-info { flex: 0 1 33rem; min-width: 15rem; }          /* fixed width: the map and sliders stay put when the text changes */
     .player .lmap { flex: 0 0 auto; margin-left: 0; min-width: 0; justify-content: flex-start; }
-    .bar2 .voice-row { flex-wrap: nowrap; }
+    .bar2 .voice-row { justify-content: flex-start; margin-left: 0; }
     .player button.play { padding: 8px 16px; }
     .player .mode-toggle button { padding: 7px 10px; }
     .player .slider-group { gap: 6px; font-size: 0.84rem; justify-content: space-between; }
@@ -471,6 +471,13 @@
   .vrow .ven { color: #8a5a00; font-family: var(--serif); font-size: 0.95rem; margin-left: 8px; }
   .wk-item .wk-en { font: 400 0.8rem var(--serif); color: #8a5a00; }
   .voice-row .enlab, .voice-row .notebtn { margin-left: 0; }
+  /* option ticks, grouped: Show | Highlight */
+  .optgrp { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px 5px; padding: 3px 6px 3px 8px; border: 1px solid var(--rule); border-radius: 10px; background: #fff; }
+  .optlab { font: 700 0.7rem var(--sans); letter-spacing: 0.05em; text-transform: uppercase; color: #8a8f99; margin-right: 2px; }
+  .optgrp .enlab { padding: 2px 9px 2px 6px; border: 1px solid transparent; border-radius: 999px; font-size: 0.84rem; gap: 5px; }
+  .optgrp .enlab:hover { background: #fbf6e6; }
+  .optgrp .enlab:has(input:checked) { background: #fdf1cf; border-color: #e8cf86; }
+  .optgrp .enlab input { margin: 0; }
   .enlab { display: inline-flex; align-items: center; gap: 6px; margin-left: 14px; color: #8a5a00; font-size: 0.88rem; cursor: pointer; white-space: nowrap; }
   body.no-en .en, body.no-en .ven, body.no-en .current-en, body.no-en .wk-en { display: none !important; }
   /* ---------- Weak-spot marks (repeat sign) ---------- */
@@ -596,11 +603,16 @@
       <div class="voice-row">
         <label for="voiceSel">Voice</label>
         <select id="voiceSel"></select>
-        <label class="enlab" title="Show the closest English IPA next to every French IPA"><input type="checkbox" id="enToggle" checked> English IPA ≈</label>
-        <label class="enlab" title="Show which letters make which sound, with arrows"><input type="checkbox" id="mapToggle" checked> Letters → sounds</label>
-        <label class="enlab" title="Under each French sound, show an arrow to an English word that has a similar sound"><input type="checkbox" id="ancToggle" checked> English sounds ↓</label>
-        <label class="enlab" title="On each sound tile (and under the player): the English word that has the sound, with a speaker to hear it"><input type="checkbox" id="tancToggle" checked> English anchor words</label>
-        <label class="enlab" title="While the voice speaks, light up the French sound (and its letters, and the word in a sentence) being said"><input type="checkbox" id="hlToggle" checked> Highlight French sounds</label>
+        <span class="optgrp" role="group" aria-label="What to show"><span class="optlab">Show</span>
+          <label class="enlab" title="Show the closest English IPA next to every French IPA"><input type="checkbox" id="enToggle" checked> English IPA ≈</label>
+          <label class="enlab" title="Show which letters make which sound, with arrows"><input type="checkbox" id="mapToggle" checked> Letters → sounds</label>
+          <label class="enlab" title="Under each French sound, show an arrow to the English sound (ee, sh, eh…)"><input type="checkbox" id="ancToggle" checked> English sounds ↓</label>
+          <label class="enlab" title="On each sound tile (and under the player): the English word that has the sound, with a speaker to hear it"><input type="checkbox" id="tancToggle" checked> Anchor words</label>
+        </span>
+        <span class="optgrp" role="group" aria-label="What to highlight while the voice speaks"><span class="optlab">Highlight</span>
+          <label class="enlab" title="While the voice speaks, light up the French sound (and its letters, and the word in a sentence) being said"><input type="checkbox" id="hlToggle" checked> French</label>
+          <label class="enlab" title="While the voice speaks, light up the English sound under the French sound being said (needs English sounds ↓ ticked)"><input type="checkbox" id="hlenToggle" checked> English</label>
+        </span>
         <button class="notebtn" id="noteBtn" type="button" aria-expanded="false" aria-controls="noteBox" title="Write your own note about the sound or word shown above">📝 Notes</button>
       </div>
     </div>
@@ -1096,14 +1108,14 @@ function renderSentenceMap(box, text) {
 }
 /* FOLLOW-ALONG: while the voice speaks, the word (sentences) and the sound (inside each word) being said light up, in the map and on the French sound tiles */
 const normTxt = t => String(t || "").normalize("NFC").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
-let kStop = null, hlOn = true;           // hlOn: the "Highlight while speaking" tick
+let kStop = null, hlOn = true, hlEn = true;           // the "Highlight French sounds" / "Highlight English sounds" ticks
 function karaokeStop() {
   if (kStop) { kStop(); kStop = null; }
   document.querySelectorAll(".now").forEach(e => e.classList.remove("now"));
 }
 function karaokeStart(text, rate) {
   karaokeStop();
-  const showEn = document.body.classList.contains("show-anc");   // the English sound lights up with the "English sounds" tick, the French one with "Highlight French sounds"
+  const showEn = hlEn && document.body.classList.contains("show-anc");   // English: its own tick, and only while the English row is shown
   if (!hlOn && !showEn) return null;
   const want = normTxt(text);
   const box = [document.getElementById("lmap"), document.getElementById("spMap")].find(b => b && !b.hidden && b.dataset.src && normTxt(b.dataset.src) === want && b.offsetParent !== null);
@@ -1188,6 +1200,10 @@ function karaokeStart(text, rate) {
   const hl = document.getElementById("hlToggle");
   try { hlOn = localStorage.getItem("fr-hl") !== "0"; } catch (e) {}
   hl.checked = hlOn;
+  const he = document.getElementById("hlenToggle");
+  try { hlEn = localStorage.getItem("fr-hlen") !== "0"; } catch (e) {}
+  he.checked = hlEn;
+  he.addEventListener("change", () => { hlEn = he.checked; karaokeStop(); try { localStorage.setItem("fr-hlen", hlEn ? "1" : "0"); } catch (e) {} });
   hl.addEventListener("change", () => { hlOn = hl.checked; karaokeStop(); try { localStorage.setItem("fr-hl", hlOn ? "1" : "0"); } catch (e) {} });
   ta.addEventListener("change", () => { document.body.classList.toggle("show-tanc", ta.checked); try { localStorage.setItem("fr-showtanc", ta.checked ? "1" : "0"); } catch (e) {} });
 })();
