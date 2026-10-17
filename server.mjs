@@ -190,6 +190,12 @@ const MODULE_CSS = `<style>
 #modtabs .mt-menu a{padding:8px 14px;border-radius:6px;background:transparent;color:#c9d2ea;white-space:nowrap}
 #modtabs .mt-menu a:hover{background:#27345c;color:#fff}
 #modtabs .mt-menu a.cur{background:#1b2542;color:#fff;cursor:default}
+#modtabs{white-space:nowrap}
+#modtabs>*{flex:none}
+#modtabs>#storeStat,#modtabs>#modbuild{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:1500px){#modtabs{gap:2px;padding-left:8px;padding-right:8px}#modtabs>a,#modtabs .mt-drop>a{padding:8px 11px}}
+@media (max-width:1250px){#modtabs>#storeStat{display:none}}
+@media (max-width:1050px){#modtabs>#modbuild{display:none}}
 @media print{#modtabs{display:none}}
 </style>`;
 const moduleBar = (active, sub) => MODULE_CSS + (active === "goal" ? "<style>header{top:40px !important}@media print{header{top:0 !important}}</style>" : "") + `<nav id="modtabs">`
@@ -202,7 +208,7 @@ const moduleBar = (active, sub) => MODULE_CSS + (active === "goal" ? "<style>hea
       .map(([t, h, k]) => `<a href="${h}"${active === "english" && sub === k ? ' class="cur" aria-current="page"' : ""}>${t}</a>`).join("")
   + `</span></span>`
   + `<a href="/feynman.html"${active === "feynman" ? ' class="on"' : ""}>Feynman</a>`
-  + `<span id="modbuild">build 10-17-d</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n`;
+  + `<span id="modbuild">build 10-17-f</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n`;
 function withModuleBar(html, active, sub) {
   const m = /<body[^>]*>/i.exec(html);
   return m ? html.slice(0, m.index + m[0].length) + "\n" + moduleBar(active, sub) + html.slice(m.index + m[0].length)
