@@ -56,7 +56,7 @@
     /* optimum use of space: [tile | word | letters->sounds map | sliders] on top, [buttons ........ voice + options] below */
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "info" "bar2" "sliders" "note" "warn";
+    grid-template-areas: "info" "mouth" "bar2" "sliders" "note" "warn";
     row-gap: 6px;
     align-items: center;
   }
@@ -64,14 +64,15 @@
   .player > .sliders    { grid-area: sliders; display: flex; flex-wrap: wrap; gap: 4px 16px; }
   .player > .bar2       { grid-area: bar2; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
   .player > .note-box   { grid-area: note; }
+  .player > .mouth      { grid-area: mouth; }
   .player > .warn       { grid-area: warn; margin-top: 0; }
   .bar2 .controls { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; margin: 0; }
   .bar2 .voice-row { margin: 0 0 0 12px; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 4px 12px; }
   @media (min-width: 1100px) {
-    .player { grid-template-columns: minmax(0, max-content) max-content minmax(0, 1fr); grid-template-areas: "info sliders rest" "bar2 bar2 bar2" "note note note" "warn warn warn"; column-gap: 30px; padding: 8px 0; }   /* everything sits together on the left: no wide gaps */
+    .player { grid-template-columns: minmax(0, max-content) max-content minmax(0, 1fr); grid-template-areas: "info sliders mouth" "bar2 bar2 bar2" "note note note" "warn warn warn"; column-gap: 30px; padding: 8px 0; }   /* everything sits together on the left: no wide gaps */
     .player > .sliders { flex-direction: column; flex-wrap: nowrap; gap: 3px; align-self: center; }
     .player > .player-row { width: auto; flex-wrap: nowrap; align-items: flex-start; gap: 16px; }
-    .player .current-info { flex: 0 1 33rem; min-width: 15rem; }          /* fixed width: the map and sliders stay put when the text changes */
+    .player .current-info { flex: 0 1 26rem; min-width: 15rem; }          /* fixed width: the map and sliders stay put when the text changes */
     .player .lmap { flex: 0 0 auto; margin-left: 0; min-width: 0; justify-content: flex-start; }
     .bar2 .voice-row { justify-content: flex-start; margin-left: 0; }
     .player button.play { padding: 8px 16px; }
@@ -478,6 +479,18 @@
   .vrow .ven { color: #8a5a00; font-family: var(--serif); font-size: 0.95rem; margin-left: 8px; }
   .wk-item .wk-en { font: 400 0.8rem var(--serif); color: #8a5a00; }
   .voice-row .enlab, .voice-row .notebtn { margin-left: 0; }
+  /* mouth diagram: tongue + lips for the sound being said */
+  .mouth { display: flex; align-items: center; gap: 10px; min-width: 0; justify-self: start; padding: 4px 10px 4px 6px; border: 1px solid var(--rule); border-radius: 12px; background: #fff; }
+  .mouth[hidden], body.no-mouth .mouth { display: none; }
+  .mouth .mouth-views { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+  .mouth .mouth-side { width: 118px; height: auto; }
+  .mouth .mouth-lips { width: 48px; height: auto; }
+  .mouth .mtxt { font: 0.74rem/1.3 var(--sans); color: #4a5062; width: 9.6rem; }
+  .mouth .mtxt b { font: 700 1.05rem var(--serif); color: #1f2f9e; display: block; margin-bottom: 1px; }
+  .mouth .mtxt .mx { color: #7a6a52; }
+  .mouth.compact .mtxt { width: auto; font-size: 0; }
+  .mouth.compact .mtxt b { font-size: 1.05rem; margin: 0; }
+  @media (min-width: 1100px) { .player.mouth-row { grid-template-areas: "info sliders ." "mouth mouth mouth" "bar2 bar2 bar2" "note note note" "warn warn warn"; } }
   /* option ticks, grouped: Show | Highlight */
   .optgrp { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px 5px; padding: 3px 6px 3px 8px; border: 1px solid var(--rule); border-radius: 10px; background: #fff; }
   .optlab { font: 700 0.7rem var(--sans); letter-spacing: 0.05em; text-transform: uppercase; color: #8a8f99; margin-right: 2px; }
@@ -581,6 +594,7 @@
       </div>
       <div class="lmap" id="lmap" hidden aria-label="Which letters make which sounds"></div>
     </div>
+    <div class="mouth" id="mouth" aria-label="Tongue and lips for the sound being said" hidden></div>
     <div class="sliders">
       <div class="slider-group">
         <label for="reps">Repeats</label>
@@ -594,7 +608,7 @@
       </div>
       <div class="slider-group">
         <label for="rate">Speed</label>
-        <input type="range" id="rate" min="0.5" max="1.2" step="0.05" value="0.85">
+        <input type="range" id="rate" min="0.25" max="1" step="0.05" value="0.85">
         <output id="rateOut" for="rate">0.85×</output>
       </div>
     </div>
@@ -615,6 +629,7 @@
           <label class="enlab" title="Under the letters of the word, show the French sound each one makes (IPA)"><input type="checkbox" id="mapToggle" checked> French sounds</label>
           <label class="enlab" title="Under each French sound, show an arrow to the English sound (ee, sh, eh…)"><input type="checkbox" id="ancToggle" checked> English sounds</label>
           <label class="enlab" title="On each sound tile (and under the player): the English word that has the sound, with a speaker to hear it"><input type="checkbox" id="tancToggle" checked> Anchor words</label>
+          <label class="enlab" title="A picture of the tongue and lips for the sound being said"><input type="checkbox" id="mouthToggle" checked> Mouth</label>
         </span>
         <span class="optgrp" role="group" aria-label="What to highlight while the voice speaks"><span class="optlab">Highlight</span>
           <label class="enlab" title="While the voice speaks, light up the French sound (and its letters, and the word in a sentence) being said"><input type="checkbox" id="hlToggle" checked> French</label>
@@ -740,6 +755,7 @@
 <script src="/fr-vocab-more.js"></script>
 <script src="/fr-sound-words.js"></script>
 <script src="/fr-align.js"></script>
+<script src="/fr-mouth.js"></script>
 <script>
 const DATA = [
   { title: "The alphabet — letter names", items: [
@@ -1120,6 +1136,33 @@ function renderSentenceMap(box, text) {
   });
   box.hidden = !any;
 }
+/* MOUTH: tongue + lips for the sound being said (fr-mouth.js). It follows the selected sound, and the sound being spoken. */
+let mouthOn = true, mouthSym = "";
+function fitMouth() {                       // beside the sliders when there is room, otherwise on a row of its own
+  const pl = document.querySelector(".player"), box = document.getElementById("mouth"); if (!pl || !box || box.hidden) return;
+  if (innerWidth < 1100) { pl.classList.remove("mouth-row"); return; }
+  const row = pl.classList.contains("mouth-row"), rowW = pl.querySelector(".player-row").getBoundingClientRect().width, slW = pl.querySelector(".sliders").getBoundingClientRect().width;
+  const free = pl.clientWidth - rowW - slW - 60;
+  const wasC = box.classList.contains("compact"), wasR = row;
+  box.classList.remove("compact"); pl.classList.remove("mouth-row");
+  let need = box.getBoundingClientRect().width + 8;
+  if (free < need) { box.classList.add("compact"); need = box.getBoundingClientRect().width + 8; }       // pictures + symbol only; the words go in a tooltip
+  if (free < need) { pl.classList.add("mouth-row"); box.classList.remove("compact"); }                  // still no room: a row of its own
+  if (!(wasC === box.classList.contains("compact") && wasR === pl.classList.contains("mouth-row")) && false) fitMouth();
+}
+function showMouth(sym) {
+  const box = document.getElementById("mouth"); if (!box || !window.FRMOUTH) return;
+  sym = sym ? String(sym) : "";
+  if (!sym) { box.hidden = true; mouthSym = ""; return; }
+  if (!mouthOn || !FRMOUTH.has(sym)) return;                      // unknown symbol (e.g. a silent letter): keep the last picture
+  if (sym === mouthSym && !box.hidden) { return; }
+  mouthSym = sym; const d = FRMOUTH.describe(sym);
+  box.innerHTML = FRMOUTH.svg(sym) + '<div class="mtxt"><b>/' + esc(sym) + "/</b>" + esc(d.tongue) + "<br>" + esc(d.lips) + '<br><span class="mx">' + esc(d.extra) + "</span></div>";
+  box.title = sym + " \u2014 " + d.tongue + ", " + d.lips + ", " + d.extra;
+  box.hidden = false; fitMouth();
+}
+addEventListener("resize", fitMouth);
+
 /* FOLLOW-ALONG: while the voice speaks, the word (sentences) and the sound (inside each word) being said light up, in the map and on the French sound tiles */
 const normTxt = t => String(t || "").normalize("NFC").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 let kStop = null, hlOn = true, hlEn = true;           // the "Highlight French sounds" / "Highlight English sounds" ticks
@@ -1130,7 +1173,7 @@ function karaokeStop() {
 function karaokeStart(text, rate) {
   karaokeStop();
   const showEn = hlEn && document.body.classList.contains("show-anc");   // English: its own tick, and only while the English row is shown
-  if (!hlOn && !showEn) return null;
+  if (!hlOn && !showEn && !mouthOn) return null;
   const want = normTxt(text);
   const box = [document.getElementById("lmap"), document.getElementById("spMap")].find(b => b && !b.hidden && b.dataset.src && normTxt(b.dataset.src) === want && b.offsetParent !== null);
   if (!box) return null;
@@ -1149,6 +1192,7 @@ function karaokeStart(text, rate) {
     lastW = w; lastS = si; if (!w) return;
     if (sent) w.g.classList.add("now");
     const el = w.sounds[si]; if (!el) return;
+    if (mouthOn) showMouth(el.dataset.s);
     if (hlOn) {
       el.classList.add("now"); const cell = el.closest(".lm-u"); if (cell) cell.classList.add("now");
       const it = tileFor(el.dataset.s); if (it && it._chip) (it._chip.closest(".chipwrap") || it._chip).classList.add("now");
@@ -1188,7 +1232,7 @@ function karaokeStart(text, rate) {
   async function hear(el, syms) {
     haltAll();                                            // this sound takes over from whatever was playing
     el.classList.add("hear");
-    for (const s of syms) { try { await synthOnce(s); } catch (e) {} if (syms.length > 1) await wait(150); }
+    for (const s of syms) { showMouth(s); try { await synthOnce(s); } catch (e) {} if (syms.length > 1) await wait(150); }
     el.classList.remove("hear");
   }
   box.addEventListener("click", e => {
@@ -1210,6 +1254,10 @@ function karaokeStart(text, rate) {
   const ta = document.getElementById("tancToggle"); let on2 = true;
   try { on2 = localStorage.getItem("fr-showtanc") !== "0"; } catch (e) {}
   ta.checked = on2; document.body.classList.toggle("show-tanc", on2);
+  const mt = document.getElementById("mouthToggle");
+  try { mouthOn = localStorage.getItem("fr-showmouth") !== "0"; } catch (e) {}
+  mt.checked = mouthOn; document.body.classList.toggle("no-mouth", !mouthOn);
+  mt.addEventListener("change", () => { mouthOn = mt.checked; document.body.classList.toggle("no-mouth", !mouthOn); try { localStorage.setItem("fr-showmouth", mouthOn ? "1" : "0"); } catch (e) {} if (mouthOn && current) { const m = mouthSym; mouthSym = ""; showMouth(m || (current.sym && !current.letter ? current.sym : "")); } });
   const hl = document.getElementById("hlToggle");
   try { hlOn = localStorage.getItem("fr-hl") !== "0"; } catch (e) {}
   hl.checked = hlOn;
@@ -1415,6 +1463,7 @@ function select(item, chipEl) {
   { const nm = !item.letter && FRIPA.name ? FRIPA.name(item.sym) : ""; const sy = !item.letter && FRIPA.say ? FRIPA.say(item.sym) : ""; bigHint.innerHTML = (sy ? '<b class="psay">\u201C' + esc(sy) + "\u201D</b> \u00B7 " : "") + (nm ? '<i class="pname">' + esc(nm) + "</i> \u00B7 " : "") + esc(item.hint); }
   $("bigEn").innerHTML = enLine(item);
   if (item.letter) renderMap("", ""); else renderMap(item.word, wordIpa(item.word));
+  showMouth(item.letter ? "" : item.sym);
   noteShow(); refreshNoteMarks();
   showExamples(item);
 }
@@ -1923,6 +1972,7 @@ function selectVocab(w, ipa, m) {
   const nw = w.trim().split(/\s+/).length, lm = $("lmap");
   if (nw > 1 && nw <= 5) { renderSentenceMap(lm, w); lm.classList.add("multi"); }     // a short phrase (vous parlez): one map per word
   else { lm.classList.remove("multi"); renderMap(mapWord, ipa); }
+  { const f1 = lm.querySelector("i[data-s]"); showMouth(f1 ? f1.dataset.s : ""); }
   noteShow(); refreshNoteMarks();
 }
 

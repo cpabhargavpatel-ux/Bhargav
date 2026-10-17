@@ -12,6 +12,7 @@ public/study.css
 public/study.js
 public/grammar.html
 public/irregular-verbs.js
+public/fr-mouth.js
 public/feynman.html
 public/irregular-verbs.html
 public/vocabulary.html
