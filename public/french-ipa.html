@@ -1009,7 +1009,9 @@ function tileFor(sym) {
   return null;
 }
 function drawUnits(parent, units) {
-  units.forEach(un => {
+  units.forEach(un0 => {
+    /* the sound chart files \u00E2 under /\u0251/ (p\u00E2te), but the dictionary writes it /a/: show it the way the chart does, so the right tile lights up */
+    const un = (/^\u00E2$/i.test(un0.l.normalize("NFC")) && un0.p.length === 1 && un0.p[0] === "a") ? Object.assign({}, un0, { p: ["\u0251"] }) : un0;
     const k = Math.max(1, un.p.length), cell = document.createElement("div");
     cell.className = "lm-u" + (un.silent ? " sil" : ""); cell.style.width = "calc(" + k + " * var(--cw))";
     let svg = '<svg class="lm-a" viewBox="0 0 100 15" preserveAspectRatio="none" aria-hidden="true">';
