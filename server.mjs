@@ -201,7 +201,7 @@ const moduleBar = (active, sub) => MODULE_CSS + (active === "goal" ? "<style>hea
   + [["Idioms", "/english.html", "idioms"], ["Vocabulary", "/vocabulary.html", "vocabulary"], ["Grammar", "/grammar.html", "grammar"], ["Irregular verbs", "/irregular-verbs.html", "verbs"], ["Notes", "/english-notes.html", "notes"]]
       .map(([t, h, k]) => `<a href="${h}"${active === "english" && sub === k ? ' class="cur" aria-current="page"' : ""}>${t}</a>`).join("")
   + `</span></span>`
-  + `<span id="modbuild">build 10-16-w</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n`;
+  + `<span id="modbuild">build 10-16-x</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n`;
 function withModuleBar(html, active, sub) {
   const m = /<body[^>]*>/i.exec(html);
   return m ? html.slice(0, m.index + m[0].length) + "\n" + moduleBar(active, sub) + html.slice(m.index + m[0].length)

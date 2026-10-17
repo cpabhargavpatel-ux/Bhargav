@@ -331,8 +331,8 @@
   /* follow-along: the word / sound being spoken right now */
   .lm-w.now { background: #fff2c2; box-shadow: 0 0 0 2px #f0b429; }
   .lm-u.now .lm-l { color: #b45309; }
-  body.hl-en .lm-an.now { background: #1f9d55; color: #fff; box-shadow: 0 0 0 3px #bfe8cf; transform: scale(1.15); }
-  body.hl-en .lm-an.now b { background: transparent; color: #fff; }
+  .lm-an.now { background: #1f9d55; color: #fff; box-shadow: 0 0 0 3px #bfe8cf; transform: scale(1.15); }
+  .lm-an.now b { background: transparent; color: #fff; }
   .lmap i.now { background: #1f9d55 !important; color: #fff !important; border-color: #1f9d55 !important; box-shadow: 0 0 0 4px #bfe8cf; transform: scale(1.18); }
   .chipwrap.now .chip { outline: 3px solid #1f9d55; outline-offset: 1px; background: #e5f7ec; }
   body.show-anc .lm-ar, body.show-anc .lm-an { display: block; }
@@ -600,8 +600,7 @@
         <label class="enlab" title="Show which letters make which sound, with arrows"><input type="checkbox" id="mapToggle" checked> Letters → sounds</label>
         <label class="enlab" title="Under each French sound, show an arrow to an English word that has a similar sound"><input type="checkbox" id="ancToggle" checked> English sounds ↓</label>
         <label class="enlab" title="On each sound tile (and under the player): the English word that has the sound, with a speaker to hear it"><input type="checkbox" id="tancToggle" checked> English anchor words</label>
-        <label class="enlab" title="While the voice speaks, light up the word and the sound being said (in the letters-to-sounds map and on the sound tiles)"><input type="checkbox" id="hlToggle" checked> Highlight while speaking</label>
-        <label class="enlab" title="When the French sound is lit while speaking, also light the English sound / anchor under it"><input type="checkbox" id="hlenToggle" checked> Highlight English sounds too</label>
+        <label class="enlab" title="While the voice speaks, light up the French sound (and its letters, and the word in a sentence) being said"><input type="checkbox" id="hlToggle" checked> Highlight French sounds</label>
         <button class="notebtn" id="noteBtn" type="button" aria-expanded="false" aria-controls="noteBox" title="Write your own note about the sound or word shown above">📝 Notes</button>
       </div>
     </div>
@@ -1104,7 +1103,8 @@ function karaokeStop() {
 }
 function karaokeStart(text, rate) {
   karaokeStop();
-  if (!hlOn) return null;
+  const showEn = document.body.classList.contains("show-anc");   // the English sound lights up with the "English sounds" tick, the French one with "Highlight French sounds"
+  if (!hlOn && !showEn) return null;
   const want = normTxt(text);
   const box = [document.getElementById("lmap"), document.getElementById("spMap")].find(b => b && !b.hidden && b.dataset.src && normTxt(b.dataset.src) === want && b.offsetParent !== null);
   if (!box) return null;
@@ -1123,9 +1123,11 @@ function karaokeStart(text, rate) {
     lastW = w; lastS = si; if (!w) return;
     if (sent) w.g.classList.add("now");
     const el = w.sounds[si]; if (!el) return;
-    el.classList.add("now"); const cell = el.closest(".lm-u"); if (cell) cell.classList.add("now");
-    const col = el.closest(".lm-sc"), en = col && col.querySelector(".lm-an"); if (en) en.classList.add("now");
-    const it = tileFor(el.dataset.s); if (it && it._chip) (it._chip.closest(".chipwrap") || it._chip).classList.add("now");
+    if (hlOn) {
+      el.classList.add("now"); const cell = el.closest(".lm-u"); if (cell) cell.classList.add("now");
+      const it = tileFor(el.dataset.s); if (it && it._chip) (it._chip.closest(".chipwrap") || it._chip).classList.add("now");
+    }
+    if (showEn) { const col = el.closest(".lm-sc"), en = col && col.querySelector(".lm-an"); if (en) en.classList.add("now"); }
   };
   const tick = () => {
     if (done) return;
@@ -1186,11 +1188,7 @@ function karaokeStart(text, rate) {
   const hl = document.getElementById("hlToggle");
   try { hlOn = localStorage.getItem("fr-hl") !== "0"; } catch (e) {}
   hl.checked = hlOn;
-  const he = document.getElementById("hlenToggle"); let onE = true;
-  try { onE = localStorage.getItem("fr-hlen") !== "0"; } catch (e) {}
-  he.checked = onE; document.body.classList.toggle("hl-en", onE);
-  he.addEventListener("change", () => { document.body.classList.toggle("hl-en", he.checked); try { localStorage.setItem("fr-hlen", he.checked ? "1" : "0"); } catch (e) {} });
-  hl.addEventListener("change", () => { hlOn = hl.checked; if (!hlOn) karaokeStop(); try { localStorage.setItem("fr-hl", hlOn ? "1" : "0"); } catch (e) {} });
+  hl.addEventListener("change", () => { hlOn = hl.checked; karaokeStop(); try { localStorage.setItem("fr-hl", hlOn ? "1" : "0"); } catch (e) {} });
   ta.addEventListener("change", () => { document.body.classList.toggle("show-tanc", ta.checked); try { localStorage.setItem("fr-showtanc", ta.checked ? "1" : "0"); } catch (e) {} });
 })();
 
