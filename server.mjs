@@ -227,14 +227,14 @@ const MODULE_CSS = `<style>
 const moduleBar = (active, sub) => MODULE_CSS + (active === "goal" ? "<style>header{top:40px !important}@media print{header{top:0 !important}}</style>" : "") + `<nav id="modtabs">`
   + `<a href="/"${active === "goal" ? ' class="on"' : ""}>Goal Setting</a>`
   + `<span class="mt-drop"><a href="/french-ipa.html"${active === "french" ? ' class="on"' : ""}>French <i>&#9662;</i></a><span class="mt-menu">`
-  + [["Sounds", "sounds", "/french-ipa.html#sounds"], ["Vocabulary", "vocab", "/french-ipa.html#vocab"], ["Sentences", "sentences", "/french-ipa.html#sentences"], ["Notes", "notes", "/french-notes.html"]].map(([t, k, h]) => `<a href="${h}" data-fr="${k}"${active === "french" && sub === "notes" && k === "notes" ? ' class="cur" aria-current="page"' : ""}>${t}</a>`).join("")
+  + [["Sounds", "sounds", "/french-ipa.html#sounds"], ["Vocabulary", "vocab", "/french-ipa.html#vocab"], ["Sentences", "sentences", "/french-ipa.html#sentences"], ["Deck", "deck", "/french-ipa.html#deck"], ["Notes", "notes", "/french-notes.html"]].map(([t, k, h]) => `<a href="${h}" data-fr="${k}"${active === "french" && sub === "notes" && k === "notes" ? ' class="cur" aria-current="page"' : ""}>${t}</a>`).join("")
   + `</span></span>`
   + `<span class="mt-drop"><a href="/english.html"${active === "english" ? ' class="on"' : ""}>English <i>&#9662;</i></a><span class="mt-menu">`
   + [["Idioms", "/english.html", "idioms"], ["Vocabulary", "/vocabulary.html", "vocabulary"], ["Grammar", "/grammar.html", "grammar"], ["Irregular verbs", "/irregular-verbs.html", "verbs"], ["Notes", "/english-notes.html", "notes"]]
       .map(([t, h, k]) => `<a href="${h}"${active === "english" && sub === k ? ' class="cur" aria-current="page"' : ""}>${t}</a>`).join("")
   + `</span></span>`
   + `<a href="/feynman.html"${active === "feynman" ? ' class="on"' : ""}>Feynman</a>`
-  + `<span id="modbuild">build 10-17-o</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n`;
+  + `<span id="modbuild">build 10-17-p</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n`;
 function withModuleBar(html, active, sub) {
   const m = /<body[^>]*>/i.exec(html);
   return m ? html.slice(0, m.index + m[0].length) + "\n" + moduleBar(active, sub) + html.slice(m.index + m[0].length)

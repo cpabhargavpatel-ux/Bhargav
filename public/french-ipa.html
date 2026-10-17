@@ -215,6 +215,42 @@
   .gloop[hidden] + .gplay, .gloop[hidden] + .gplay + .gresume { display: none !important; }   /* the weak-spot loop buttons hide when there is nothing to play */
   .gctl { display: inline-flex; gap: 6px; flex-wrap: wrap; align-items: center; }
   .gresume { border-style: dashed; }
+  /* ---------- deck ---------- */
+  .deck-sec { margin-top: 14px; }
+  .deck-sec h2 { font-family: var(--serif); font-size: 1.4rem; margin: 0 0 4px; }
+  .deck-sub { color: var(--gray); font-size: 0.9rem; margin: 0 0 10px; max-width: 62ch; }
+  .deck-bar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 12px; }
+  .deck-stats b { font-family: var(--serif); font-size: 1.1rem; } .deck-stats { color: var(--ink); font-size: 0.92rem; }
+  .deck-mode { color: var(--gray); font-size: 0.88rem; } .deck-mode select { font: inherit; padding: 5px 8px; border: 1px solid var(--rule); border-radius: 8px; background: #fff; }
+  .dcard { border: 1px solid var(--rule); border-radius: 14px; background: #fff; padding: 18px 22px 16px; margin: 6px 0 18px; max-width: 760px; box-shadow: 0 2px 10px rgba(30,40,80,.06); }
+  .dcard[hidden] { display: none; }
+  .dprog { color: var(--gray); font-size: 0.82rem; margin-bottom: 6px; }
+  .dface { min-height: 84px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 6px; }
+  .dface .big { font-family: var(--serif); font-size: 2.1rem; line-height: 1.2; }
+  .dface .ipa { color: var(--blue); font-family: var(--serif); font-size: 1.15rem; } .dface .en { color: #8a5a00; font-family: var(--serif); font-size: 1rem; }
+  .dface .mean { font-size: 1.25rem; } .dface .meta { color: var(--gray); font-size: 0.82rem; }
+  .dface button.say { font: inherit; font-size: 0.85rem; padding: 3px 10px; border: 1px solid var(--blue); background: #fff; color: var(--blue); border-radius: 999px; cursor: pointer; }
+  .dback { border-top: 1px dashed var(--rule); margin-top: 12px; padding-top: 12px; }
+  .dback .lmap { margin: 4px 0 0; }
+  .dactions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 16px; }
+  .dgrades { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+  .dgrades button { font: 600 0.92rem var(--sans); padding: 7px 14px; border-radius: 8px; border: 1px solid var(--rule); background: #fff; cursor: pointer; }
+  .dgrades button small { display: block; font-weight: 400; color: var(--gray); font-size: 0.74rem; }
+  .dgrades .g0 { border-color: #e57373; } .dgrades .g1 { border-color: #f0a56b; } .dgrades .g2 { border-color: #7bc68f; } .dgrades .g3 { border-color: #6aa8e8; }
+  .dgrades button:hover { background: var(--blue-tint); }
+  .dactions .loop { margin-left: auto; }
+  .deck-tabs { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 4px 0 8px; }
+  .deck-tabs > button:not(.gloop) { font: 600 0.9rem var(--sans); padding: 5px 14px; border-radius: 999px; border: 1px solid var(--rule); background: #fff; cursor: pointer; }
+  .deck-tabs > button.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .deck-tabs input { flex: 1; min-width: 140px; max-width: 280px; font: inherit; padding: 5px 10px; border: 1px solid var(--rule); border-radius: 8px; }
+  .drow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; padding: 8px 4px; border-top: 1px solid var(--rule); }
+  .drow .w { font-family: var(--serif); font-size: 1.15rem; } .drow .i { color: var(--blue); font-family: var(--serif); font-size: .9rem; margin-left: 8px; }
+  .drow .m { color: var(--gray); font-size: .88rem; grid-column: 1; } .drow .meta { color: var(--gray); font-size: .78rem; margin-left: 8px; }
+  .drow .tag { font: 700 .72rem var(--sans); padding: 1px 8px; border-radius: 999px; margin-left: 6px; background: #eef1f8; color: #556; } .drow .tag.due { background: #fdecc8; color: #8a5a00; } .drow .tag.weak { background: #fde8e8; color: #B4331F; }
+  .drow .btns { grid-row: 1 / span 2; grid-column: 2; display: flex; gap: 6px; }
+  .drow .btns button { font: inherit; font-size: .85rem; border: 1px solid var(--rule); background: #fff; border-radius: 8px; padding: 3px 9px; cursor: pointer; }
+  .drow .btns button:hover { background: var(--blue-tint); } .drow .btns .on { color: #e0a800; border-color: #e0c060; }
+  .deck-empty { color: var(--gray); padding: 14px 4px; }
   .gloop:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
   .grid {
     display: grid;
@@ -421,10 +457,12 @@
   .frsub a { text-decoration: none; font: 600 0.95rem var(--sans); color: var(--ink, #222); border: 1px solid var(--rule); background: #fff; border-radius: 999px; padding: 6px 18px; }
   .frsub a:hover { background: var(--blue-tint); }
   .frsub a.on { background: var(--blue, #2540d9); border-color: var(--blue, #2540d9); color: #fff; }
-  body.tab-sounds .vocab-sec, body.tab-sounds .side { display: none; }
+  body.tab-sounds .vocab-sec, body.tab-sounds .side, .deck-sec { display: none; }
+  body.tab-deck .deck-sec { display: block; }
+  body.tab-deck #sections, body.tab-deck .vocab-sec, body.tab-deck .side, body.tab-deck .player, body.tab-deck .weak-sec { display: none; }
   body.tab-vocab #sections, body.tab-vocab .side { display: none; }
   body.tab-sentences #sections, body.tab-sentences .vocab-sec { display: none; }
-  @media (min-width: 1100px) { body.tab-sounds .layout, body.tab-vocab .layout, body.tab-sentences .layout { grid-template-columns: minmax(0, 1fr); } }
+  @media (min-width: 1100px) { body.tab-sounds .layout, body.tab-vocab .layout, body.tab-sentences .layout, body.tab-deck .layout { grid-template-columns: minmax(0, 1fr); } }
   @media (min-width: 1100px) { body.tab-sentences .main { display: contents; } body.tab-sentences .side { position: static; max-height: none; overflow: visible; padding: 0; } }   /* one column, so the player stays frozen over the sentence box too */
   .sp-need { color: #B54708; font-size: 0.86rem; margin: 6px 0 0; }
   /* ---------- Saved sentences ---------- */
@@ -505,6 +543,9 @@
   .chipwrap { display: flex; }
   .chipwrap .chip { flex: 1; min-width: 0; }
   .vwrap .vrow { width: 100%; }
+  .dstar { position: absolute; top: 3px; right: 44px; border: 0; background: transparent; font-size: 1rem; line-height: 1; color: #b8a44c; opacity: .55; cursor: pointer; padding: 2px 3px; border-radius: 5px; }
+  .dstar:hover, .dstar.on, .dstar:focus-visible { opacity: 1; } .dstar.on { color: #e0a800; }
+  div.vwrap .dstar { top: 16px; right: 76px; transform: none; } .xwrap .dstar { top: 7px; right: 40px; }
   .wk { position: absolute; top: 3px; right: 4px; border: 0; background: transparent; font: 700 0.9rem/1 var(--sans);
     color: #9aa3b2; opacity: 0.3; cursor: pointer; padding: 3px 5px; border-radius: 6px; letter-spacing: -2px; z-index: 2; }
   .vwrap .wk { top: 50%; right: 10px; transform: translateY(-50%); }
@@ -660,6 +701,32 @@
 
   <div id="sections"></div>
 
+  <section class="deck-sec" id="deckSec">
+    <h2><span>My deck <span class="vcount" id="deckCount"></span></span></h2>
+    <p class="deck-sub">Your deck is the words you starred ★ plus your weak spots ↻. Every word you open is also logged under “Looked at”, so you can add it later.</p>
+    <div class="deck-bar">
+      <span class="deck-stats" id="deckStats"></span>
+      <label class="deck-mode">Cards <select id="deckMode"><option value="fm">French → meaning</option><option value="mf">Meaning → French</option></select></label>
+      <button class="play" id="deckStart" type="button">▶ Review now</button>
+    </div>
+    <div class="dcard" id="dcard" hidden>
+      <div class="dprog" id="dprog"></div>
+      <div class="dface" id="dfront"></div>
+      <div class="dface dback" id="dback" hidden></div>
+      <div class="dactions">
+        <button class="play" id="dshow" type="button">Show answer <small>(Space)</small></button>
+        <span class="dgrades" id="dgrades" hidden>
+          <button type="button" data-g="0" class="g0">Again <small></small></button><button type="button" data-g="1" class="g1">Hard <small></small></button><button type="button" data-g="2" class="g2">Good <small></small></button><button type="button" data-g="3" class="g3">Easy <small></small></button>
+        </span>
+        <button class="play loop" id="dquit" type="button">End session</button>
+      </div>
+    </div>
+    <div class="deck-tabs"><button type="button" class="on" data-t="deck" id="dtabDeck">Deck</button><button type="button" data-t="seen" id="dtabSeen">Looked at</button>
+      <input type="search" id="deckSearch" placeholder="Search…" aria-label="Search the deck">
+      <button class="gloop" id="deckBulk" type="button" hidden></button></div>
+    <div id="deckList"></div>
+  </section>
+
   <section class="vocab-sec">
     <h2><span>Vocabulary <span class="vcount" id="vcount"></span></span><button class="gloop" id="vGroupBtn" data-label="Loop list">Loop list</button></h2>
     <input type="search" id="vsearch" class="vsearch" placeholder="Search a French word or English meaning…" autocomplete="off">
@@ -764,6 +831,7 @@
 <script src="/fr-sound-words.js"></script>
 <script src="/fr-align.js"></script>
 <script src="/fr-mouth.js"></script>
+<script src="/srs.js"></script>
 <script>
 const DATA = [
   { title: "The alphabet — letter names", items: [
@@ -887,6 +955,41 @@ function makeBadge(key, what) {
   b.addEventListener("dblclick", e => e.stopPropagation());
   return b;
 }
+/* ---------- My deck: the words you look at are logged; \u2605 puts one in the deck; weak spots (\u21BB) join it automatically ---------- */
+const DECK_STORE = "fr-deck";
+let DECK = Store.cached(DECK_STORE, {}, null) || {};            // lower-case word -> { w, ipa, m, n (times looked at), first, last, star, sr (review schedule) }
+const deckListeners = [];
+let deckRefresh = () => {};                                     // set by the Deck page code below; called when weak spots change
+const deckChanged = () => deckListeners.forEach(f => { try { f(); } catch (e) {} });
+Store.load(DECK_STORE, {}, null).then(v => { v = v || {}; if (JSON.stringify(v) !== JSON.stringify(DECK)) { DECK = v; deckChanged(); refreshStars(); } });
+const deckKey = w => String(w || "").trim().toLowerCase();
+function deckSave() { Store.save(DECK_STORE, DECK); deckChanged(); }
+function deckCanon(w, ipa, m) {                                  // the list's own spelling / IPA / meaning when we have it
+  const e = typeof vocabLookup === "function" && !/\s/.test(String(w).trim()) ? vocabLookup(w) : null;
+  if (e && e[1]) return { w: e[0], ipa: e[1], m: e[2] || "" };
+  if (ipa && m && !/^my (word|sentence)/.test(m)) return { w: String(w).trim(), ipa, m };
+  return null;
+}
+function deckSeen(w, ipa, m) {                                   // called when you open a word or phrase
+  const c = deckCanon(w, ipa, m); if (!c) return;
+  const k = deckKey(c.w), now = Date.now(), r = DECK[k] || (DECK[k] = { w: c.w, ipa: c.ipa, m: c.m, n: 0, first: now });
+  r.n++; r.last = now; deckSave(); refreshStars();
+}
+function deckEnsure(w, ipa, m) { const c = deckCanon(w, ipa, m); if (!c) return null; const k = deckKey(c.w); return DECK[k] || (DECK[k] = { w: c.w, ipa: c.ipa, m: c.m, n: 0, first: Date.now(), last: Date.now() }); }
+function deckToggleStar(w, ipa, m) { const r = deckEnsure(w, ipa, m); if (!r) return; r.star = !r.star; deckSave(); refreshStars(); }
+const deckIsStar = w => !!(DECK[deckKey(w)] && DECK[deckKey(w)].star);
+function makeStar(w, ipa, m) {
+  const b = document.createElement("button"); b.type = "button"; b.className = "dstar"; b.dataset.w = w; b.dataset.ipa = ipa || ""; b.dataset.m = m || "";
+  b.addEventListener("click", e => { e.stopPropagation(); deckToggleStar(w, ipa, m); });
+  b.addEventListener("dblclick", e => e.stopPropagation());
+  paintStar(b);
+  return b;
+}
+function paintStar(b) {
+  const on = deckIsStar(b.dataset.w); b.classList.toggle("on", on); b.textContent = on ? "\u2605" : "\u2606";
+  b.title = on ? "In your deck \u2014 click to take it out" : "Add to my deck"; b.setAttribute("aria-label", b.title + ": " + b.dataset.w);
+}
+function refreshStars() { document.querySelectorAll(".dstar").forEach(paintStar); }
 /* ---------- My notes: one short text per sound, word or sentence, saved in your account ---------- */
 const NOTE_STORE = "fr-notes";
 let FRNOTES = Store.cached(NOTE_STORE, {}, null) || {};
@@ -996,6 +1099,7 @@ function refreshWeak() {
     (isSentItem(x) ? sbox : box).appendChild(b);
   });
   refreshNoteMarks();
+  deckRefresh();
 }
 
 /* ---------- letters -> sounds map: which letters make which sound, with arrows (silent letters greyed) ---------- */
@@ -1475,7 +1579,7 @@ function showExamples(item) {
       const b = document.createElement("button"); b.type = "button"; b.className = "xw";
       b.innerHTML = '<span class="xw1">' + hiWord(e[0], g[0]) + '</span><span class="xi">/' + hiIpa(e[1], item.sym) + '/</span><span class="xe">\u2248 /' + esc(FRIPA.word(e[1])) + '/</span><span class="xm">' + esc(e[2]) + "</span>";
       b.addEventListener("click", () => { selectVocab(e[0], e[1], e[2]); if (!looping) playSequence(); });
-      wrap.appendChild(b); wrap.appendChild(makeBadge("w:" + e[0], "this word"));
+      wrap.appendChild(b); wrap.appendChild(makeBadge("w:" + e[0], "this word")); wrap.appendChild(makeStar(e[0], e[1], e[2]));
       grid.appendChild(wrap);
     });
     body.appendChild(head); body.appendChild(grid);
@@ -1979,12 +2083,12 @@ function vRender(reset) {
       if (!looping) playSequence();
     });
     const vw = document.createElement("div"); vw.className = "vwrap";
-    vw.appendChild(b); vw.appendChild(makeBadge("w:" + w, "this word"));
+    vw.appendChild(b); vw.appendChild(makeBadge("w:" + w, "this word")); vw.appendChild(makeStar(w, ipa, m));
     attachNote(vw, "w:" + w, "the word " + w);
     frag.appendChild(vw);
   }
   vlist.appendChild(frag);
-  refreshWeak();
+  refreshWeak(); refreshStars();
   vShown = end;
   vmoreBtn.style.display = vShown < vFiltered.length ? "" : "none";
   vcount.textContent = vFiltered.length.toLocaleString() + " words";
@@ -2003,6 +2107,7 @@ function selectVocab(w, ipa, m) {
     if (e && e[1]) { ipa = e[1]; mapWord = e[0]; if (m === "my word" && e[2]) m = "my word \u00B7 " + e[2]; }
     else { const gs = guessEntry(w.replace(/[^\p{L}'\u2019-]/gu, "")); if (gs) { ipa = gs[1]; mapWord = gs[0]; if (m === "my word") m = "my word \u00B7 not in the list \u2014 pronunciation estimated from the spelling"; } }
   }
+  if (!looping) deckSeen(w, ipa, m);                                  // log it in "Looked at" (not while a loop is cycling through the list)
   current = { vocab: true, sym: w, word: w, hit: "", hint: m, speak: w };
   document.querySelectorAll(".chip.active").forEach(c => c.classList.remove("active"));
   bigSym.textContent = ipa ? "/" + ipa + "/" : "•";
@@ -2593,9 +2698,147 @@ refreshWeak();
   apply(); refreshNoteMarks();
 })();
 
+/* ---------- Deck page: review cards + the Deck / Looked at lists ---------- */
+(function () {
+  const $d = id => document.getElementById(id);
+  let tab = "deck", S = null;
+  const ivLabel = d => d < 1 ? "10 min" : d < 30 ? Math.round(d) + " d" : d < 365 ? Math.round(d / 30) + " mo" : (d / 365).toFixed(1) + " y";
+  const isDue = r => r.sr && r.sr.due <= Date.now();
+
+  function cards() {                                           // starred words + weak-spot words
+    const out = new Map();
+    Object.keys(DECK).forEach(k => { if (DECK[k].star) out.set(k, { r: DECK[k], star: true, weak: 0, wkey: null }); });
+    Object.keys(WEAK).forEach(key => {
+      if (key.slice(0, 2) !== "w:") return;
+      const w = key.slice(2), k = deckKey(w); let r = DECK[k];
+      if (!r) { const c = deckCanon(w, "", ""); if (!c) return; r = { w: c.w, ipa: c.ipa, m: c.m, n: 0, first: Date.now(), last: 0, virtual: true }; }
+      const o = out.get(k) || { r, star: false, weak: 0 }; o.weak = WEAK[key]; o.wkey = key; out.set(k, o);
+    });
+    return [...out.values()];
+  }
+  const materialize = r => { if (r.virtual) { delete r.virtual; DECK[deckKey(r.w)] = r; } };
+  const speak = w => { haltAll(); speakOnce(String(w).toLowerCase()); };
+  const weakOf = r => WEAK["w:" + r.w] || WEAK["w:" + deckKey(r.w)] || 0;
+
+  /* ---------- the lists ---------- */
+  function rowHtml(c, kind) {
+    const r = c.r, due = r.sr ? SRS.dueLabel(r) : { cls: "new", text: "new" };
+    return '<div class="drow" data-k="' + esc(deckKey(r.w)) + '"><div><span class="w">' + esc(r.w) + '</span><span class="i">/' + esc(r.ipa) + '/</span>'
+      + (kind === "deck" ? '<span class="tag ' + (due.cls === "now" ? "due" : "") + '">' + esc(due.text) + "</span>" + (c.weak ? '<span class="tag weak">' + "↻".repeat(c.weak) + "</span>" : "") : "")
+      + '<span class="meta">looked at ' + (r.n || 0) + "×" + (r.last ? " · " + new Date(r.last).toLocaleDateString([], { day: "numeric", month: "short" }) : "") + '</span></div>'
+      + '<div class="m">' + esc(r.m || "") + '</div><div class="btns"><button type="button" data-a="say" title="Hear it">🔊</button>'
+      + (kind === "deck" ? '<button type="button" data-a="star" class="' + (r.star ? "on" : "") + '" title="' + (r.star ? "Starred" : "Add a star") + '">' + (r.star ? "★" : "☆") + '</button><button type="button" data-a="out" title="Take it out of the deck' + (c.weak ? " (also clears its ↻ mark)" : "") + '">✕</button>'
+                         : '<button type="button" data-a="add" title="Add to my deck">☆ Add</button><button type="button" data-a="forget" title="Forget this word from the history">✕</button>') + "</div></div>";
+  }
+  function seenList() {
+    const inDeck = new Set(cards().map(c => deckKey(c.r.w)));
+    return Object.values(DECK).filter(r => !r.star && !inDeck.has(deckKey(r.w)) && r.n > 0).sort((a, b) => (b.last || 0) - (a.last || 0));
+  }
+  function renderAll() {
+    if (!$d("deckSec")) return;
+    const cs = cards(), dueN = cs.filter(c => isDue(c.r)).length, newN = cs.filter(c => !c.r.sr).length, seen = seenList();
+    $d("deckCount").textContent = cs.length ? "(" + cs.length + ")" : "";
+    $d("deckStats").innerHTML = cs.length ? "<b>" + dueN + "</b> due · <b>" + newN + "</b> new · " + cs.length + " cards" : "No cards yet";
+    $d("deckStart").disabled = !dueN && !newN;
+    $d("dtabDeck").textContent = "Deck (" + cs.length + ")"; $d("dtabSeen").textContent = "Looked at (" + seen.length + ")";
+    const q = $d("deckSearch").value.trim().toLowerCase(), hit = r => !q || (r.w + " " + (r.m || "")).toLowerCase().indexOf(q) >= 0;
+    const box = $d("deckList"), bulk = $d("deckBulk");
+    if (tab === "deck") {
+      bulk.hidden = true;
+      const list = cs.filter(c => hit(c.r)).sort((a, b) => (a.r.sr ? a.r.sr.due : 0) - (b.r.sr ? b.r.sr.due : 0));
+      box.innerHTML = list.length ? list.map(c => rowHtml(c, "deck")).join("") : '<div class="deck-empty">' + (cs.length ? "No card matches." : "Your deck is empty. Click ☆ on a word in the Vocabulary list or in a sound’s examples, or mark it ↻ — or add words from “Looked at”.") + "</div>";
+    } else {
+      const list = seen.filter(hit), many = seen.filter(r => r.n >= 2).length;
+      bulk.hidden = !many; bulk.textContent = "★ Add all looked at 2+ times (" + many + ")";
+      box.innerHTML = list.slice(0, 300).map(r => rowHtml({ r, weak: 0 }, "seen")).join("") || '<div class="deck-empty">' + (seen.length ? "No word matches." : "Words you open in Vocabulary or in a sound’s examples appear here.") + "</div>";
+    }
+  }
+  deckRefresh = renderAll;
+  deckListeners.push(renderAll);
+  $d("deckSearch").addEventListener("input", renderAll);
+  document.querySelectorAll(".deck-tabs > button[data-t]").forEach(b => b.addEventListener("click", () => {
+    tab = b.dataset.t; document.querySelectorAll(".deck-tabs > button[data-t]").forEach(x => x.classList.toggle("on", x === b)); renderAll();
+  }));
+  $d("deckBulk").addEventListener("click", () => { seenList().filter(r => r.n >= 2).forEach(r => { r.star = true; }); deckSave(); refreshStars(); });
+  $d("deckList").addEventListener("click", e => {
+    const b = e.target.closest("button[data-a]"); if (!b) return;
+    const row = b.closest(".drow"), r = DECK[row.dataset.k] || (cards().find(c => deckKey(c.r.w) === row.dataset.k) || {}).r; if (!r) return;
+    const a = b.dataset.a;
+    if (a === "say") speak(r.w);
+    else if (a === "star") { materialize(r); r.star = !r.star; deckSave(); refreshStars(); }
+    else if (a === "add") { r.star = true; deckSave(); refreshStars(); }
+    else if (a === "forget") { delete DECK[deckKey(r.w)]; deckSave(); refreshStars(); }
+    else if (a === "out") {
+      r.star = false; const wk = Object.keys(WEAK).find(k => k.slice(0, 2) === "w:" && deckKey(k.slice(2)) === deckKey(r.w));
+      if (wk) setWeak(wk, 0); materialize(r); deckSave(); refreshStars();
+    }
+  });
+
+  /* ---------- the review session ---------- */
+  function startSession() {
+    const cs = cards();
+    const due = cs.filter(c => isDue(c.r)).sort((a, b) => a.r.sr.due - b.r.sr.due);
+    const fresh = cs.filter(c => !c.r.sr).sort((a, b) => (b.r.last || 0) - (a.r.last || 0)).slice(0, 20);
+    S = { q: due.concat(fresh).map(c => c.r), done: 0, total: due.length + fresh.length, shown: false };
+    $d("dcard").hidden = false; next();
+  }
+  function endSession(msg) {
+    S = null; haltAll();
+    if (msg) { $d("dcard").hidden = false; $d("dprog").textContent = ""; $d("dfront").innerHTML = '<div class="mean">' + msg + "</div>"; $d("dback").hidden = true; $d("dshow").hidden = true; $d("dgrades").hidden = true; $d("dquit").textContent = "Close"; }
+    else $d("dcard").hidden = true;
+    renderAll();
+  }
+  function next() {
+    if (!S) return;
+    if (!S.q.length) {
+      const nx = cards().filter(c => c.r.sr).map(c => c.r.sr.due).sort((a, b) => a - b)[0], done = S.done;
+      endSession("🎉 Session complete — " + done + " card" + (done === 1 ? "" : "s") + " reviewed." + (nx ? " The next one is due " + SRS.dueLabel({ sr: { due: nx } }).text + "." : "")); return;
+    }
+    const r = S.q[0], mode = $d("deckMode").value;
+    S.shown = false; $d("dquit").textContent = "End session"; $d("dshow").hidden = false; $d("dgrades").hidden = true; $d("dback").hidden = true;
+    $d("dprog").textContent = S.done + " done · " + S.q.length + " left";
+    $d("dfront").innerHTML = mode === "fm"
+      ? '<div class="big">' + esc(r.w) + '</div><button type="button" class="say" id="dsay">🔊 Hear it</button>'
+      : '<div class="mean">' + esc(r.m || "?") + '</div><div class="meta">What is the French word?</div>';
+    const sb = $d("dsay"); if (sb) sb.onclick = () => speak(r.w);
+    if (mode === "fm") setTimeout(() => { if (S && S.q[0] === r && !S.shown) speak(r.w); }, 200);
+  }
+  function reveal() {
+    if (!S || S.shown || !S.q.length) return;
+    const r = S.q[0], mode = $d("deckMode").value, wk = weakOf(r); S.shown = true;
+    $d("dback").innerHTML = (mode === "fm" ? '<div class="mean">' + esc(r.m || "") + "</div>" : '<div class="big">' + esc(r.w) + '</div><button type="button" class="say" id="dsay2">🔊 Hear it</button>')
+      + '<div class="ipa">/' + esc(r.ipa) + '/</div><div class="en">≈ English /' + esc(FRIPA.word(r.ipa)) + '/</div><div class="lmap spmap dmap" id="dmap"></div>'
+      + '<div class="meta">looked at ' + (r.n || 0) + "×" + (wk ? " · weak spot " + "↻".repeat(wk) : "") + "</div>";
+    renderSentenceMap($d("dmap"), r.w); $d("dback").hidden = false; $d("dshow").hidden = true; $d("dgrades").hidden = false;
+    $d("dgrades").querySelectorAll("button").forEach(b => { b.querySelector("small").textContent = ivLabel(SRS.schedule({ sr: r.sr, hard: wk }, +b.dataset.g).days); });
+    const s2 = $d("dsay2"); if (s2) s2.onclick = () => speak(r.w);
+    speak(r.w);
+  }
+  function grade(g) {
+    if (!S || !S.shown) return;
+    const r = S.q.shift(), st = SRS.schedule({ sr: r.sr, hard: weakOf(r) }, g);
+    r.sr = { ease: st.ease, iv: st.iv, reps: st.reps, lapses: st.lapses, due: st.due, last: Date.now() };
+    materialize(r); deckSave();
+    if (g === 0) S.q.push(r); else S.done++;                       // "Again": it comes back later in this session
+    next();
+  }
+  $d("deckStart").addEventListener("click", startSession);
+  $d("dshow").addEventListener("click", reveal);
+  $d("dgrades").addEventListener("click", e => { const b = e.target.closest("button[data-g]"); if (b) grade(+b.dataset.g); });
+  $d("dquit").addEventListener("click", () => endSession(""));
+  $d("deckMode").addEventListener("change", () => { if (S) next(); });
+  document.addEventListener("keydown", e => {
+    if (!S || !document.body.classList.contains("tab-deck") || /^(INPUT|TEXTAREA|SELECT)$/.test((e.target || {}).tagName || "")) return;
+    if (e.key === " " && !S.shown) { e.preventDefault(); reveal(); }
+    else if (S.shown && /^[1-4]$/.test(e.key)) { e.preventDefault(); grade(+e.key - 1); }
+  });
+  window.addEventListener("hashchange", () => { if (S && location.hash !== "#deck") endSession(""); });
+  renderAll(); refreshStars();
+})();
+
 /* ---------- French sub-tabs: Sounds | Vocabulary | Sentences (#sounds / #vocab / #sentences, last one used is remembered) ---------- */
 (function () {
-  const TABS = ["sounds", "vocab", "sentences"], KEY = "fr-subtab";
+  const TABS = ["sounds", "vocab", "sentences", "deck"], KEY = "fr-subtab";
   function current() {
     const t = location.hash.replace("#", ""); if (TABS.includes(t)) return t;
     try { const s = localStorage.getItem(KEY); if (TABS.includes(s)) return s; } catch (e) {}
@@ -2603,7 +2846,7 @@ refreshWeak();
   }
   function apply() {
     const t = current();
-    document.body.classList.toggle("tab-sounds", t === "sounds"); document.body.classList.toggle("tab-vocab", t === "vocab"); document.body.classList.toggle("tab-sentences", t === "sentences");
+    document.body.classList.toggle("tab-sounds", t === "sounds"); document.body.classList.toggle("tab-vocab", t === "vocab"); document.body.classList.toggle("tab-sentences", t === "sentences"); document.body.classList.toggle("tab-deck", t === "deck");
     document.querySelectorAll("#frSub a").forEach(a => { const on = a.dataset.t === t; a.classList.toggle("on", on); if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
     document.querySelectorAll("#modtabs .mt-menu a[data-fr]").forEach(a => a.classList.toggle("cur", a.dataset.fr === t));
     try { localStorage.setItem(KEY, t); } catch (e) {}
