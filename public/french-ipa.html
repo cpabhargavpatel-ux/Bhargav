@@ -326,6 +326,7 @@
   body:not(.show-anc) .chip .pn, body:not(.show-anc) .current-hint .psay, body:not(.show-anc) .xh .xsay { display: none !important; }      /* tick: English sounds (ee, sh...) */
   body:not(.show-tanc) .chip .anc, body:not(.show-tanc) .anbtn, body:not(.show-tanc) .anplay, body:not(.show-tanc) .anline { display: none !important; }   /* tick: English anchor words (+ speakers) */
   .lmap.spmap { flex-wrap: wrap; gap: 10px 10px; margin: 12px 0 2px; padding: 8px 6px; border: 1px solid var(--rule); border-radius: 8px; background: #fff; }
+  .lmap.multi { flex-wrap: wrap; gap: 6px 8px; max-width: 36rem; }
   .lm-w { display: flex; gap: 3px; align-items: flex-start; padding: 5px 8px; border-radius: 8px; background: #f4f6fb; }
   .lm-w.miss { align-self: flex-start; }
   .lm-w.guess { background: #fffaf0; box-shadow: inset 0 0 0 1.5px #e3c15f; }   /* a word that is not in the list: sounds estimated from its spelling */
@@ -989,7 +990,7 @@ function drawUnits(parent, units) {
 }
 function renderMap(word, ipa) {
   const box = document.getElementById("lmap"); if (!box) return;
-  box.textContent = ""; box.dataset.src = word || "";
+  box.classList.remove("multi"); box.textContent = ""; box.dataset.src = word || "";
   const units = word && ipa && window.FRALIGN ? FRALIGN.align(word, ipa) : null;
   if (!units) { box.hidden = true; return; }
   drawUnits(box, units);
@@ -1129,7 +1130,7 @@ function karaokeStart(text, rate) {
   const want = normTxt(text);
   const box = [document.getElementById("lmap"), document.getElementById("spMap")].find(b => b && !b.hidden && b.dataset.src && normTxt(b.dataset.src) === want && b.offsetParent !== null);
   if (!box) return null;
-  const sent = box.classList.contains("spmap");
+  const sent = box.classList.contains("spmap") || box.classList.contains("multi");
   const words = (sent ? [...box.querySelectorAll(".lm-w:not(.miss)")] : [box]).map(g => ({
     g, tok: g.dataset.t == null ? -1 : +g.dataset.t,
     sounds: [...g.querySelectorAll("i[data-s]")],
@@ -1889,7 +1890,9 @@ function selectVocab(w, ipa, m) {
   bigWord.textContent = w;
   bigHint.textContent = m;
   $("bigEn").innerHTML = ipa ? "\u2248 English <b>" + enSlash(FRIPA.word(ipa)) + "</b>" : "";
-  renderMap(mapWord, ipa);
+  const nw = w.trim().split(/\s+/).length, lm = $("lmap");
+  if (nw > 1 && nw <= 5) { renderSentenceMap(lm, w); lm.classList.add("multi"); }     // a short phrase (vous parlez): one map per word
+  else { lm.classList.remove("multi"); renderMap(mapWord, ipa); }
   noteShow(); refreshNoteMarks();
 }
 
