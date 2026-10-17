@@ -541,6 +541,8 @@
     background: #fff; cursor: pointer; font-family: var(--serif); font-size: 1.05rem; }
   .wk-item:hover { background: var(--blue-tint); }
   .wk-item small { font: 700 0.85rem/1 var(--sans); letter-spacing: -2px; }
+  .wk-item .wk-x { margin-left: 2px; padding: 0 5px; border-radius: 50%; font: 700 0.8rem/1.5 var(--sans); color: #9aa0ae; cursor: pointer; }
+  .wk-item .wk-x:hover, .wk-item .wk-x:focus-visible { background: #fde8e8; color: #B4331F; outline: none; }
   .wk-item[data-l="1"] { border-color: #e9c77a; } .wk-item[data-l="1"] small { color: #A56A00; }
   .wk-item[data-l="2"] { border-color: #f0a56b; } .wk-item[data-l="2"] small { color: #C25A0E; }
   .wk-item[data-l="3"] { border-color: #e57373; } .wk-item[data-l="3"] small { color: #C62828; }
@@ -964,7 +966,7 @@ function refreshWeak() {
   if (!box) return;
   document.getElementById("weakCount").textContent = list.length ? "(" + list.length + ")" : "";
   document.getElementById("weakSub").textContent = list.length
-    ? "The weakest are practised most. Tap a mark again to raise it, or cycle it off."
+    ? "The weakest are practised most. Tap a mark to raise it; \u2715 removes one from this list."
     : "Tap the \u21BB on any sound or word you find hard. \u21BB weak, \u21BB\u21BB weaker, \u21BB\u21BB\u21BB weakest \u2014 the weakest get repeated most.";
   document.getElementById("weakLoop").hidden = document.getElementById("weakClear").hidden = !list.length;
   const sbox = document.getElementById("weakSent");
@@ -980,6 +982,11 @@ function refreshWeak() {
     b.querySelector(".wk-en").textContent = wen ? "\u2248 /" + wen + "/" : "";
     b.title = "Play it \u00B7 " + WEAK_NAME[x.lvl];
     b.addEventListener("click", () => { applyItem(x.item); if (!looping) playSequence(); });
+    const rm = document.createElement("span"); rm.className = "wk-x"; rm.setAttribute("role", "button"); rm.tabIndex = 0; rm.textContent = "\u2715";
+    rm.title = "Remove from weak spots"; rm.setAttribute("aria-label", "Remove " + label + " from weak spots");
+    const drop = e => { e.stopPropagation(); e.preventDefault(); setWeak(x.key, 0); };
+    rm.addEventListener("click", drop); rm.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") drop(e); });
+    b.appendChild(rm);
     (isSentItem(x) ? sbox : box).appendChild(b);
   });
   refreshNoteMarks();
