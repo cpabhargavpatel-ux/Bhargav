@@ -687,10 +687,15 @@
         <input type="range" id="spGap" min="0" max="8" step="0.5" value="3">
         <output id="spGapOut" for="spGap">3 s</output>
       </div>
+      <div class="slider-group">
+        <label for="spRate">Speed</label>
+        <input type="range" id="spRate" min="0.25" max="1" step="0.05" value="0.85">
+        <output id="spRateOut" for="spRate">0.85×</output>
+      </div>
     </div>
     <p class="sp-need" id="spNeed" hidden>A sentence needs two or more words. For a single word, use the Vocabulary tab.</p>
     <p class="sp-status" id="spStatus"></p>
-    <p class="sp-note" style="margin:2px 0 0">Uses the Voice and Speed set in the player above.</p>
+    <p class="sp-note" style="margin:2px 0 0">Uses the Voice set in the player above. Speed here and in the player are the same setting.</p>
 
     <div class="sp-mine">
       <div class="sp-row" style="margin-top:0">
@@ -2182,6 +2187,11 @@ refreshWeak();
   renderSaved();
   reps.addEventListener("input", () => { $("spRepsOut").textContent = reps.value + "×"; });
   gp.addEventListener("input", () => { $("spGapOut").textContent = gp.value + " s"; });
+  /* Speed: the same setting as the player's Speed slider, kept in step both ways */
+  { const sr = $("spRate"), fmtR = v => parseFloat(v).toFixed(2).replace(/0$/, "") + "\u00D7";
+    const pull = () => { sr.value = rate.value; $("spRateOut").textContent = fmtR(rate.value); };
+    sr.addEventListener("input", () => { rate.value = sr.value; $("spRateOut").textContent = fmtR(sr.value); rate.dispatchEvent(new Event("input")); });
+    rate.addEventListener("input", pull); pull(); }
 
   /* --- speak with repetition --- */
   let tok = 0, looping = false;
