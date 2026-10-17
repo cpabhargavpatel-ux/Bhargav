@@ -326,6 +326,7 @@
   .lmap.spmap { flex-wrap: wrap; gap: 10px 10px; margin: 12px 0 2px; padding: 8px 6px; border: 1px solid var(--rule); border-radius: 8px; background: #fff; }
   .lm-w { display: flex; gap: 3px; align-items: flex-start; padding: 5px 8px; border-radius: 8px; background: #f4f6fb; }
   .lm-w.miss { align-self: flex-start; }
+  .lm-w.guess { background: #fffaf0; box-shadow: inset 0 0 0 1.5px #e3c15f; }   /* a word that is not in the list: sounds estimated from its spelling */
   .lm-w.miss .lm-l { color: #8a8f99; font-style: italic; border-bottom: 1px dashed #c8ccd4; }
   /* follow-along: the word / sound being spoken right now */
   .lm-w.now { background: #fff2c2; box-shadow: 0 0 0 2px #f0b429; }
@@ -975,6 +976,91 @@ function renderMap(word, ipa) {
   box.hidden = false;
 }
 /* a whole sentence: every word gets its own letters -> sounds map, looked up in the vocabulary lists (l\u2019homme and est-ce are split at the ' or -) */
+/* rule-based French pronouncer for words that are not in the lists: spelling -> IPA (an estimate) */
+function frG2P(raw) {
+  const w = String(raw || "").normalize("NFC").toLowerCase().replace(/[^\p{L}]/gu, "");
+  if (!w) return "";
+  const n = w.length, V = "aeiouyàâäéèêëîïôöùûüœæ", isV = c => !!c && V.includes(c), at = k => w[k] || "";
+  let lim = n;
+  while (lim > 2 && ("stdxp".includes(w[lim - 1]) || (w[lim - 1] === "z" && w[lim - 2] === "e") || (w[lim - 1] === "g" && w[lim - 2] === "n") || (w[lim - 1] === "c" && w[lim - 2] === "n")) && !(w[lim - 1] === "s" && w[lim - 2] === "u")) lim--;
+  if (lim > 2 && w[lim - 1] === "e") lim--;
+  const nasalOK = j => (at(j) === "n" || at(j) === "m") && !isV(at(j + 1)) && at(j + 1) !== at(j) && at(j + 1) !== "n" && at(j + 1) !== "m";
+  let i = 0, out = "";
+  const take = (k, s) => { out += s; i += k; };
+  while (i < lim) {
+    const c = w[i], p = at(i - 1), nx = at(i + 1), s2 = w.substr(i, 2), s3 = w.substr(i, 3), nl = i + 1 < lim ? nx : "";
+    const mj = /^(ou|eu|\u0153u|a|e|u|o)ill/.exec(w.slice(i));
+    if (mj) { take(mj[0].length, ({ ou: "u", eu: "\u0153", "\u0153u": "\u0153", a: "a", e: "\u025B", u: "\u0265i", o: "\u0254" })[mj[1]] + "j"); continue; }
+    // --- vowel groups
+    if (s3 === "eau") { take(3, "o"); continue; }
+    if (s3 === "ill" && isV(p) && p !== "") { take(3, "j"); continue; }                    // travail-ler: aill, eill, ouill
+    if (s3 === "ill" && !isV(p) && i > 0) { take(3, "ij"); continue; }                  // fille
+    if (s2 === "au") { take(2, "o"); continue; }
+    if (s3 === "oin" && nasalOK(i + 2)) { take(3, "wɛ̃"); continue; }
+    if (s2 === "oi") { take(2, "wa"); continue; }
+    if (c === "o" && nx === "y" && isV(at(i + 2))) { take(2, "waj"); continue; }
+    if (s2 === "ou") { take(2, "u"); continue; }
+    if (s2 === "eu" || s2 === "œu") { take(2, (i + 2 >= lim || (at(i + 2) === "s" && i + 3 >= n) || w.substr(i + 2, 2) === "se") ? "ø" : "œ"); continue; }
+    if (s2 === "ui") { take(2, "ɥi"); continue; }
+    if ((s3 === "ain" || s3 === "aim" || s3 === "ein" || s3 === "eim") && nasalOK(i + 2)) { take(3, "ɛ̃"); continue; }
+    if ((s3 === "ien" || s3 === "yen") && nasalOK(i + 2) && i > 0) { take(3, "jɛ̃"); continue; }
+    if (s2 === "ai" || s2 === "ei") { take(2, i + 2 === n ? "e" : "ɛ"); continue; }
+    if (s3 === "tio" && at(i + 3) === "n" && i > 0) { take(2, "sj"); continue; }
+    if ((s2 === "an" || s2 === "am" || s2 === "en" || s2 === "em") && nasalOK(i + 1)) { take(2, (c === "e" && (p === "é" || p === "i")) ? "ɛ̃" : "ɑ̃"); continue; }
+    if ((s2 === "in" || s2 === "im" || s2 === "yn" || s2 === "ym") && nasalOK(i + 1)) { take(2, "ɛ̃"); continue; }
+    if ((s2 === "un" || s2 === "um") && nasalOK(i + 1)) { take(2, "œ̃"); continue; }
+    if ((s2 === "on" || s2 === "om") && nasalOK(i + 1)) { take(2, "ɔ̃"); continue; }
+    if ((c === "e") && ((s2 === "er" && i + 2 === lim && lim > 3) || (s2 === "ez" && i + 2 >= n))) { take(2, "e"); continue; }
+    if (c === "e") {
+      let r;
+      if (i + 1 >= lim) r = (at(lim) === "t" && lim + 1 === n && lim > 1) ? "ɛ" : "ə";   // -et is /ɛ/
+      else if ("bcdfgkptv".includes(nx) && nx !== "" && at(i + 2) !== "" && "rl".includes(at(i + 2)) && i + 3 <= lim) r = "\u0259";   // stop + r/l starts the next syllable (re-cruter)
+      else if (!isV(nx) && nx === at(i + 2) && nx !== "") r = "ɛ";                      // double consonant
+      else if (!isV(nx) && !isV(at(i + 2)) && at(i + 2) !== "" && !(nx === "s" && i + 2 >= lim)) r = "ɛ";   // two consonants
+      else if (!isV(nx) && i + 2 >= lim && nx !== "h") r = "ɛ";                          // final consonant that is pronounced
+      else if (nx === "x") r = "ɛ";
+      else r = "ə";                                                                      // open syllable
+      take(1, r); continue;
+    }
+    if (c === "é") { take(1, "e"); continue; }
+    if (c === "è" || c === "ê" || c === "ë") { take(1, "ɛ"); continue; }
+    if (c === "a" || c === "à" || c === "â" || c === "ä") { take(1, "a"); continue; }
+    if (c === "i" && isV(nl) && i > 0 && !isV(p)) { take(1, "j"); continue; }
+    if (c === "y" && isV(nl) && i > 0) { take(1, "j"); continue; }
+    if (c === "i" || c === "î" || c === "ï" || c === "y") { take(1, "i"); continue; }
+    if (c === "ô") { take(1, "o"); continue; }
+    if (c === "o") { take(1, (i + 1 >= lim || (nx === "s" && isV(at(i + 2))) || (nx === "z")) ? "o" : "ɔ"); continue; }
+    if (c === "u") { take(1, "y"); continue; }
+    if (c === "û" || c === "ù" || c === "ü") { take(1, "y"); continue; }
+    if (c === "œ") { take(1, "œ"); continue; }
+    if (c === "æ") { take(1, "e"); continue; }
+    // --- consonants
+    if (s2 === "ch") { take(2, "ʃ"); continue; }
+    if (s2 === "ph") { take(2, "f"); continue; }
+    if (s2 === "th") { take(2, "t"); continue; }
+    if (s2 === "gn") { take(2, "ɲ"); continue; }
+    if (s2 === "sh") { take(2, "ʃ"); continue; }
+    if (s2 === "qu") { take(2, "k"); continue; }
+    if (s2 === "gu" && "eiyéèê".includes(at(i + 2))) { take(2, "g"); continue; }
+    if (s2 === "ck") { take(2, "k"); continue; }
+    if (s2 === "sc" && "eiyéèê".includes(at(i + 2))) { take(2, "s"); continue; }
+    if (s2 === "cc" && "eiyéèê".includes(at(i + 2))) { take(2, "ks"); continue; }
+    if (c === "c") { take(nx === "c" ? 2 : 1, ("eiyéèê".includes(nx)) ? "s" : "k"); continue; }
+    if (c === "ç") { take(1, "s"); continue; }
+    if (c === "g") { take(1, ("eiyéèê".includes(nx)) ? "ʒ" : "g"); continue; }
+    if (c === "j") { take(1, "ʒ"); continue; }
+    if (c === "h") { take(1, ""); continue; }
+    if (c === "s") { take(nx === "s" ? 2 : 1, (isV(p) && isV(nx) && nx !== "") ? "z" : "s"); continue; }
+    if (c === "x") { take(1, (p === "e" && isV(nx) && i === 1) ? "gz" : "ks"); continue; }
+    if (c === "w") { take(1, "v"); continue; }
+    if (c === "r") { take(nx === "r" ? 2 : 1, "ʁ"); continue; }
+    if (c === "k") { take(1, "k"); continue; }
+    if ("bdfklmnpqtvz".includes(c)) { take(nx === c ? 2 : 1, c === "q" ? "k" : c); continue; }
+    take(1, "");
+  }
+  return out;
+}
+const guessEntry = w => { const ipa = w.length > 1 ? frG2P(w) : ""; if (!ipa) return null; const e = [w.toLowerCase(), ipa, ""]; e.guess = true; return e; };   // [word, ipa, meaning] marked as an estimate
 const CLITIC = { l: "l", d: "d", s: "s", j: "\u0292", m: "m", t: "t", n: "n", c: "s", qu: "k", jusqu: "\u0292ysk", lorsqu: "l\u0254\u0281sk", puisqu: "p\u0265isk" };   // the short words before an apostrophe
 function lookupLoose(w) {                       // exact word, else the same word without a circumflex (plait for pla\u00EEt: same sound)
   const e = vocabLookup(w); if (e && e[1]) return e;
@@ -990,8 +1076,8 @@ function sentenceParts(text) {
     const whole = lookupLoose(clean);
     if (whole) { out.push({ w: clean, e: whole, t: ti }); return; }
     const bits = clean.split(/[\u2019'\-]/).filter(Boolean);
-    if (bits.length > 1) bits.forEach((b, i) => { const lc = b.toLowerCase(), e = (i < bits.length - 1 && CLITIC[lc] != null && /[\u2019']/.test(clean.charAt(clean.indexOf(b) + b.length))) ? [lc, CLITIC[lc], ""] : lookupLoose(b); out.push({ w: b, e: e && e[1] ? e : null, t: ti }); });
-    else out.push({ w: clean, e: null, t: ti });
+    if (bits.length > 1) bits.forEach((b, i) => { const lc = b.toLowerCase(), e = (i < bits.length - 1 && CLITIC[lc] != null && /[\u2019']/.test(clean.charAt(clean.indexOf(b) + b.length))) ? [lc, CLITIC[lc], ""] : lookupLoose(b); out.push({ w: b, e: e && e[1] ? e : guessEntry(b), t: ti }); });
+    else out.push({ w: clean, e: guessEntry(clean), t: ti });
   });
   return out;
 }
@@ -1003,7 +1089,7 @@ function renderSentenceMap(box, text) {
   parts.forEach(pt => {
     const g = document.createElement("div"), units = alignPart(pt);
     g.dataset.t = pt.t;
-    if (units) { g.className = "lm-w"; drawUnits(g, units); any = true; if (pt.e[2]) g.title = pt.w + " \u2014 " + pt.e[2]; }
+    if (units) { g.className = "lm-w" + (pt.e.guess ? " guess" : ""); drawUnits(g, units); any = true; g.title = pt.e.guess ? "\u201C" + pt.w + "\u201D is not in the word list \u2014 its sounds are estimated from the spelling" : (pt.e[2] ? pt.w + " \u2014 " + pt.e[2] : ""); }
     else { g.className = "lm-w miss"; g.title = "No pronunciation data for \u201C" + pt.w + "\u201D"; g.innerHTML = '<span class="lm-l">' + esc(pt.w) + "</span>"; }
     box.appendChild(g);
   });
@@ -1767,7 +1853,11 @@ function vocabLookup(w) {
 }
 function selectVocab(w, ipa, m) {
   let mapWord = /\s/.test(w) ? "" : w;
-  if (!ipa && !/\s/.test(w.trim())) { const e = vocabLookup(w); if (e && e[1]) { ipa = e[1]; mapWord = e[0]; if (m === "my word" && e[2]) m = "my word \u00B7 " + e[2]; } }
+  if (!ipa && !/\s/.test(w.trim())) {
+    const e = vocabLookup(w);
+    if (e && e[1]) { ipa = e[1]; mapWord = e[0]; if (m === "my word" && e[2]) m = "my word \u00B7 " + e[2]; }
+    else { const gs = guessEntry(w.replace(/[^\p{L}'\u2019-]/gu, "")); if (gs) { ipa = gs[1]; mapWord = gs[0]; if (m === "my word") m = "my word \u00B7 not in the list \u2014 pronunciation estimated from the spelling"; } }
+  }
   current = { vocab: true, sym: w, word: w, hit: "", hint: m, speak: w };
   document.querySelectorAll(".chip.active").forEach(c => c.classList.remove("active"));
   bigSym.textContent = ipa ? "/" + ipa + "/" : "•";
