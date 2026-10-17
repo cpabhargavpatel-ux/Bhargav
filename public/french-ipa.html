@@ -304,7 +304,9 @@
   /* ---------- letters -> sounds map (beside the word in the player) ---------- */
   .lmap { display: flex; align-items: flex-start; gap: 3px; flex: 0 1 auto; padding: 2px 4px; }
   .lmap[hidden] { display: none; }
-  body.no-map .lmap { display: none; }
+  body.no-map .lm-sc i, body.no-map .lm-a { display: none; }                 /* "French sounds" unticked: only the letters (and the English row, if ticked) */
+  body.no-map:not(.show-anc) .lmap { display: none; }                        /* nothing left to map: hide it */
+  body.no-map .lm-ar { margin-top: 5px; }
   .lm-u { display: flex; flex-direction: column; align-items: center; flex: none; }
   .lm-l { font: 600 1.25rem/1.1 var(--serif); color: var(--ink, #222); padding: 0 4px; border-bottom: 2px solid var(--blue, #2540d9); }
   .lm-u.sil .lm-l { color: #aab0bd; border-bottom-color: #d4d8e2; text-decoration: line-through; text-decoration-color: #c4c9d6; font-weight: 400; }
@@ -605,13 +607,13 @@
         <select id="voiceSel"></select>
         <span class="optgrp" role="group" aria-label="What to show"><span class="optlab">Show</span>
           <label class="enlab" title="Show the closest English IPA next to every French IPA"><input type="checkbox" id="enToggle" checked> English IPA ≈</label>
-          <label class="enlab" title="Show which letters make which sound, with arrows"><input type="checkbox" id="mapToggle" checked> Letters → sounds</label>
-          <label class="enlab" title="Under each French sound, show an arrow to the English sound (ee, sh, eh…)"><input type="checkbox" id="ancToggle" checked> English sounds ↓</label>
+          <label class="enlab" title="Under the letters of the word, show the French sound each one makes (IPA)"><input type="checkbox" id="mapToggle" checked> French sounds</label>
+          <label class="enlab" title="Under each French sound, show an arrow to the English sound (ee, sh, eh…)"><input type="checkbox" id="ancToggle" checked> English sounds</label>
           <label class="enlab" title="On each sound tile (and under the player): the English word that has the sound, with a speaker to hear it"><input type="checkbox" id="tancToggle" checked> Anchor words</label>
         </span>
         <span class="optgrp" role="group" aria-label="What to highlight while the voice speaks"><span class="optlab">Highlight</span>
           <label class="enlab" title="While the voice speaks, light up the French sound (and its letters, and the word in a sentence) being said"><input type="checkbox" id="hlToggle" checked> French</label>
-          <label class="enlab" title="While the voice speaks, light up the English sound under the French sound being said (needs English sounds ↓ ticked)"><input type="checkbox" id="hlenToggle" checked> English</label>
+          <label class="enlab" title="While the voice speaks, light up the English sound under the French sound being said (needs English sounds ticked)"><input type="checkbox" id="hlenToggle" checked> English</label>
         </span>
         <button class="notebtn" id="noteBtn" type="button" aria-expanded="false" aria-controls="noteBox" title="Write your own note about the sound or word shown above">📝 Notes</button>
       </div>
