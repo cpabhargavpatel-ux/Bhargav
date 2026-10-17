@@ -702,9 +702,10 @@
         <button class="play rec" id="spRec">● Record my voice</button>
         <button class="play loop" id="spPractice" title="Hear the sentence, then it records you automatically — and repeats">🔁 Practice loop</button>
         <div class="slider-group">
-          <label for="spRecT">Record time</label>
-          <input type="range" id="spRecT" min="2" max="15" step="1" value="6">
+          <label for="spRecT" title="The longest a recording runs before it stops by itself (■ stops it earlier)">Record up to</label>
+          <input type="range" id="spRecT" min="2" max="20" step="1" value="6">
           <output id="spRecTOut" for="spRecT">6 s</output>
+          <label class="enlab" style="margin-left:6px" title="Work out the recording time from the length of the sentence and the speed"><input type="checkbox" id="spRecAuto" checked> Auto</label>
         </div>
         <span class="sp-status" id="spRecStatus" style="margin:0"></span>
       </div>
@@ -723,7 +724,7 @@
       </div>
       <details class="sp-note">
         <summary>How it works</summary>
-        <p style="margin-top:6px"><b>Practice loop:</b> it says the sentence <b>Repeats</b> times (set above); after each time it records you for the Record time, then shows your score. <b>■ Stop</b> ends it.</p>
+        <p style="margin-top:6px"><b>Practice loop:</b> it says the sentence <b>Repeats</b> times (set above); after each time it records you for up to the Record-up-to time, then shows your score. <b>■ Stop</b> ends it.</p>
         <p style="margin-top:6px">Your latest recording of each sentence is saved in this browser only (see My sentences) — it isn’t uploaded anywhere by this app. The pronunciation check uses your browser’s speech recognition — Chrome or Edge — which sends the audio to the browser maker’s service to turn it into text, so it needs internet and is only approximate. In other browsers you still get the recording to listen back to. The microphone only works on <b>localhost</b> (or https).</p>
       </details>
     </div>
@@ -2196,7 +2197,19 @@ refreshWeak();
   /* --- speak with repetition --- */
   let tok = 0, looping = false;
   const recB = $("spRec"), recSt = $("spRecStatus"), audio = $("spAudio"), pracB = $("spPractice"), recT = $("spRecT");
-  recT.addEventListener("input", () => { $("spRecTOut").textContent = recT.value + " s"; });
+  /* Record up to: the longest a recording runs. Auto works it out from the sentence length and Speed (about 0.6 s a word, plus 2 s to start). */
+  const recAuto = $("spRecAuto");
+  try { recAuto.checked = localStorage.getItem("fr-recauto") !== "0"; } catch (e) {}
+  const autoSecs = () => { const n = txt.value.trim().split(/\s+/).filter(Boolean).length; return Math.min(20, Math.max(4, Math.round(2 + n * 0.6 / Math.max(0.5, parseFloat(rate.value) || 1)))); };
+  const recMsNow = () => (recAuto.checked ? autoSecs() : parseInt(recT.value, 10)) * 1000;
+  function refreshRecT() {
+    if (recAuto.checked) recT.value = autoSecs();
+    recT.disabled = recAuto.checked;
+    $("spRecTOut").textContent = recT.value + " s" + (recAuto.checked ? " (auto)" : "");
+  }
+  recT.addEventListener("input", refreshRecT);
+  recAuto.addEventListener("change", () => { try { localStorage.setItem("fr-recauto", recAuto.checked ? "1" : "0"); } catch (e) {} refreshRecT(); });
+  txt.addEventListener("input", refreshRecT); rate.addEventListener("input", refreshRecT); refreshRecT();
   $("spAudioLoop").addEventListener("change", e => { audio.loop = e.target.checked; });
   function setBusy(b) { sayB.disabled = loopB.disabled = pracB.disabled = cmpB.disabled = cmpLoopB.disabled = b; recB.disabled = b && looping; stopB.disabled = !b; }
   async function run(forever) {
@@ -2373,7 +2386,13 @@ refreshWeak();
     if (recording) { recSt.textContent = ""; await finish(); return; }
     if (txt.value.trim() && !isSentence(txt.value)) { st.textContent = NEED; txt.focus(); return; }
     speechSynthesis.cancel(); tok++; setBusy(false); st.textContent = "";
-    if (await begin()) recSt.textContent = "Recording — say the sentence…";
+    const my = tok;
+    if (!(await begin())) return;
+    for (let t = recMsNow(); t > 0 && recording && my === tok; t -= 100) {        // stops by itself after "Record up to"; \u25A0 stops it sooner
+      recSt.textContent = "Recording \u2014 say the sentence\u2026 " + Math.ceil(t / 1000) + " s left";
+      await wait(100);
+    }
+    if (recording && my === tok) { recSt.textContent = ""; await finish(); }
   };
 
   /* --- practice loop: say it -> record me -> score -> repeat --- */
@@ -2382,7 +2401,7 @@ refreshWeak();
     if (!text) { st.textContent = "Type a sentence first."; txt.focus(); return; }
     if (!isSentence(text)) { st.textContent = NEED; txt.focus(); return; }
     haltAll("sentence");
-    const my = ++tok, total = parseInt(reps.value, 10), recMs = parseInt(recT.value, 10) * 1000;
+    const my = ++tok, total = parseInt(reps.value, 10), recMs = recMsNow();
     looping = true; touchSentence(text); speechSynthesis.cancel(); setBusy(true);
     const log = $("spRounds"); log.hidden = false; log.textContent = ""; const scores = [];
     for (let n = 1; n <= total; n++) {
