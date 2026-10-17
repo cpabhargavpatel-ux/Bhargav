@@ -1183,7 +1183,14 @@ function karaokeStop() {
   if (kStop) { kStop(); kStop = null; }
   document.querySelectorAll(".now").forEach(e => e.classList.remove("now"));
 }
-function karaokeStart(text, rate) {
+/* how long each sentence really took last time (text + speed + voice), so the highlight keeps exact time on repeats */
+let KDUR = {}; try { KDUR = JSON.parse(localStorage.getItem("fr-kdur") || "{}") || {}; } catch (e) {}
+function kdurSave(key, ms) {
+  KDUR[key] = KDUR[key] ? Math.round((KDUR[key] + ms) / 2) : Math.round(ms);
+  const ks = Object.keys(KDUR); if (ks.length > 300) delete KDUR[ks[0]];
+  try { localStorage.setItem("fr-kdur", JSON.stringify(KDUR)); } catch (e) {}
+}
+function karaokeStart(text, rate, voiceName) {
   karaokeStop();
   const showEn = hlEn && document.body.classList.contains("show-anc");   // English: its own tick, and only while the English row is shown
   if (!hlOn && !showEn && !mouthOn) return null;
@@ -1191,14 +1198,16 @@ function karaokeStart(text, rate) {
   const box = [document.getElementById("lmap"), document.getElementById("spMap")].find(b => b && !b.hidden && b.dataset.src && normTxt(b.dataset.src) === want && b.offsetParent !== null);
   if (!box) return null;
   const sent = box.classList.contains("spmap") || box.classList.contains("multi");
-  const words = (sent ? [...box.querySelectorAll(".lm-w:not(.miss)")] : [box]).map(g => ({
+  const words = (sent ? [...box.querySelectorAll(".lm-w")] : [box]).map(g => ({           // every word, even one with no sound data (it just lights as a whole)
     g, tok: g.dataset.t == null ? -1 : +g.dataset.t,
     sounds: [...g.querySelectorAll("i[data-s]")],
-    ms: ([...g.querySelectorAll(".lm-l")].reduce((n, l) => n + l.textContent.length, 0) * 75 + 140) / Math.max(0.3, rate || 1) }));
+    ms: ([...g.querySelectorAll(".lm-l")].reduce((n, l) => n + l.textContent.length, 0) * 66 + 120) / Math.max(0.3, rate || 1) }));
   if (!words.some(w => w.sounds.length)) return null;
+  const key = want + "|" + (Math.round((rate || 1) * 100)) + "|" + (voiceName || "");
+  if (KDUR[key]) { const sum = words.reduce((n, w) => n + w.ms, 0), f = KDUR[key] / sum; words.forEach(w => { w.ms *= f; }); }   // learned: keep exact time
   const starts = [];                                  // where each word begins in the spoken text, to match the voice's word events
   String(text).replace(/\S+/g, (m, i) => { starts.push(i); return m; });
-  let t0 = 0, raf = 0, anchor = null, done = false, lastW = null, lastS = null;
+  let t0 = 0, raf = 0, anchor = null, done = false, lastW = null, lastS = null, sweepT = [];
   const lit = (w, si) => {
     if (w === lastW && si === lastS) return;
     document.querySelectorAll(".now").forEach(e => e.classList.remove("now"));
@@ -1225,14 +1234,25 @@ function karaokeStart(text, rate) {
       let el = now - t0; while (wi < words.length - 1 && el > words[wi].ms) { el -= words[wi].ms; wi++; }
       frac = Math.min(0.999, Math.max(0, el / words[wi].ms));
     }
-    const w = words[wi]; lit(w, Math.min(w.sounds.length - 1, Math.floor(frac * w.sounds.length)));
+    const w = words[wi]; lit(w, Math.max(0, Math.min(w.sounds.length - 1, Math.floor(frac * w.sounds.length))));
     raf = requestAnimationFrame(tick);
   };
-  kStop = () => { done = true; cancelAnimationFrame(raf); };
+  kStop = () => { done = true; cancelAnimationFrame(raf); sweepT.forEach(clearTimeout); sweepT = []; };
   return {
     start() { t0 = performance.now(); raf = requestAnimationFrame(tick); },
     boundary(ci) { let ti = 0; for (let i = 0; i < starts.length; i++) if (starts[i] <= ci) ti = i; if (words.some(w => w.tok === ti)) anchor = { tok: ti, at: performance.now() }; },
-    end() { karaokeStop(); }
+    /* natural: the voice finished by itself. Remember how long it took, and if the highlight is behind, catch up through the remaining words so every one lights up. */
+    end(natural) {
+      if (!natural || !t0) { karaokeStop(); return; }
+      const took = performance.now() - t0; if (took > 300 && took < 90000) kdurSave(key, took);
+      done = true; cancelAnimationFrame(raf);
+      const at = Math.max(0, words.indexOf(lastW)), rest = [];
+      for (let i = at + 1; i < words.length; i++) rest.push(i);
+      if (!rest.length) { karaokeStop(); return; }
+      kStop = () => { sweepT.forEach(clearTimeout); sweepT = []; };
+      rest.forEach((wi, n) => sweepT.push(setTimeout(() => lit(words[wi], 0), 70 * n)));
+      sweepT.push(setTimeout(() => karaokeStop(), 70 * rest.length + 350));
+    }
   };
 }
 (function () {                                  // hovering a sound in the map outlines its tile in the grid below
@@ -1736,16 +1756,16 @@ function speakOnce(text) {
     u.rate = parseFloat(rate.value);
     const v = frVoices[parseInt(voiceSel.value, 10)];
     if (v) u.voice = v;
-    const k = karaokeStart(text, u.rate);
+    const k = karaokeStart(text, u.rate, v && v.name);
     /* WATCHDOG: some voices (Chrome's online ones especially) sometimes never say they have finished. Without this the player would
        sit on "Playing\u2026" for ever, so a voice that does not start within 4 s, or runs far longer than the text needs, is cut off. */
     let done = false, started = false, t1 = 0, t2 = 0;
-    const finish = () => { if (done) return; done = true; clearTimeout(t1); clearTimeout(t2); if (k) k.end(); resolve(); };
+    const finish = nat => { if (done) return; done = true; clearTimeout(t1); clearTimeout(t2); if (k) k.end(nat === true); resolve(); };
     const limit = 3000 + String(text).length * 130 / Math.max(0.25, u.rate || 1);
     u.onstart = () => { started = true; clearTimeout(t1); if (k) k.start(); t2 = setTimeout(() => { try { speechSynthesis.cancel(); } catch (e) {} finish(); }, limit); };
     u.onboundary = e => { if (k && (!e.name || e.name === "word")) k.boundary(e.charIndex || 0); };
-    u.onend = finish;
-    u.onerror = finish;
+    u.onend = () => finish(true);
+    u.onerror = () => finish(false);
     t1 = setTimeout(() => { if (!started && !done) { try { speechSynthesis.cancel(); } catch (e) {} status.textContent = "The voice did not start \u2014 try another one in the Voice list"; finish(); } }, 4000);
     speechSynthesis.speak(u);
   });
