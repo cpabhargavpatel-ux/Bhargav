@@ -2,3 +2,4 @@ Backups/
 update-backup/
 *.db
 goal-app.log
+Data/

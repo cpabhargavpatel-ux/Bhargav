@@ -21,7 +21,7 @@
 import { createServer } from "node:http";
 import { DatabaseSync } from "node:sqlite";
 import { randomBytes, pbkdf2Sync, timingSafeEqual } from "node:crypto";
-import { readFileSync, existsSync, mkdirSync, copyFileSync, statSync } from "node:fs";
+import { readFileSync, existsSync, mkdirSync, copyFileSync, statSync, unlinkSync } from "node:fs";
 import { join, dirname, extname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
@@ -34,11 +34,37 @@ try { CFG = JSON.parse(readFileSync(join(HERE, "config.json"), "utf8")); } catch
 const PORT = Number(process.env.PORT || CFG.port || 8484);
 const OPEN_SIGNUP = CFG.openSignup !== false;      // default: open; set false to require admin approval
 
-/* The LIVE database sits on local disk, never inside OneDrive/Dropbox: a sync
-   client can lock or copy the file mid-write and corrupt it. Dated snapshot
-   copies go the other way — into Backups/ beside this file — because a plain
-   copy is safe to sync and means a dead PC doesn't take the data with it. */
-const DATA = process.env.GTN_DATA || join(homedir(), "GoalSettingData");
+/* The LIVE database sits in a Data\ folder inside the app's own folder, on local disk. It must never be inside OneDrive/Dropbox:
+   a sync client can lock or copy the file mid-write and corrupt it, so if the app folder turns out to be a synced folder the
+   server keeps using the old %USERPROFILE%\GoalSettingData instead. The first start after upgrading COPIES the old database into
+   Data\ (the old folder is left untouched, so nothing is lost) and checks the copy before using it.
+   Dated snapshot copies go the other way — into Backups\ beside this file — because a plain copy is safe to sync and means a dead
+   PC doesn't take the data with it. GTN_DATA overrides all of this. */
+const LEGACY_DATA = join(homedir(), "GoalSettingData");
+const APP_DATA = join(HERE, "Data");
+function pickDataDir() {
+  if (process.env.GTN_DATA) return process.env.GTN_DATA;
+  if (/onedrive|dropbox|google ?drive|icloud/i.test(APP_DATA)) { console.warn("The app folder looks like a synced folder; keeping the database in " + LEGACY_DATA); return LEGACY_DATA; }
+  const here = join(APP_DATA, "goals.db"), old = join(LEGACY_DATA, "goals.db");
+  if (!existsSync(here) && existsSync(old)) {
+    try {
+      mkdirSync(APP_DATA, { recursive: true });
+      for (const ext of ["", "-wal", "-shm"]) if (existsSync(old + ext)) copyFileSync(old + ext, here + ext);
+      const t = new DatabaseSync(here);
+      const ok = t.prepare("PRAGMA integrity_check").get();
+      const users = t.prepare("SELECT COUNT(*) AS n FROM users").get().n;
+      t.exec("PRAGMA wal_checkpoint(TRUNCATE);"); t.close();
+      if (!ok || Object.values(ok)[0] !== "ok") throw new Error("integrity check failed on the copy");
+      console.log("Database copied from " + LEGACY_DATA + " to " + APP_DATA + " (" + users + " account(s)). The old folder was left as it was.");
+    } catch (e) {
+      console.error("Could not move the database into the app folder (" + e.message + "); keeping " + LEGACY_DATA);
+      for (const ext of ["", "-wal", "-shm"]) { try { unlinkSync(here + ext); } catch (e2) {} }
+      return LEGACY_DATA;
+    }
+  }
+  return APP_DATA;
+}
+const DATA = pickDataDir();
 const BACKUP2 = process.env.GTN_BACKUP2 || join(HERE, "Backups");
 const PUBLIC = join(HERE, "public");
 if (!existsSync(DATA)) mkdirSync(DATA, { recursive: true });
@@ -208,7 +234,7 @@ const moduleBar = (active, sub) => MODULE_CSS + (active === "goal" ? "<style>hea
       .map(([t, h, k]) => `<a href="${h}"${active === "english" && sub === k ? ' class="cur" aria-current="page"' : ""}>${t}</a>`).join("")
   + `</span></span>`
   + `<a href="/feynman.html"${active === "feynman" ? ' class="on"' : ""}>Feynman</a>`
-  + `<span id="modbuild">build 10-17-n</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n`;
+  + `<span id="modbuild">build 10-17-o</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n`;
 function withModuleBar(html, active, sub) {
   const m = /<body[^>]*>/i.exec(html);
   return m ? html.slice(0, m.index + m[0].length) + "\n" + moduleBar(active, sub) + html.slice(m.index + m[0].length)

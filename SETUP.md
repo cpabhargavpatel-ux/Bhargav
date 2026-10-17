@@ -42,13 +42,19 @@ what ships with Node (its web server, SQLite database, and crypto).
 
 ## Where the data lives, and backups
 
-- The live database is `%USERPROFILE%\GoalSettingData\goals.db` on the host
-  PC — deliberately **not** inside OneDrive/Dropbox, because a sync client
-  can lock or copy a live database mid-write and corrupt it.
+- The live database is `Data\goals.db` **inside this app folder** (for example
+  `C:\Users\<you>\Desktop\Claude\Goal Setting Server\Data\goals.db`). It must
+  **not** be inside a OneDrive/Dropbox-synced folder, because a sync client can
+  lock or copy a live database mid-write and corrupt it — if the app folder is
+  synced, the server keeps using the old `%USERPROFILE%\GoalSettingData` instead.
+- Upgrading from an older version: on its first start the server **copies**
+  `%USERPROFILE%\GoalSettingData\goals.db` into `Data\`, checks the copy, and uses
+  it. The old folder is left untouched (delete it yourself once you are happy).
+  `Update from GitHub.cmd` never touches `Data\`.
 - The server writes a **dated snapshot copy once per day** to two places:
-  `%USERPROFILE%\GoalSettingData\backups\` and this folder's `Backups\`
-  (safe to sync — snapshots are plain copies).
-- To restore: stop the server, copy a snapshot over `goals.db`, start again.
+  `Data\backups\` and this folder's `Backups\` (safe to sync — snapshots are plain
+  copies).
+- To restore: stop the server, copy a snapshot over `Data\goals.db`, start again.
 - Individual users can also Export/Import their own goals as JSON from
   inside the app at any time.
 
