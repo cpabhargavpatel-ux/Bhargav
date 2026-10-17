@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feynman technique</title>
+<script>try{var p=parseInt(localStorage.getItem("en-fontsize"));if(p>=80&&p<=180)document.documentElement.style.fontSize=p+"%"}catch(e){}</script>
+<style>
+  :root {
+    --bg: #f3f5f9; --card: #ffffff; --ink: #1b2433; --mute: #667085; --line: #d9dfeb; --soft: #eef1f8;
+    --accent: #2f4bd8; --accent-ink: #ffffff; --accent-soft: #e4e9ff; --danger: #c0392b;
+    --ok: #1f8a4c; --ok-soft: #e3f5ea; --warn: #b45309; --warn-soft: #fdf1d8; --hint: #fff8e1; --hint-line: #ecd98a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10151f; --card: #19212f; --ink: #e6ebf5; --mute: #98a5bd; --line: #2b3850; --soft: #212c40;
+      --accent: #8199ff; --accent-ink: #0b1230; --accent-soft: #25305a; --danger: #ff8a7a;
+      --ok: #5fd08a; --ok-soft: #1c3a2a; --warn: #f0b45a; --warn-soft: #3a2f18; --hint: #2e2a14; --hint-line: #6b5a1c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .fy { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; max-width: 1400px; margin: 0 auto; padding: 16px 16px 48px; align-items: start; }
+  @media (max-width: 860px) { .fy { grid-template-columns: 1fr; } }
+
+  /* ---------- topic list ---------- */
+  .side { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; position: sticky; top: 56px; max-height: calc(100vh - 72px); display: flex; flex-direction: column; }
+  @media (max-width: 860px) { .side { position: static; max-height: 360px; } }
+  .side h1 { margin: 0; font-size: 1.2rem; }
+  .side .sub { margin: 2px 0 10px; color: var(--mute); font-size: .86rem; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .side .row { margin-bottom: 8px; }
+  input[type=search], input[type=text], select, textarea { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; min-width: 0; }
+  .side input[type=search] { flex: 1; }
+  .btn { font-weight: 600; font-size: .9rem; border-radius: 8px; padding: 8px 14px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); white-space: nowrap; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .btn.alt { background: transparent; color: var(--accent); }
+  .btn.danger { background: transparent; border-color: var(--danger); color: var(--danger); }
+  .btn.small { padding: 4px 10px; font-size: .8rem; }
+  .list { overflow: auto; margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .item { text-align: left; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; cursor: pointer; width: 100%; }
+  .item:hover { border-color: var(--accent); }
+  .item.on { background: var(--accent-soft); border-color: var(--accent); }
+  .item b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item .meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: var(--mute); font-size: .78rem; margin-top: 3px; }
+  .none { color: var(--mute); padding: 14px 4px; text-align: center; }
+
+  .chip { display: inline-block; border-radius: 999px; padding: 1px 9px; font-size: .74rem; font-weight: 700; background: var(--soft); color: var(--mute); white-space: nowrap; }
+  .chip.s-Studying { background: var(--soft); color: var(--mute); }
+  .chip.s-Explained { background: var(--accent-soft); color: var(--accent); }
+  .chip.s-Hasgaps { background: var(--warn-soft); color: var(--warn); }
+  .chip.s-Simplified { background: var(--ok-soft); color: var(--ok); }
+  .chip.s-Mastered { background: var(--ok); color: var(--card); }
+
+  /* ---------- main panel ---------- */
+  .main { background: var(--card); border: 1px solid var(--line); border-radius: 12px; min-width: 0; padding: 18px 20px 22px; }
+  .empty h2 { margin: 0 0 6px; font-size: 1.35rem; }
+  .empty p { color: var(--mute); margin: 0 0 16px; max-width: 62ch; }
+  .steps4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin: 14px 0 20px; }
+  .steps4 div { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--bg); }
+  .steps4 b { display: block; margin-bottom: 3px; }
+  .steps4 span { color: var(--mute); font-size: .88rem; }
+  .num { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: .82rem; font-weight: 700; margin-right: 6px; }
+
+  .head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .main .head input.title { width: auto; flex: 1 1 260px; font-size: 1.4rem; font-weight: 700; font-family: Georgia, "Times New Roman", serif; padding: 6px 10px; }
+  .main .head input.subject { width: 180px; }
+  .stepper { display: flex; gap: 6px; margin: 16px 0 14px; flex-wrap: wrap; position: sticky; top: 40px; z-index: 5; background: var(--card); padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .stepper button { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px 7px 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); cursor: pointer; font-weight: 600; font-size: .92rem; color: var(--mute); }
+  .stepper button .num { margin: 0; background: var(--line); color: var(--ink); }
+  .stepper button.done .num { background: var(--ok); color: var(--card); }
+  .stepper button.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .stepper button.on .num { background: var(--accent); color: var(--accent-ink); }
+
+  .hint { background: var(--hint); border: 1px solid var(--hint-line); border-radius: 10px; padding: 10px 14px; margin: 0 0 14px; font-size: .92rem; }
+  .hint b { display: block; margin-bottom: 2px; }
+  label.f { display: block; font-weight: 600; font-size: .88rem; margin: 14px 0 4px; }
+  label.f small { font-weight: 400; color: var(--mute); }
+  .main textarea, .main input[type=text] { width: 100%; }
+  .main textarea { resize: vertical; line-height: 1.55; min-height: 110px; font-family: Georgia, "Times New Roman", serif; font-size: 1.05rem; }
+  .big { min-height: 260px !important; }
+  .count { color: var(--mute); font-size: .82rem; margin-top: 4px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 16px; }
+  .actions .push { margin-left: auto; }
+
+  .readback { border: 1px dashed var(--line); border-radius: 10px; padding: 12px 14px; background: var(--bg); white-space: pre-wrap; font-family: Georgia, "Times New Roman", serif; font-size: 1.05rem; line-height: 1.6; }
+  .gap { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px 10px; align-items: start; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-top: 8px; background: var(--bg); }
+  .gap.fixed { background: var(--ok-soft); border-color: var(--ok); }
+  .gap input[type=checkbox] { width: 18px; height: 18px; margin-top: 8px; }
+  .gap textarea { grid-column: 2 / 3; min-height: 56px; font-size: .95rem; font-family: inherit; }
+  .gap .x { border: 0; background: transparent; color: var(--mute); cursor: pointer; font-size: 1.1rem; }
+  .gap .x:hover { color: var(--danger); }
+  .addgap { display: flex; gap: 8px; margin-top: 10px; }
+  .addgap input { flex: 1; }
+
+  .vers { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .vers h3 { margin: 0 0 6px; font-size: 1rem; }
+  .vers .trend { color: var(--mute); font-size: .86rem; margin-bottom: 8px; }
+  details.v { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; margin-top: 6px; background: var(--bg); }
+  details.v summary { cursor: pointer; font-weight: 600; font-size: .92rem; }
+  details.v pre { white-space: pre-wrap; font-family: Georgia, "Times New Roman", serif; font-size: 1rem; margin: 8px 0 0; }
+  .cap { color: var(--mute); font-size: .86rem; }
+  @media print { .side, .stepper, .actions { display: none; } .fy { display: block; } }
+</style>
+</head>
+<body>
+<div class="fy">
+  <aside class="side">
+    <h1>Feynman technique</h1>
+    <p class="sub">Learn it by teaching it.</p>
+    <div class="row"><input type="search" id="q" placeholder="Search topics…" aria-label="Search topics"><button class="btn" id="newBtn" type="button">+ New</button></div>
+    <select id="stSel" aria-label="Filter by status">
+      <option value="">All statuses</option><option>Studying</option><option>Explained</option><option>Has gaps</option><option>Simplified</option><option>Mastered</option>
+    </select>
+    <div class="list" id="list"></div>
+  </aside>
+  <main class="main" id="main"></main>
+</div>
+<datalist id="subjects"></datalist>
+<script>
+(function () {
+  "use strict";
+  var KEY = "feynman", LAST = "fey-last";
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+  var uid = function () { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); };
+  var words = function (t) { return (String(t || "").trim().match(/\S+/g) || []).length; };
+  var fmt = function (t) { return new Date(t).toLocaleDateString([], { day: "numeric", month: "short" }); };
+
+  var data = { topics: [] }, cur = null, step = 1, filter = { q: "", st: "" };
+
+  function norm(t) {
+    t.title = t.title || ""; t.subject = t.subject || ""; t.source = t.source || ""; t.notes = t.notes || "";
+    t.draft = t.draft || ""; t.versions = Array.isArray(t.versions) ? t.versions : []; t.gaps = Array.isArray(t.gaps) ? t.gaps : [];
+    t.analogy = t.analogy || ""; t.summary = t.summary || ""; t.simplified = !!t.simplified; t.mastered = !!t.mastered; t.gapsChecked = !!t.gapsChecked;
+    t.created = t.created || Date.now(); t.updated = t.updated || t.created; return t;
+  }
+  function save() { if (cur) cur.updated = Date.now(); Store.save(KEY, data); }
+  function openGaps(t) { return t.gaps.filter(function (g) { return !g.fixed; }).length; }
+  function statusOf(t) {
+    if (t.mastered) return "Mastered";
+    if (t.versions.length && openGaps(t)) return "Has gaps";
+    if (t.simplified) return "Simplified";
+    return t.versions.length ? "Explained" : "Studying";
+  }
+  var chip = function (s) { return '<span class="chip s-' + s.replace(/\s/g, "") + '">' + s + "</span>"; };
+  var latest = function (t) { return t.versions.length ? t.versions[t.versions.length - 1].text : ""; };
+  function done(t, n) {
+    if (n === 1) return !!t.title.trim();
+    if (n === 2) return t.versions.length > 0;
+    if (n === 3) return t.versions.length > 0 && !openGaps(t) && (t.gaps.length > 0 || t.gapsChecked);
+    return t.simplified;
+  }
+
+  /* ---------- list ---------- */
+  function visible() {
+    var q = filter.q.toLowerCase();
+    return data.topics.filter(function (t) {
+      if (filter.st && statusOf(t) !== filter.st) return false;
+      return !q || (t.title + " " + t.subject + " " + t.notes + " " + latest(t)).toLowerCase().indexOf(q) >= 0;
+    }).sort(function (a, b) { return b.updated - a.updated; });
+  }
+  function renderList() {
+    var list = visible(), box = $("list");
+    box.innerHTML = list.length ? list.map(function (t) {
+      return '<button type="button" class="item' + (cur && cur.id === t.id ? " on" : "") + '" data-id="' + t.id + '"><b>' + esc(t.title || "Untitled topic") + '</b><span class="meta"><span>' + esc(t.subject || "—") + " · v" + t.versions.length + "</span>" + chip(statusOf(t)) + "</span></button>";
+    }).join("") : '<div class="none">' + (data.topics.length ? "No topics match." : "No topics yet.") + "</div>";
+    var subs = {}; data.topics.forEach(function (t) { if (t.subject) subs[t.subject] = 1; });
+    $("subjects").innerHTML = Object.keys(subs).sort().map(function (s) { return '<option value="' + esc(s) + '">'; }).join("");
+  }
+  function refreshChips() { renderList(); var c = $("curChip"); if (c && cur) c.innerHTML = chip(statusOf(cur)); document.querySelectorAll(".stepper button").forEach(function (b) { b.classList.toggle("done", !!cur && done(cur, +b.dataset.n)); }); }
+
+  /* ---------- open / new / delete ---------- */
+  function open(id) {
+    cur = data.topics.filter(function (t) { return t.id === id; })[0] || null;
+    if (cur) { step = cur.versions.length ? (openGaps(cur) ? 3 : (cur.simplified ? 4 : 3)) : 1; try { localStorage.setItem(LAST, id); } catch (e) {} }
+    renderList(); renderMain();
+  }
+  function newTopic() {
+    var t = norm({ id: uid() }); data.topics.push(t); cur = t; step = 1; try { localStorage.setItem(LAST, t.id); } catch (e) {} save(); renderList(); renderMain();
+    var ti = $("title"); if (ti) ti.focus();
+  }
+  function remove() {
+    if (!cur || !confirm("Delete “" + (cur.title || "this topic") + "” and all its versions?")) return;
+    data.topics = data.topics.filter(function (t) { return t !== cur; }); cur = null; save(); renderList(); renderMain();
+  }
+
+  /* ---------- the panels ---------- */
+  function renderMain() {
+    var m = $("main");
+    if (!cur) {
+      m.innerHTML = '<div class="empty"><h2>Explain it simply — and find out what you don’t know yet</h2>'
+        + '<p>Richard Feynman’s method: you only understand something when you can explain it in plain words. Pick a topic and work through four steps. Everything is saved to your account, and every version of your explanation is kept so you can watch it get clearer.</p>'
+        + '<div class="steps4"><div><b><span class="num">1</span>Study</b><span>Choose one concept and learn it from a book, a lecture or notes.</span></div>'
+        + '<div><b><span class="num">2</span>Explain</b><span>Close the book. Teach it in plain words to a curious 12-year-old.</span></div>'
+        + '<div><b><span class="num">3</span>Find the gaps</b><span>Where did you hesitate or hide behind a big word? Go back and learn exactly that.</span></div>'
+        + '<div><b><span class="num">4</span>Simplify</b><span>Rewrite it shorter, drop the jargon, and add an analogy.</span></div></div>'
+        + '<button class="btn" id="startBtn" type="button">+ Start your first topic</button></div>';
+      var s = $("startBtn"); if (s) { s.textContent = data.topics.length ? "+ New topic" : "+ Start your first topic"; s.onclick = newTopic; }
+      return;
+    }
+    var t = cur;
+    m.innerHTML = '<div class="head"><input type="text" class="title" id="title" placeholder="Topic (one concept, e.g. “How vaccines train the immune system”)" value="' + esc(t.title) + '" aria-label="Topic">'
+      + '<input type="text" class="subject" id="subject" list="subjects" placeholder="Subject" value="' + esc(t.subject) + '" aria-label="Subject"><span id="curChip">' + chip(statusOf(t)) + '</span>'
+      + '<button class="btn danger small" id="delBtn" type="button">Delete</button></div>'
+      + '<div class="stepper" role="tablist">' + [["1", "Study"], ["2", "Explain"], ["3", "Find gaps"], ["4", "Simplify"]].map(function (s) {
+          return '<button type="button" role="tab" data-n="' + s[0] + '" class="' + (step === +s[0] ? "on " : "") + (done(t, +s[0]) ? "done" : "") + '"><span class="num">' + (done(t, +s[0]) ? "✓" : s[0]) + "</span>" + s[1] + "</button>";
+        }).join("") + "</div><div id=\"panel\"></div>" + versionsHtml(t);
+    $("title").oninput = function () { t.title = this.value; save(); refreshChips(); var nx = $("next"); if (nx && step === 1) nx.disabled = !this.value.trim(); };
+    $("subject").oninput = function () { t.subject = this.value; save(); renderList(); };
+    $("delBtn").onclick = remove;
+    m.querySelectorAll(".stepper button").forEach(function (b) { b.onclick = function () { go(+b.dataset.n); }; });
+    renderPanel();
+  }
+  function go(n) { step = n; window.scrollTo({ top: 0 }); document.querySelectorAll(".stepper button").forEach(function (b) { b.classList.toggle("on", +b.dataset.n === n); }); renderPanel(); }
+
+  function versionsHtml(t) {
+    if (!t.versions.length) return "";
+    var first = words(t.versions[0].text), last = words(latest(t));
+    return '<div class="vers" id="vers"><h3>Your versions (' + t.versions.length + ")</h3>"
+      + (t.versions.length > 1 ? '<div class="trend">First version ' + first + " words → latest " + last + " words" + (last < first ? " — shorter and clearer is the goal." : ".") + "</div>" : "")
+      + t.versions.slice().reverse().map(function (v, i) {
+          var n = t.versions.length - i;
+          return '<details class="v"><summary>Version ' + n + " · " + fmt(v.at) + " · " + words(v.text) + " words</summary><pre>" + esc(v.text) + "</pre></details>";
+        }).join("") + "</div>";
+  }
+  function refreshVersions() { var v = $("vers"); var html = versionsHtml(cur); if (v) v.outerHTML = html || '<div id="vers"></div>'; else if (html) $("main").insertAdjacentHTML("beforeend", html); }
+
+  function renderPanel() {
+    var p = $("panel"), t = cur; if (!p || !t) return;
+    if (step === 1) panel1(p, t); else if (step === 2) panel2(p, t); else if (step === 3) panel3(p, t); else panel4(p, t);
+  }
+
+  function panel1(p, t) {
+    p.innerHTML = '<div class="hint"><b>Step 1 — Study</b>Choose <u>one</u> concept small enough to explain in a few minutes. Learn it from your book, lecture or notes. When you feel ready, close everything and go to step 2.</div>'
+      + '<label class="f">Where I’m learning it from <small>(book, link, lecture…)</small></label><input type="text" id="source" value="' + esc(t.source) + '">'
+      + '<label class="f">What I want to understand <small>(key ideas, questions, formulas — optional)</small></label><textarea id="notes" rows="5">' + esc(t.notes) + "</textarea>"
+      + '<div class="actions"><button class="btn push" id="next" type="button"' + (t.title.trim() ? "" : " disabled") + '>Next: explain it →</button></div>';
+    $("source").oninput = function () { t.source = this.value; save(); };
+    $("notes").oninput = function () { t.notes = this.value; save(); };
+    $("next").onclick = function () { go(2); };
+    var ti = $("title"); if (ti && !t.title) ti.focus();
+  }
+
+  function panel2(p, t) {
+    var name = t.title.trim() || "this topic", has = t.versions.length;
+    p.innerHTML = '<div class="hint"><b>Step 2 — Explain “' + esc(name) + '”</b>Teach it to a curious 12-year-old. Use short sentences and everyday words. Don’t look at your notes — the places where you get stuck are the whole point.</div>'
+      + '<textarea class="big" id="draft" placeholder="Write it the way you would say it out loud…">' + esc(t.draft) + "</textarea>"
+      + '<div class="count" id="count"></div>'
+      + '<div class="actions"><button class="btn alt" id="blank" type="button"' + (has ? "" : " hidden") + '>Start from a blank page</button>'
+      + '<button class="btn push" id="saveV" type="button">Save as version ' + (has + 1) + ' → find the gaps</button></div>';
+    var d = $("draft"), upd = function () { var n = words(d.value); $("count").textContent = n + " word" + (n === 1 ? "" : "s") + (n >= 5 ? "" : " — write at least a few sentences"); $("saveV").disabled = n < 5; };
+    d.oninput = function () { t.draft = d.value; save(); upd(); }; upd(); d.focus();
+    $("blank").onclick = function () { if (confirm("Clear the box and explain it again from memory? Your saved versions stay.")) { t.draft = ""; d.value = ""; save(); upd(); d.focus(); } };
+    $("saveV").onclick = function () { addVersion(t, d.value); go(3); };
+  }
+  function addVersion(t, text) {
+    text = String(text || "").trim(); if (!text) return;
+    if (latest(t).trim() !== text) t.versions.push({ at: Date.now(), text: text });
+    t.draft = text; save(); refreshChips(); refreshVersions();
+  }
+
+  function panel3(p, t) {
+    if (!t.versions.length) { p.innerHTML = '<div class="hint"><b>Step 3 — Find the gaps</b>First write an explanation in step 2, then come back here to read it back.</div><div class="actions"><button class="btn" id="to2" type="button">← Go to step 2</button></div>'; $("to2").onclick = function () { go(2); }; return; }
+    p.innerHTML = '<div class="hint"><b>Step 3 — Find the gaps</b>Read your explanation back (or listen to it). Where did you hesitate, wave your hands, or use a word you couldn’t define? Write each one down, go back to your source, and tick it off once you can explain that part simply.</div>'
+      + '<div class="row" style="justify-content:space-between;margin-bottom:6px"><span class="cap">Your latest explanation (version ' + t.versions.length + ")</span><button class=\"btn alt small\" id=\"listen\" type=\"button\">🔊 Listen</button></div>"
+      + '<div class="readback">' + esc(latest(t)) + "</div>"
+      + '<label class="f">Gaps I found <small>(' + openGaps(t) + " still open)</small></label><div id=\"gaps\"></div>"
+      + '<div class="addgap"><input type="text" id="gapText" placeholder="e.g. I couldn’t say why the pressure drops…"><button class="btn" id="addGap" type="button">Add gap</button></div>'
+      + '<div class="actions"><button class="btn alt" id="again" type="button">← Re-explain with what I learned</button>'
+      + '<button class="btn alt" id="nogaps" type="button"' + (t.gaps.length ? " hidden" : "") + '>I found no gaps</button>'
+      + '<button class="btn push" id="next" type="button">Next: simplify →</button></div>';
+    var box = $("gaps");
+    function drawGaps() {
+      box.innerHTML = t.gaps.map(function (g, i) {
+        return '<div class="gap' + (g.fixed ? " fixed" : "") + '" data-i="' + i + '"><input type="checkbox" data-a="fix" ' + (g.fixed ? "checked" : "") + ' aria-label="Fixed"><input type="text" data-a="text" value="' + esc(g.text) + '"><button class="x" data-a="del" type="button" aria-label="Remove">✕</button>'
+          + '<textarea data-a="note" placeholder="What I found when I went back to the source…">' + esc(g.note || "") + "</textarea></div>";
+      }).join("") || '<div class="cap">No gaps written down yet.</div>';
+    }
+    drawGaps();
+    box.addEventListener("input", function (e) { var r = e.target.closest(".gap"); if (!r) return; var g = t.gaps[+r.dataset.i], a = e.target.dataset.a; if (a === "text") g.text = e.target.value; else if (a === "note") g.note = e.target.value; save(); });
+    box.addEventListener("change", function (e) { var r = e.target.closest(".gap"); if (!r || e.target.dataset.a !== "fix") return; t.gaps[+r.dataset.i].fixed = e.target.checked; r.classList.toggle("fixed", e.target.checked); save(); refreshChips(); recount(); });
+    box.addEventListener("click", function (e) { if (e.target.dataset.a !== "del") return; var r = e.target.closest(".gap"); t.gaps.splice(+r.dataset.i, 1); save(); drawGaps(); refreshChips(); recount(); $("nogaps").hidden = t.gaps.length > 0; });
+    function recount() { var f = p.querySelector("label.f small"); if (f) f.textContent = "(" + openGaps(t) + " still open)"; }
+    function add() { var v = $("gapText").value.trim(); if (!v) return; t.gaps.push({ id: uid(), text: v, fixed: false, note: "" }); t.gapsChecked = false; $("gapText").value = ""; save(); drawGaps(); refreshChips(); recount(); $("nogaps").hidden = true; $("gapText").focus(); }
+    $("addGap").onclick = add; $("gapText").onkeydown = function (e) { if (e.key === "Enter") add(); };
+    $("nogaps").onclick = function () { t.gapsChecked = true; save(); refreshChips(); go(4); };
+    $("again").onclick = function () { t.draft = latest(t); save(); go(2); };
+    $("next").onclick = function () { go(4); };
+    $("listen").onclick = function () {
+      if (!("speechSynthesis" in window)) return; speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(latest(t)); u.lang = "en-US"; u.rate = 0.95; speechSynthesis.speak(u);
+    };
+  }
+
+  function panel4(p, t) {
+    var has = t.versions.length, open = openGaps(t);
+    p.innerHTML = '<div class="hint"><b>Step 4 — Simplify</b>Rewrite your explanation shorter and clearer: cut jargon, keep one idea per sentence, and add an analogy a child would get. Save it as a new version when you’re happy.</div>'
+      + (open ? '<div class="hint" style="background:var(--warn-soft);border-color:var(--warn)"><b>' + open + " gap" + (open === 1 ? "" : "s") + ' still open</b>You can simplify now, but you can only mark this topic as mastered once every gap is ticked off.</div>' : "")
+      + '<label class="f">One-sentence version</label><input type="text" id="summary" placeholder="If you had ten seconds…" value="' + esc(t.summary) + '">'
+      + '<label class="f">An analogy <small>(“It’s like…”)</small></label><textarea id="analogy" rows="3" style="min-height:70px">' + esc(t.analogy) + "</textarea>"
+      + '<label class="f">My simple explanation</label><textarea class="big" id="draft" style="min-height:200px">' + esc(t.draft || latest(t)) + "</textarea><div class=\"count\" id=\"count\"></div>"
+      + '<div class="actions"><button class="btn alt" id="mast" type="button"' + ((t.simplified && !open) || t.mastered ? "" : " disabled") + ">" + (t.mastered ? "✓ Mastered — click to undo" : "Mark as mastered") + "</button>"
+      + '<button class="btn push" id="saveS" type="button"' + (has ? "" : " disabled") + '>Save as version ' + (has + 1) + " & mark simplified</button></div>"
+      + (has ? "" : '<p class="cap">Write your first explanation in step 2 before simplifying.</p>');
+    $("summary").oninput = function () { t.summary = this.value; save(); };
+    $("analogy").oninput = function () { t.analogy = this.value; save(); };
+    var d = $("draft"), upd = function () { var n = words(d.value); $("count").textContent = n + " words" + (has ? " (latest version: " + words(latest(t)) + ")" : ""); };
+    d.oninput = function () { t.draft = d.value; save(); upd(); }; upd();
+    $("saveS").onclick = function () { addVersion(t, d.value); t.simplified = true; save(); refreshChips(); renderPanel(); };
+    $("mast").onclick = function () { t.mastered = !t.mastered; save(); refreshChips(); renderPanel(); };
+  }
+
+  /* ---------- wiring ---------- */
+  $("newBtn").onclick = newTopic;
+  $("q").oninput = function () { filter.q = this.value; renderList(); };
+  $("stSel").onchange = function () { filter.st = this.value; renderList(); };
+  $("list").addEventListener("click", function (e) { var b = e.target.closest(".item"); if (b) open(b.dataset.id); });
+
+  Store.load(KEY, { topics: [] }, null).then(function (v) {
+    data = v && Array.isArray(v.topics) ? v : { topics: [] }; data.topics.forEach(norm);
+    var last = null; try { last = localStorage.getItem(LAST); } catch (e) {}
+    renderList();
+    if (last && data.topics.some(function (t) { return t.id === last; })) open(last); else renderMain();
+  });
+})();
+</script>
+</body>
+</html>
