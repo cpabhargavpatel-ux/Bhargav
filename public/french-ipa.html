@@ -368,6 +368,7 @@
   body:not(.show-tanc) .chip .anc, body:not(.show-tanc) .anbtn, body:not(.show-tanc) .anplay, body:not(.show-tanc) .anline { display: none !important; }   /* tick: English anchor words (+ speakers) */
   .lmap.spmap { flex-wrap: wrap; gap: 10px 10px; margin: 12px 0 2px; padding: 8px 6px; border: 1px solid var(--rule); border-radius: 8px; background: #fff; }
   .lmap.multi { flex-wrap: wrap; gap: 6px 8px; max-width: 36rem; }
+  .lm-sep { align-self: flex-start; font: 700 1.15rem/1.3 var(--serif); color: #8a8f99; padding: 0 1px; }
   .lm-w { display: flex; gap: 3px; align-items: flex-start; padding: 5px 8px; border-radius: 8px; background: #f4f6fb; }
   .lm-w.miss { align-self: flex-start; }
   .lm-w.guess { background: #fffaf0; box-shadow: inset 0 0 0 1.5px #e3c15f; }   /* a word that is not in the list: sounds estimated from its spelling */
@@ -1154,7 +1155,23 @@ function tileFor(sym) {
   for (const g of DATA) for (const it of g.items) if (!it.letter && (it.sym === sym || it.sym.normalize("NFC") === sym.normalize("NFC"))) return it;
   return null;
 }
-function drawUnits(parent, units) {
+/* letters -> sounds, also for words with an apostrophe or hyphen (c\u2019est-\u00E0-dire): align the letters alone, then put each separator back between its letters */
+function alignAny(word, ipa) {
+  if (!word || !ipa || !window.FRALIGN) return null;
+  let u = FRALIGN.align(word, ipa); if (u) return { units: u, seps: [] };
+  if (/['\u2019\-]/.test(word)) {
+    const seps = []; let n = 0;
+    [...word].forEach(c => { if (/['\u2019\-]/.test(c)) seps.push({ at: n, ch: c === "\u2019" ? "'" : c }); else n++; });
+    u = FRALIGN.align(word.replace(/['\u2019\-]/g, ""), ipa);
+    if (u) return { units: u, seps };
+  }
+  /* the letters will not line up one by one (week-end, chewing-gum and other foreign words): show the whole word with an arrow to each of its sounds */
+  const ph = FRALIGN.tokens(ipa);
+  return ph.length && word.replace(/['\u2019\-]/g, "").length > 1 ? { units: [{ l: word, p: ph, silent: false }], seps: [], loose: true } : null;
+}
+function drawUnits(parent, units, seps) {
+  let eaten = 0; const put = at => (seps || []).forEach(sp => { if (sp.at === at && !sp.done) { sp.done = true; const d = document.createElement("div"); d.className = "lm-sep"; d.textContent = sp.ch; d.setAttribute("aria-hidden", "true"); parent.appendChild(d); } });
+  put(0);
   units.forEach(un0 => {
     /* the sound chart files \u00E2 under /\u0251/ (p\u00E2te), but the dictionary writes it /a/: show it the way the chart does, so the right tile lights up */
     const un = (/^\u00E2$/i.test(un0.l.normalize("NFC")) && un0.p.length === 1 && un0.p[0] === "a") ? Object.assign({}, un0, { p: ["\u0251"] }) : un0;
@@ -1167,14 +1184,18 @@ function drawUnits(parent, units) {
     cell.innerHTML = '<span class="lm-l">' + esc(un.l) + "</span>" + svg + '<span class="lm-s">' + (un.silent ? '<span class="lm-sc"><i class="none" title="silent letter">\u00B7</i></span>' : un.p.map(s => { const a = FRIPA.sound(s); return '<span class="lm-sc"><i class="' + FRALIGN.kind(s) + '" data-s="' + esc(s) + '" tabindex="0" role="button" title="Hear /' + esc(s) + '/">' + esc(s) + "</i>" + (a && a.ex ? '<span class="lm-ar" aria-hidden="true"></span><span class="lm-an" data-w="' + esc(a.ex) + '" title="English sound: like the ' + esc(a.hit || "") + ' in \u201C' + esc(a.ex) + '\u201D \u2014 click to hear it">' + esc((FRIPA.say && FRIPA.say(s)) || a.hit || a.ex) + "</span>" : "") + "</span>"; }).join("")) + "</span>";
     cell.title = un.silent ? "\u201C" + un.l + "\u201D is silent here" : "\u201C" + un.l + "\u201D \u2192 /" + un.p.join("") + "/  \u2014 click to hear it";
     parent.appendChild(cell);
+    eaten += un0.l.length; put(eaten);
   });
 }
 function renderMap(word, ipa) {
   const box = document.getElementById("lmap"); if (!box) return;
   box.classList.remove("multi"); box.textContent = ""; box.dataset.src = word || "";
-  const units = word && ipa && window.FRALIGN ? FRALIGN.align(word, ipa) : null;
-  if (!units) { box.hidden = true; return; }
-  drawUnits(box, units);
+  const a = alignAny(word, ipa);
+  if (!a) {
+    if (word && ipa && /['\u2019\-]/.test(word)) { renderSentenceMap(box, word); box.classList.add("multi"); return; }      // week-end and the like: map the parts one by one
+    box.hidden = true; return;
+  }
+  drawUnits(box, a.units, a.seps);
   box.hidden = false;
 }
 /* a whole sentence: every word gets its own letters -> sounds map, looked up in the vocabulary lists (l\u2019homme and est-ce are split at the ' or -) */
@@ -1270,7 +1291,7 @@ function lookupLoose(w) {                       // exact word, else the same wor
   if (t !== w.normalize("NFC")) { const f = vocabLookup(t); if (f && f[1]) return f; }
   return null;
 }
-const alignPart = pt => pt.e && window.FRALIGN ? (FRALIGN.align(pt.w, pt.e[1]) || FRALIGN.align(pt.e[0], pt.e[1])) : null;
+const alignPart = pt => pt.e ? (alignAny(pt.w, pt.e[1]) || alignAny(pt.e[0], pt.e[1])) : null;
 function sentenceParts(text) {
   const out = [];
   String(text || "").trim().split(/\s+/).filter(Boolean).forEach((tok, ti) => {
@@ -1289,9 +1310,9 @@ function renderSentenceMap(box, text) {
   const parts = window.FRALIGN ? sentenceParts(text) : [];
   let any = false;
   parts.forEach(pt => {
-    const g = document.createElement("div"), units = alignPart(pt);
+    const g = document.createElement("div"), ap = alignPart(pt), units = ap && ap.units;
     g.dataset.t = pt.t;
-    if (units) { g.className = "lm-w" + (pt.e.guess ? " guess" : ""); drawUnits(g, units); any = true; g.title = pt.e.guess ? "\u201C" + pt.w + "\u201D is not in the word list \u2014 its sounds are estimated from the spelling" : (pt.e[2] ? pt.w + " \u2014 " + pt.e[2] : ""); }
+    if (units) { g.className = "lm-w" + (pt.e.guess ? " guess" : ""); drawUnits(g, units, ap.seps); any = true; g.title = pt.e.guess ? "\u201C" + pt.w + "\u201D is not in the word list \u2014 its sounds are estimated from the spelling" : (pt.e[2] ? pt.w + " \u2014 " + pt.e[2] : ""); }
     else { g.className = "lm-w miss"; g.title = "No pronunciation data for \u201C" + pt.w + "\u201D"; g.innerHTML = '<span class="lm-l">' + esc(pt.w) + "</span>"; }
     box.appendChild(g);
   });
