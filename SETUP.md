@@ -134,3 +134,7 @@ and server always run the same app, only the storage differs.
 - This is a small office/home tool served over plain HTTP on a trusted
   network. Do not expose port 8484 to the internet as-is — if remote access
   is ever needed, put it behind a VPN.
+
+## Clapping sounds
+
+The app plays short clapping / applause sound effects when you win something: a Good or Easy grade in the French deck, a finished deck session, a sentence-practice score of 80% or more, a Feynman topic marked simplified or mastered. They are synthesised in the browser (no audio files). The 👏 button in the top bar turns them off and on (the choice is remembered per browser).
