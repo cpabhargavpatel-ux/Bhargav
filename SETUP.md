@@ -40,6 +40,32 @@ what ships with Node (its web server, SQLite database, and crypto).
   and restart the server. Pending accounts are approved on the **Users** page
   (button in the app header, administrators only).
 
+## iPhone and iPad (over Tailscale)
+
+The app works in Safari on an iPhone or iPad, using the same sign-in and the same data as on the PC.
+The pages adapt to the screen: the top bar scrolls sideways and the French / English menus open with a
+tap, the French player stays short with **Play / Loop in a bar at the bottom** and the options behind a
+**⚙ Options** button, and the **Book** page turns pages when you swipe.
+
+1. Install Tailscale on the PC and on the phone/tablet and sign in to the same account.
+2. On the device, open `http://<pc-tailscale-name>:<port>` (the port is in `config.json`; the name is
+   shown in the Tailscale app, or use the PC's `100.x.y.z` address).
+   If it does not load, allow the port through the Windows firewall (see "Let other people use it").
+3. **Recording needs https.** Safari only allows the microphone on a secure page, so with plain `http://`
+   everything works **except** Record my voice, Practice loop and Compare. To get https inside your
+   Tailscale network, turn on **HTTPS certificates** (Tailscale admin console > DNS), then run this once
+   on the PC:
+
+   ```
+   tailscale serve --bg <port>
+   ```
+
+   and open `https://<pc-name>.<your-tailnet>.ts.net/` on the iPhone/iPad instead (this is only visible
+   inside your tailnet; do not use "funnel").
+4. To use it like an app: in Safari tap **Share > Add to Home Screen**.
+5. French voice: on the device, Settings > Accessibility > Spoken Content > Voices > French (download an
+   Enhanced voice). If the "pure sounds" are silent, check the side switch is not in silent mode.
+
 ## Where the data lives, and backups
 
 - The live database is `Data\goals.db` **inside this app folder** (for example

@@ -224,9 +224,22 @@ const MODULE_CSS = `<style>
 @media (max-width:1500px){#modtabs{gap:2px;padding-left:8px;padding-right:8px}#modtabs>a,#modtabs .mt-drop>a{padding:8px 11px}}
 @media (max-width:1250px){#modtabs>#storeStat{display:none}}
 @media (max-width:1050px){#modtabs>#modbuild{display:none}}
+html{touch-action:manipulation;-webkit-text-size-adjust:100%}
+/* phones and tablets: the bar scrolls sideways instead of pushing the page wide, and the French / English menus open by tap (no hover on a touch screen) */
+@media (max-width:900px),(hover:none){
+#modtabs{overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+#modtabs::-webkit-scrollbar{display:none}
+#modtabs .mt-menu{position:fixed;top:40px}
+#modtabs>a,#modtabs .mt-drop>a{padding:10px 14px}
+}
+@media (hover:none){
+#modtabs .mt-drop:hover .mt-menu,#modtabs .mt-drop:focus-within .mt-menu{display:none}
+#modtabs .mt-drop.open .mt-menu{display:flex}
+#modtabs .mt-menu a{padding:12px 16px;font-size:15px}
+}
 @media print{#modtabs{display:none}}
 </style>`;
-const moduleBar = (active, sub) => MODULE_CSS + (active === "goal" ? "<style>header{top:40px !important}@media print{header{top:0 !important}}</style>" : "") + `<nav id="modtabs">`
+const moduleBar = (active, sub) => MODULE_CSS + (active === "goal" ? "<style>header{top:40px !important}@media (max-width:820px){header{position:static !important}}@media print{header{top:0 !important}}</style>" : "") + `<nav id="modtabs">`
   + `<a href="/"${active === "goal" ? ' class="on"' : ""}>Goal Setting</a>`
   + `<span class="mt-drop"><a href="/french-ipa.html"${active === "french" ? ' class="on"' : ""}>French <i>&#9662;</i></a><span class="mt-menu">`
   + [["Sounds", "sounds", "/french-ipa.html#sounds"], ["Vocabulary", "vocab", "/french-ipa.html#vocab"], ["Book", "book", "/french-book.html"], ["Sentences", "sentences", "/french-ipa.html#sentences"], ["Deck", "deck", "/french-ipa.html#deck"], ["Notes", "notes", "/french-notes.html"]].map(([t, k, h]) => `<a href="${h}" data-fr="${k}"${active === "french" && sub === k ? ' class="cur" aria-current="page"' : ""}>${t}</a>`).join("")
@@ -236,8 +249,10 @@ const moduleBar = (active, sub) => MODULE_CSS + (active === "goal" ? "<style>hea
       .map(([t, h, k]) => `<a href="${h}"${active === "english" && sub === k ? ' class="cur" aria-current="page"' : ""}>${t}</a>`).join("")
   + `</span></span>`
   + `<a href="/feynman.html"${active === "feynman" ? ' class="on"' : ""}>Feynman</a>`
-  + `<span id="modbuild">build 10-18-a</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n`;
+  + `<span id="modbuild">build 10-18-e</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n<script>(function(){var bar=document.getElementById("modtabs");if(!bar)return;function closeAll(){bar.querySelectorAll(".mt-drop.open").forEach(function(x){x.classList.remove("open")})}bar.addEventListener("click",function(e){if(e.target.closest(".mt-menu a")){setTimeout(closeAll,0);return}var a=e.target.closest(".mt-drop>a");if(!a||!matchMedia("(hover:none)").matches)return;e.preventDefault();var d=a.parentElement,was=d.classList.contains("open");closeAll();if(!was){d.classList.add("open");var m=d.querySelector(".mt-menu");m.style.left=Math.max(6,a.getBoundingClientRect().left)+"px"}});document.addEventListener("click",function(e){if(!e.target.closest("#modtabs .mt-drop"))closeAll()});bar.addEventListener("scroll",closeAll,{passive:true})})();</script>\n`;
+const HEAD_EXTRA = `<link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Goal Setting">`;
 function withModuleBar(html, active, sub) {
+  html = html.replace("</head>", HEAD_EXTRA + "</head>");
   const m = /<body[^>]*>/i.exec(html);
   return m ? html.slice(0, m.index + m[0].length) + "\n" + moduleBar(active, sub) + html.slice(m.index + m[0].length)
            : moduleBar(active, sub) + html;
@@ -245,7 +260,7 @@ function withModuleBar(html, active, sub) {
 
 /* pages and assets that need no sign-in (they hold no server data) */
 const ENGLISH_SUB = { "english.html": "idioms", "vocabulary.html": "vocabulary", "grammar.html": "grammar", "irregular-verbs.html": "verbs", "english-notes.html": "notes" };
-const PUBLIC_PAGES = new Set(["login.html", "server-shim.js", "timer.js", "reminders.js", "store.js", "fr-en-ipa.js", "study.js", "study.css", "srs.js"]);   // assets only; the French / English pages need a sign-in because their data lives in your account
+const PUBLIC_PAGES = new Set(["login.html", "server-shim.js", "timer.js", "reminders.js", "store.js", "apple-touch-icon.png", "fr-en-ipa.js", "study.js", "study.css", "srs.js"]);   // assets only; the French / English pages need a sign-in because their data lives in your account
 const SHIM_TAG = `<script src="/server-shim.js"></script>\n`;
 function serveApp(res) {
   const f = join(PUBLIC, "app.html");

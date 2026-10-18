@@ -30,3 +30,4 @@ public/french-book.html
 public/pdf.min.js
 public/pdf.worker.min.js
 public/pdf_viewer.css
+public/apple-touch-icon.png

@@ -23,7 +23,7 @@
   button, input, select { font: inherit; color: inherit; }
   button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-  .bk { display: flex; height: calc(100vh - 40px); min-height: 360px; }
+  .bk { display: flex; height: calc(100vh - 40px); height: calc(100dvh - 40px); min-height: 360px; }
   .bk-side { width: 300px; flex: none; background: var(--card); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
   .bk-side[hidden] { display: none; }
   .bk-tabs { display: flex; gap: 6px; padding: 10px 10px 6px; }
@@ -73,6 +73,15 @@
   .pop[hidden] { display: none; }
   @media (max-width: 760px) { .bk-side { position: absolute; z-index: 20; height: calc(100% - 0px); } .bk-stage { padding: 10px 40px; } }
   :fullscreen .bk { height: 100vh; }
+  @media (max-width: 700px) {
+    .bk-bar { gap: 4px 6px; padding: 6px 8px; }
+    .bk-bar .grp { padding-right: 4px; margin-right: 0; border-right: 0; }
+    .btn { min-width: 40px; height: 40px; } #pgIn { height: 40px; width: 64px; } .bk-bar select { height: 40px; max-width: 190px; }
+    #fWidth, #fPage, #zOut, #zIn, #fs { display: none; }          /* pinch to zoom instead */
+    .bk-stage { padding: 8px 6px; touch-action: pan-y pinch-zoom; } .nav { display: none; }
+    .bk-foot { display: none; }
+  }
+  @media (pointer: coarse) { .sr, .toc a { min-height: 44px; } .btn { min-height: 40px; } .bk-tabs button { min-height: 44px; } }
 </style>
 </head>
 <body>
@@ -167,6 +176,7 @@
         el.className = "pg" + (list.length === 2 ? (k === 0 ? " left" : " right") : "");
         el.style.width = Math.floor(vp.width) + "px"; el.style.height = Math.floor(vp.height) + "px";
         var cv = document.createElement("canvas"), ratio = Math.min(window.devicePixelRatio || 1, 2);
+        while (ratio > 1 && vp.width * vp.height * ratio * ratio > 9e6) ratio -= 0.25;            // iPhones and iPads limit how big a canvas can be
         cv.width = Math.floor(vp.width * ratio); cv.height = Math.floor(vp.height * ratio); cv.style.width = Math.floor(vp.width) + "px"; cv.style.height = Math.floor(vp.height) + "px";
         el.appendChild(cv);
         var tl = document.createElement("div"); tl.className = "textLayer"; tl.style.setProperty("--scale-factor", vp.scale); el.appendChild(tl);
@@ -294,6 +304,20 @@
     else if (k === "f" || k === "F") $("fs").onclick(); else if (k === "/") { e.preventDefault(); $("side").hidden = false; $("fTab").onclick(); }
   });
   var rt; window.addEventListener("resize", function () { clearTimeout(rt); rt = setTimeout(function () { if (pdf) show(page); }, 200); });
+
+  /* ---------- swipe to turn the page (when the page is not zoomed in) ---------- */
+  (function () {
+    var st = null, stage = $("stage");
+    stage.addEventListener("touchstart", function (e) { st = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() } : null; }, { passive: true });
+    stage.addEventListener("touchend", function (e) {
+      if (!st || !e.changedTouches.length) return;
+      var dx = e.changedTouches[0].clientX - st.x, dy = e.changedTouches[0].clientY - st.y, dt = Date.now() - st.t; st = null;
+      if (window.visualViewport && window.visualViewport.scale > 1.05) return;                       // pinch-zoomed: swiping pans instead
+      if (String(getSelection()).length) return;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy) && dt < 700) flip(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  })();
+  if (!document.documentElement.requestFullscreen) $("fs").style.display = "none";                   // iPhone Safari has no full screen for pages
 
   /* ---------- select a word or phrase -> hear it in French ---------- */
   var pop = $("pop"), picked = "";
