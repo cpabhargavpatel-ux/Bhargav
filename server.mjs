@@ -21,8 +21,8 @@
 import { createServer } from "node:http";
 import { DatabaseSync } from "node:sqlite";
 import { randomBytes, pbkdf2Sync, timingSafeEqual } from "node:crypto";
-import { readFileSync, existsSync, mkdirSync, copyFileSync, statSync, unlinkSync } from "node:fs";
-import { join, dirname, extname, sep } from "node:path";
+import { readFileSync, existsSync, mkdirSync, copyFileSync, statSync, unlinkSync, createReadStream, readdirSync } from "node:fs";
+import { join, dirname, extname, sep, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
 
@@ -67,6 +67,8 @@ function pickDataDir() {
 const DATA = pickDataDir();
 const BACKUP2 = process.env.GTN_BACKUP2 || join(HERE, "Backups");
 const PUBLIC = join(HERE, "public");
+/* Books (PDFs) you read on French > Book live in the "French Learning" folder beside this file. */
+const BOOKS_DIR = process.env.GTN_BOOKS || join(HERE, "French Learning");
 if (!existsSync(DATA)) mkdirSync(DATA, { recursive: true });
 const DB_PATH = join(DATA, "goals.db");
 
@@ -227,14 +229,14 @@ const MODULE_CSS = `<style>
 const moduleBar = (active, sub) => MODULE_CSS + (active === "goal" ? "<style>header{top:40px !important}@media print{header{top:0 !important}}</style>" : "") + `<nav id="modtabs">`
   + `<a href="/"${active === "goal" ? ' class="on"' : ""}>Goal Setting</a>`
   + `<span class="mt-drop"><a href="/french-ipa.html"${active === "french" ? ' class="on"' : ""}>French <i>&#9662;</i></a><span class="mt-menu">`
-  + [["Sounds", "sounds", "/french-ipa.html#sounds"], ["Vocabulary", "vocab", "/french-ipa.html#vocab"], ["Sentences", "sentences", "/french-ipa.html#sentences"], ["Deck", "deck", "/french-ipa.html#deck"], ["Notes", "notes", "/french-notes.html"]].map(([t, k, h]) => `<a href="${h}" data-fr="${k}"${active === "french" && sub === "notes" && k === "notes" ? ' class="cur" aria-current="page"' : ""}>${t}</a>`).join("")
+  + [["Sounds", "sounds", "/french-ipa.html#sounds"], ["Vocabulary", "vocab", "/french-ipa.html#vocab"], ["Book", "book", "/french-book.html"], ["Sentences", "sentences", "/french-ipa.html#sentences"], ["Deck", "deck", "/french-ipa.html#deck"], ["Notes", "notes", "/french-notes.html"]].map(([t, k, h]) => `<a href="${h}" data-fr="${k}"${active === "french" && sub === k ? ' class="cur" aria-current="page"' : ""}>${t}</a>`).join("")
   + `</span></span>`
   + `<span class="mt-drop"><a href="/english.html"${active === "english" ? ' class="on"' : ""}>English <i>&#9662;</i></a><span class="mt-menu">`
   + [["Idioms", "/english.html", "idioms"], ["Vocabulary", "/vocabulary.html", "vocabulary"], ["Grammar", "/grammar.html", "grammar"], ["Irregular verbs", "/irregular-verbs.html", "verbs"], ["Notes", "/english-notes.html", "notes"]]
       .map(([t, h, k]) => `<a href="${h}"${active === "english" && sub === k ? ' class="cur" aria-current="page"' : ""}>${t}</a>`).join("")
   + `</span></span>`
   + `<a href="/feynman.html"${active === "feynman" ? ' class="on"' : ""}>Feynman</a>`
-  + `<span id="modbuild">build 10-17-p</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n`;
+  + `<span id="modbuild">build 10-18-a</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n`;
 function withModuleBar(html, active, sub) {
   const m = /<body[^>]*>/i.exec(html);
   return m ? html.slice(0, m.index + m[0].length) + "\n" + moduleBar(active, sub) + html.slice(m.index + m[0].length)
@@ -273,6 +275,23 @@ const server = createServer(async (req, res) => {
         if (!u) { res.writeHead(302, { location: "/login.html" }); res.end(); return; }
         return serveApp(res);
       }
+      if (p.startsWith("/books/")) {                       // a PDF from the French Learning folder, with Range support so big books open fast
+        if (!u) { res.writeHead(401).end("Sign in first"); return; }
+        const name = p.slice(7), f = join(BOOKS_DIR, name);
+        if (!name || name !== basename(name) || extname(name).toLowerCase() !== ".pdf" || !existsSync(f) || !statSync(f).isFile()) { res.writeHead(404).end("Not found"); return; }
+        const size = statSync(f).size, m = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || "");
+        const base = { "content-type": "application/pdf", "accept-ranges": "bytes", "cache-control": "private, max-age=3600" };
+        if (m && (m[1] || m[2])) {
+          let a = m[1] === "" ? Math.max(0, size - parseInt(m[2], 10)) : parseInt(m[1], 10), z = m[1] === "" || m[2] === "" ? size - 1 : Math.min(parseInt(m[2], 10), size - 1);
+          if (!(a <= z) || a >= size) { res.writeHead(416, { "content-range": "bytes */" + size }).end(); return; }
+          res.writeHead(206, { ...base, "content-range": `bytes ${a}-${z}/${size}`, "content-length": z - a + 1 });
+          if (req.method === "HEAD") { res.end(); return; }
+          createReadStream(f, { start: a, end: z }).pipe(res); return;
+        }
+        res.writeHead(200, { ...base, "content-length": size });
+        if (req.method === "HEAD") { res.end(); return; }
+        createReadStream(f).pipe(res); return;
+      }
       const rel = p.replace(/^\/+/, "");
       if (rel === "notes.html" || rel === "quick-notes.html") { res.writeHead(302, { location: "/french-notes.html" }); res.end(); return; }   // the notes live under French and English now
       const NOTES_PAGES = { "french-notes.html": "fr", "english-notes.html": "en" };               // one page file, two separate note books
@@ -283,6 +302,7 @@ const server = createServer(async (req, res) => {
       let b = readFileSync(file);
       if (rel === "french-ipa.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "french"));
       if (rel === "feynman.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "feynman"));
+      if (rel === "french-book.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "french", "book"));
       if (NOTES_PAGES[rel]) {
         const html = b.toString("utf8").replace("<head>", `<head>\n<script>window.NOTES_LANG=${JSON.stringify(NOTES_PAGES[rel])}</script>`);
         b = Buffer.from(withModuleBar(html, NOTES_PAGES[rel] === "fr" ? "french" : "english", "notes"));
@@ -340,6 +360,11 @@ const server = createServer(async (req, res) => {
 
     if (!u) return json(res, 401, { error: "Please sign in." });
 
+    if (p === "/api/books") {                              // the PDFs in the French Learning folder
+      let books = [];
+      try { books = readdirSync(BOOKS_DIR, { withFileTypes: true }).filter(d => d.isFile() && extname(d.name).toLowerCase() === ".pdf").map(d => ({ name: d.name, size: statSync(join(BOOKS_DIR, d.name)).size })).sort((a, b) => a.name.localeCompare(b.name)); } catch (e) {}
+      return json(res, 200, { dir: BOOKS_DIR, books });
+    }
     if (p === "/api/me") return json(res, 200, { user: { id: u.id, username: u.username, displayName: u.display_name, role: u.role } });
 
     /* ---- the signed-in user's own document ---- */

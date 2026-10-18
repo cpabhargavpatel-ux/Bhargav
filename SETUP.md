@@ -58,6 +58,18 @@ what ships with Node (its web server, SQLite database, and crypto).
 - Individual users can also Export/Import their own goals as JSON from
   inside the app at any time.
 
+## Reading a PDF book (French > Book)
+
+Put any PDF in the **`French Learning`** folder next to `server.mjs` (for example
+`...\Goal Setting Server\French Learning\French-English_Bilingual_Visual_Dictionary.pdf`),
+then open **French > Book**. It opens like a book (cover alone, then two-page spreads), with a
+contents list from the PDF's bookmarks, full-text search with the matches highlighted, a
+jump-to-page box, zoom, full screen, and it remembers the page you stopped at for each PDF.
+Select a word or phrase on a page and press **Hear it** to have it read in French. The server
+sends only the parts of a large PDF you look at. The PDF reader is
+[PDF.js](https://mozilla.github.io/pdf.js/) (Apache-2.0), bundled as `pdf.min.js`,
+`pdf.worker.min.js` and `pdf_viewer.css`, so it works offline.
+
 ## Run it automatically at sign-in (optional)
 
 Task Scheduler → Create Task:

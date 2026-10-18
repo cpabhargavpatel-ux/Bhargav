@@ -26,3 +26,7 @@ public/fonts/gentium-book-plus-700.woff2
 Goal Setting.vbs
 Stop Goal Setting.vbs
 French IPA.vbs
+public/french-book.html
+public/pdf.min.js
+public/pdf.worker.min.js
+public/pdf_viewer.css
