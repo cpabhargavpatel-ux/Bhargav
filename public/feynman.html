@@ -310,8 +310,8 @@
     $("analogy").oninput = function () { t.analogy = this.value; save(); };
     var d = $("draft"), upd = function () { var n = words(d.value); $("count").textContent = n + " words" + (has ? " (latest version: " + words(latest(t)) + ")" : ""); };
     d.oninput = function () { t.draft = d.value; save(); upd(); }; upd();
-    $("saveS").onclick = function () { addVersion(t, d.value); t.simplified = true; save(); refreshChips(); renderPanel(); if (window.Cheer) Cheer.claps(3); };
-    $("mast").onclick = function () { t.mastered = !t.mastered; save(); refreshChips(); renderPanel(); if (window.Cheer && t.mastered) Cheer.applause(3); };
+    $("saveS").onclick = function () { addVersion(t, d.value); t.simplified = true; save(); refreshChips(); renderPanel(); };
+    $("mast").onclick = function () { t.mastered = !t.mastered; save(); refreshChips(); renderPanel(); };
   }
 
   /* ---------- wiring ---------- */

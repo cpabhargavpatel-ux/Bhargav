@@ -2522,7 +2522,6 @@ refreshWeak();
       w.appendChild(sp); w.appendChild(document.createTextNode(" "));
     });
     $("spHeard").textContent = "Heard: “" + heard.trim() + "”";
-    if (window.Cheer && r.pct >= 80) { if (r.pct >= 100) Cheer.applause(2.5); else Cheer.claps(r.pct >= 90 ? 4 : 2); }
     return r.pct;
   }
 
@@ -2856,7 +2855,6 @@ refreshWeak();
     if (!S) return;
     if (!S.q.length) {
       const nx = cards().filter(c => c.r.sr).map(c => c.r.sr.due).sort((a, b) => a - b)[0], done = S.done;
-      if (window.Cheer) Cheer.applause(3);
       endSession("🎉 Session complete — " + done + " card" + (done === 1 ? "" : "s") + " reviewed." + (nx ? " The next one is due " + SRS.dueLabel({ sr: { due: nx } }).text + "." : "")); return;
     }
     const r = S.q[0], mode = $d("deckMode").value;
@@ -2885,7 +2883,6 @@ refreshWeak();
     r.sr = { ease: st.ease, iv: st.iv, reps: st.reps, lapses: st.lapses, due: st.due, last: Date.now() };
     materialize(r); deckSave();
     if (g === 0) S.q.push(r); else S.done++;                       // "Again": it comes back later in this session
-    if (window.Cheer && g >= 2) Cheer.claps(g === 3 ? 4 : 2);
     next();
   }
   $d("deckStart").addEventListener("click", startSession);

@@ -18,7 +18,6 @@ public/irregular-verbs.html
 public/vocabulary.html
 public/app.html
 public/timer.js
-public/cheer.js
 public/reminders.js
 public/quick-notes.html
 public/fonts/gentium-book-plus-400.woff2
