@@ -137,4 +137,4 @@ and server always run the same app, only the storage differs.
 
 ## Clapping sounds
 
-The app plays short clapping / applause sound effects when you win something: a Good or Easy grade in the French deck, a finished deck session, a sentence-practice score of 80% or more, a Feynman topic marked simplified or mastered. They are synthesised in the browser (no audio files). The 👏 button in the top bar turns them off and on (the choice is remembered per browser).
+The app plays short clapping / applause sound effects when you win something: a Good or Easy grade in the French deck, a finished deck session, a sentence-practice score of 80% or more, a Feynman topic marked simplified or mastered. They are synthesised in the browser (no audio files). The **👏 Clap** button in the top bar (on every page) claps whenever you like: tap for three claps, keep tapping for a clap each time, press and hold (or Shift-click) for applause. The 🔔 button beside it mutes or restores the automatic cheers (remembered per browser).
