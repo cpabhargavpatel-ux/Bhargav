@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shadowing</title>
+<script>try{var p=parseInt(localStorage.getItem("en-fontsize"));if(p>=80&&p<=180)document.documentElement.style.fontSize=p+"%"}catch(e){}</script>
+<style>
+  :root {
+    --bg: #f3f5f9; --card: #ffffff; --ink: #1b2433; --mute: #667085; --line: #d9dfeb; --soft: #eef1f8;
+    --accent: #2f4bd8; --accent-ink: #ffffff; --accent-soft: #e4e9ff; --danger: #c0392b; --danger-soft: #fde8e5;
+    --ok: #1f8a4c; --ok-soft: #e3f5ea; --hint: #fff8e1; --hint-line: #ecd98a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10151f; --card: #19212f; --ink: #e6ebf5; --mute: #98a5bd; --line: #2b3850; --soft: #212c40;
+      --accent: #8199ff; --accent-ink: #0b1230; --accent-soft: #25305a; --danger: #ff8a7a; --danger-soft: #3d2420;
+      --ok: #5fd08a; --ok-soft: #1c3a2a; --hint: #2e2a14; --hint-line: #6b5a1c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  button, input, select { font: inherit; color: inherit; }
+  button:focus-visible, input:focus-visible, select:focus-visible, video:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .sh { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 16px; max-width: 1500px; margin: 0 auto; padding: 16px 16px 48px; align-items: start; }
+  @media (max-width: 860px) { .sh { grid-template-columns: 1fr; } }
+
+  .side { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; position: sticky; top: 56px; max-height: calc(100vh - 72px); display: flex; flex-direction: column; }
+  @media (max-width: 860px) { .side { position: static; max-height: 300px; } }
+  .side h1 { margin: 0; font-size: 1.2rem; }
+  .side .sub { margin: 2px 0 10px; color: var(--mute); font-size: .86rem; }
+  .vl { list-style: none; margin: 0; padding: 0; overflow: auto; flex: 1; min-height: 60px; }
+  .vl li { margin: 0 0 6px; }
+  .vl button { width: 100%; text-align: left; background: var(--soft); border: 1px solid transparent; border-radius: 9px; padding: 8px 10px; cursor: pointer; display: block; }
+  .vl button:hover { border-color: var(--line); }
+  .vl button.on { background: var(--accent-soft); border-color: var(--accent); }
+  .vl .nm { font-weight: 600; font-size: .92rem; word-break: break-word; }
+  .vl .mt { color: var(--mute); font-size: .78rem; }
+  .vl .rec { color: var(--ok); }
+  .empty { color: var(--mute); font-size: .9rem; margin: 6px 0; }
+  .empty code { background: var(--soft); border-radius: 5px; padding: 1px 5px; word-break: break-all; font-size: .82rem; }
+  .btn { font-weight: 600; font-size: .92rem; border-radius: 9px; padding: 9px 14px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); white-space: nowrap; touch-action: manipulation; }
+  .btn.alt { background: transparent; color: var(--accent); }
+  .btn.rec.on { background: var(--danger); border-color: var(--danger); color: #fff; animation: pulse 1.2s infinite; }
+  .btn.small { font-size: .8rem; padding: 5px 10px; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  @keyframes pulse { 50% { opacity: .7; } }
+  .btn kbd { font: 700 .75rem ui-monospace, Consolas, monospace; background: rgba(255,255,255,.22); border: 1px solid rgba(255,255,255,.45); border-radius: 5px; padding: 0 6px; margin-left: 6px; }
+  .btn.alt kbd { background: var(--soft); border-color: var(--line); }
+
+  .main { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-width: 0; }
+  .main h2 { margin: 0 0 8px; font-size: 1.05rem; word-break: break-word; }
+  .stage { background: #000; border-radius: 10px; overflow: hidden; }
+  video { display: block; width: 100%; max-height: 68vh; background: #000; }
+  video.aud { height: 54px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0 6px; }
+  .opts { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; color: var(--mute); font-size: .88rem; margin: 6px 0; }
+  .opts label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+  .opts select { background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 3px 6px; }
+  .status { min-height: 1.6em; margin: 8px 0 2px; font-weight: 600; }
+  .status.rec { color: var(--danger); }
+  .mine { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--mute); font-size: .88rem; }
+  .keys { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; color: var(--mute); font-size: .86rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 4px 14px; }
+  .keys kbd { font: 700 .78rem ui-monospace, Consolas, monospace; background: var(--soft); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 6px; color: var(--ink); }
+  .tip { background: var(--hint); border: 1px solid var(--hint-line); border-radius: 9px; padding: 8px 12px; margin: 10px 0 0; font-size: .86rem; }
+  .none { padding: 40px 10px; text-align: center; color: var(--mute); }
+  @media (max-width: 700px) { .keys { display: none; } .btn { flex: 1 1 140px; } }
+</style>
+</head>
+<body>
+<div class="sh">
+  <aside class="side">
+    <h1>Shadowing</h1>
+    <p class="sub">Videos from your <b>Shadowing</b> folder.</p>
+    <ul class="vl" id="vl"></ul>
+    <div class="empty" id="empty" hidden></div>
+    <button class="btn alt small" id="refresh" type="button" style="margin-top:8px">↻ Refresh the list</button>
+  </aside>
+
+  <section class="main">
+    <div class="none" id="none">Pick a video on the left.</div>
+    <div id="work" hidden>
+      <h2 id="title"></h2>
+      <div class="stage"><video id="v" controls playsinline preload="metadata"></video></div>
+      <div class="bar">
+        <button class="btn" id="bStart" type="button">▶ Start<kbd>S</kbd></button>
+        <button class="btn rec" id="bRec" type="button">● Record my voice<kbd>R</kbd></button>
+        <button class="btn alt" id="bPlay" type="button">▶ My voice<kbd>P</kbd></button>
+      </div>
+      <div class="status" id="status" role="status" aria-live="polite"></div>
+      <div class="mine" id="mine"></div>
+      <div class="opts">
+        <label>Speed <select id="rate"><option>0.5</option><option>0.6</option><option>0.7</option><option>0.75</option><option>0.8</option><option>0.9</option><option selected>1</option><option>1.1</option><option>1.25</option></select></label>
+        <label><input type="checkbox" id="oLoop"> Repeat the video (<kbd>L</kbd>)</label>
+        <label id="subLbl" hidden><input type="checkbox" id="oSubs" checked> Subtitles</label>
+        <label><input type="checkbox" id="oRecPlay" checked> R also starts the video, and stops it when recording stops</label>
+        <label><input type="checkbox" id="oRecEnd" checked> Stop recording when the video ends</label>
+        <label><input type="checkbox" id="oBoth"> P also plays the video (muted) to watch with my voice</label>
+      </div>
+      <div class="keys">
+        <span><kbd>S</kbd> start / stop the video</span>
+        <span><kbd>R</kbd> record my voice / stop recording</span>
+        <span><kbd>P</kbd> play my voice / stop playing</span>
+        <span><kbd>←</kbd> <kbd>→</kbd> back / forward 3 seconds</span>
+        <span><kbd>0</kbd> back to the beginning</span>
+        <span><kbd>L</kbd> repeat the video on / off</span>
+      </div>
+      <p class="tip">Shadowing: play the video and speak along with it, a split second behind, copying the rhythm, the melody and the sounds. <b>Use headphones</b> so the video's sound doesn't leak into your recording. On an iPhone or iPad the microphone needs the <code>https://</code> address (see SETUP.md); the keyboard shortcuts need a keyboard, the buttons work everywhere.</p>
+    </div>
+  </section>
+</div>
+<script src="/store.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var v = $("v"), statusEl = $("status"), cur = null, list = [], meta = {}, mine = null, mineAudio = null, rec = null;
+  var LS = function (k, d) { try { var x = localStorage.getItem(k); return x == null ? d : x; } catch (e) { return d; } };
+  var LSset = function (k, x) { try { localStorage.setItem(k, x); } catch (e) {} };
+  var h36 = function (s) { var a = 2166136261, b = 5381; for (var i = 0; i < s.length; i++) { var k = s.charCodeAt(i); a ^= k; a = Math.imul(a, 16777619); b = (Math.imul(b, 33) ^ k) | 0; } return (a >>> 0).toString(36) + (b >>> 0).toString(36); };
+  var blobKey = function (name) { return "shadow-" + h36(name); };
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+  var mb = function (n) { return n >= 1e9 ? (n / 1e9).toFixed(1) + " GB" : (n / 1e6).toFixed(n < 1e7 ? 1 : 0) + " MB"; };
+  var clock = function (s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60); };
+  function say(t, cls) { statusEl.textContent = t || ""; statusEl.className = "status" + (cls ? " " + cls : ""); }
+
+  /* ---------- the list ---------- */
+  Store.load("shadow-meta", {}, null).then(function (m) { meta = m || {}; paintList(); showMine(); });
+  function saveMeta() { Store.save("shadow-meta", meta); }
+  function paintList() {
+    var ul = $("vl"); ul.textContent = "";
+    list.forEach(function (it) {
+      var li = document.createElement("li"), b = document.createElement("button"), m = meta[it.name];
+      b.type = "button"; b.className = cur && cur.name === it.name ? "on" : "";
+      b.innerHTML = '<div class="nm">' + esc(it.name.replace(/\.[^.]+$/, "")) + '</div><div class="mt">' + mb(it.size) + (it.sub ? " · subtitles" : "") + (m && m.has ? ' · <span class="rec">● my voice ' + clock(m.dur || 0) + "</span>" : "") + "</div>";
+      b.onclick = function () { open(it); };
+      li.appendChild(b); ul.appendChild(li);
+    });
+  }
+  function loadList() {
+    return fetch("/api/videos", { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (d) {
+      list = d.videos || [];
+      var e = $("empty");
+      e.hidden = list.length > 0;
+      if (!list.length) e.innerHTML = "No videos yet. Put a video (<b>.mp4</b>, <b>.m4v</b>, <b>.webm</b> or <b>.mov</b>; audio files work too) in this folder, then press Refresh:<br><code>" + esc(d.dir || "Shadowing") + "</code><br>A subtitle file with the same name (<b>.vtt</b> or <b>.srt</b>) is picked up automatically.";
+      paintList();
+      if (!cur && list.length) { var last = LS("shadow-last", ""), it = list.filter(function (x) { return x.name === last; })[0]; if (it) open(it); }
+      if (cur && !list.some(function (x) { return x.name === cur.name; })) { cur = null; $("work").hidden = true; $("none").hidden = false; }
+    }).catch(function () { $("empty").hidden = false; $("empty").textContent = "Couldn’t read the list — is the server running?"; });
+  }
+  $("refresh").onclick = loadList;
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") loadList(); });
+
+  /* ---------- open a video ---------- */
+  function open(it) {
+    stopRec(true); stopMine();
+    cur = it; LSset("shadow-last", it.name); paintList();
+    $("none").hidden = true; $("work").hidden = false; $("title").textContent = it.name.replace(/\.[^.]+$/, "");
+    v.classList.toggle("aud", !!it.audio);
+    while (v.firstChild) v.removeChild(v.firstChild);
+    v.pause(); v.src = "/videos/" + encodeURIComponent(it.name);
+    if (it.sub) {
+      var t = document.createElement("track"); t.kind = "subtitles"; t.label = "Subtitles"; t.srclang = "fr"; t.src = "/videos/" + encodeURIComponent(it.sub); t.default = true; v.appendChild(t);
+    }
+    $("subLbl").hidden = !it.sub; applySubs();
+    v.playbackRate = parseFloat($("rate").value) || 1; v.load();
+    say(""); showMine();
+  }
+  function applySubs() { for (var i = 0; i < v.textTracks.length; i++) v.textTracks[i].mode = $("oSubs").checked ? "showing" : "hidden"; }
+  $("oSubs").onchange = function () { LSset("shadow-subs", this.checked ? "1" : "0"); applySubs(); };
+  v.addEventListener("loadedmetadata", applySubs);
+  v.addEventListener("error", function () { if (cur) say("This browser can’t play “" + cur.name + "”. Use an .mp4 (H.264 + AAC) or .webm file.", "rec"); });
+
+  /* ---------- video: start / stop ---------- */
+  function toggleVideo() {
+    if (!cur) return;
+    stopMine();
+    if (v.paused) { v.play().catch(function () { say("The browser blocked playing — press Start again.", "rec"); }); } else v.pause();
+  }
+  function syncStart() { $("bStart").innerHTML = (v.paused ? "▶ Start" : "■ Stop") + "<kbd>S</kbd>"; }
+  v.addEventListener("play", syncStart); v.addEventListener("pause", syncStart); v.addEventListener("ended", syncStart);
+  v.addEventListener("ended", function () { if (rec && $("oRecEnd").checked && rec.withVideo) stopRec(); });
+  $("bStart").onclick = toggleVideo;
+  $("rate").onchange = function () { v.playbackRate = parseFloat(this.value) || 1; LSset("shadow-rate", this.value); this.blur(); };
+  v.addEventListener("loadeddata", function () { v.playbackRate = parseFloat($("rate").value) || 1; });
+  $("oLoop").onchange = function () { v.loop = this.checked; LSset("shadow-loop", this.checked ? "1" : "0"); };
+  ["oRecPlay", "oRecEnd", "oBoth"].forEach(function (id) { $(id).onchange = function () { LSset("shadow-" + id, this.checked ? "1" : "0"); }; });
+  $("rate").value = LS("shadow-rate", "1"); if ($("rate").value !== LS("shadow-rate", "1")) $("rate").value = "1";
+  $("oLoop").checked = LS("shadow-loop", "0") === "1"; v.loop = $("oLoop").checked;
+  $("oSubs").checked = LS("shadow-subs", "1") === "1";
+  ["oRecPlay", "oRecEnd"].forEach(function (id) { $(id).checked = LS("shadow-" + id, "1") === "1"; });
+  $("oBoth").checked = LS("shadow-oBoth", "0") === "1";
+
+  /* ---------- record my voice ---------- */
+  var stream = null, starting = false;
+  function recNow() { return !!rec; }
+  async function startRec() {
+    if (!cur || starting) return;
+    if (!window.isSecureContext || !navigator.mediaDevices || !window.MediaRecorder) { say("Recording needs a secure page: on the PC open http://localhost:… ; on an iPhone/iPad use the https:// address (Tailscale Serve — see SETUP.md).", "rec"); return; }
+    stopMine(); starting = true;
+    if (!stream || !stream.active) {
+      try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+      catch (e) { starting = false; say("Microphone blocked — allow it in the browser’s address bar, then press R again.", "rec"); return; }
+    }
+    starting = false;
+    var chunks = [], mr;
+    try { mr = new MediaRecorder(stream, { audioBitsPerSecond: 48000 }); } catch (e) { mr = new MediaRecorder(stream); }
+    var withVideo = $("oRecPlay").checked, t0 = v.currentTime || 0, started = Date.now();
+    rec = { mr: mr, withVideo: withVideo, t0: t0, chunks: chunks, started: started, cur: cur };
+    mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+    mr.onstop = function () { finishRec(rec && rec.mr === mr ? rec : null, mr, chunks, t0, started, cur, withVideo); };
+    mr.start(1000);
+    $("bRec").classList.add("on"); $("bRec").innerHTML = "■ Stop recording<kbd>R</kbd>";
+    if (withVideo) v.play().catch(function () {});
+    tickRec();
+  }
+  var tickT = 0;
+  function tickRec() {
+    clearTimeout(tickT);
+    if (!rec) return;
+    var s = (Date.now() - rec.started) / 1000;
+    say("● Recording " + clock(s) + " — speak along with the video. Press R to stop.", "rec");
+    if (s > 900) { stopRec(); return; }                                   // 15 minutes at most
+    tickT = setTimeout(tickRec, 500);
+  }
+  function stopRec(discard) {
+    if (!rec) return;
+    var r = rec; if (discard) r.discard = true;
+    $("bRec").classList.remove("on"); $("bRec").innerHTML = "● Record my voice<kbd>R</kbd>";
+    clearTimeout(tickT);
+    try { r.mr.stop(); } catch (e) { rec = null; }
+    if (r.withVideo && !discard) v.pause();
+    if (discard) rec = null;
+  }
+  async function finishRec(r, mr, chunks, t0, started, item, withVideo) {
+    var discarded = !r || r.discard; rec = null;
+    if (discarded) return;
+    var blob = new Blob(chunks, { type: mr.mimeType || "audio/webm" }), dur = (Date.now() - started) / 1000;
+    if (blob.size < 1500) { say("Nothing was recorded — check the microphone.", "rec"); return; }
+    mine = { name: item.name, blob: blob };
+    meta[item.name] = { has: true, dur: Math.round(dur), t0: withVideo ? Math.round(t0 * 100) / 100 : null, at: Date.now() };
+    saveMeta(); paintList(); showMine();
+    say("Saved your voice (" + clock(dur) + "). Press P to hear it.", "");
+    var ok = await Store.putBlob(blobKey(item.name), blob);
+    if (!ok) say("Recorded, but it could not be saved to your account (too large or offline). It is still here until you leave the page — press P.", "rec");
+  }
+  $("bRec").onclick = function () { recNow() ? stopRec() : startRec(); };
+
+  /* ---------- play my voice ---------- */
+  function stopMine() {
+    if (mineAudio) { var a = mineAudio; mineAudio = null; a.pause(); try { URL.revokeObjectURL(a.src); } catch (e) {} }
+    v.muted = false; $("bPlay").innerHTML = "▶ My voice<kbd>P</kbd>";
+  }
+  async function playMine() {
+    if (!cur) return;
+    if (mineAudio) { stopMine(); say(""); return; }
+    if (recNow()) { say("Stop recording first (R).", "rec"); return; }
+    v.pause();
+    var blob = mine && mine.name === cur.name ? mine.blob : null;
+    if (!blob) { say("Loading your recording…"); blob = await Store.getBlob(blobKey(cur.name)); if (blob) mine = { name: cur.name, blob: blob }; }
+    if (!blob) { say("No recording of this video yet — press R to record your voice.", "rec"); return; }
+    var a = new Audio(URL.createObjectURL(blob)); mineAudio = a;
+    var m = meta[cur.name], together = $("oBoth").checked && m && m.t0 != null;
+    a.onended = a.onerror = function () { if (mineAudio === a) { stopMine(); if (together) v.pause(); say(""); } };
+    $("bPlay").innerHTML = "■ Stop my voice<kbd>P</kbd>";
+    try { await a.play(); } catch (e) { stopMine(); say("The browser blocked playing — press P again.", "rec"); return; }
+    if (together) { v.muted = true; try { v.currentTime = m.t0; } catch (e) {} v.play().catch(function () {}); }
+    say("▶ Playing your voice…");
+  }
+  $("bPlay").onclick = playMine;
+  function showMine() {
+    var m = cur && meta[cur.name], el = $("mine"); el.textContent = "";
+    if (!m || !m.has) return;
+    el.appendChild(document.createTextNode("My latest recording: " + clock(m.dur || 0) + " · " + new Date(m.at || Date.now()).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })));
+    var d = document.createElement("button"); d.type = "button"; d.className = "btn alt small"; d.textContent = "Delete it";
+    d.onclick = function () { if (!confirm("Delete your recording of this video?")) return; stopMine(); Store.delBlob(blobKey(cur.name)); if (mine && mine.name === cur.name) mine = null; delete meta[cur.name]; saveMeta(); paintList(); showMine(); say(""); };
+    el.appendChild(d);
+  }
+
+  /* ---------- keyboard ---------- */
+  document.addEventListener("keydown", function (e) {            // capture phase: the page's keys win over the video's own
+    if (e.ctrlKey || e.metaKey || e.altKey || !cur || $("work").hidden) return;
+    var t = e.target, tag = t && t.tagName;
+    if (tag === "INPUT" && t.type !== "checkbox" || tag === "TEXTAREA" || tag === "SELECT" || (t && t.isContentEditable)) return;
+    var k = e.key.toLowerCase(), used = true;
+    if (k === "s") toggleVideo();
+    else if (k === "r") recNow() ? stopRec() : startRec();
+    else if (k === "p") playMine();
+    else if (k === "l") { $("oLoop").checked = !$("oLoop").checked; $("oLoop").onchange.call($("oLoop")); }
+    else if (k === "0") { try { v.currentTime = 0; } catch (x) {} }
+    else if (e.key === "ArrowLeft") { v.currentTime = Math.max(0, v.currentTime - 3); }
+    else if (e.key === "ArrowRight") { v.currentTime = Math.min(v.duration || 1e9, v.currentTime + 3); }
+    else used = false;
+    if (used) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
+  addEventListener("pagehide", function () { if (rec) stopRec(true); });
+
+  loadList();
+})();
+</script>
+</body>
+</html>

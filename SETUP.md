@@ -134,3 +134,17 @@ and server always run the same app, only the storage differs.
 - This is a small office/home tool served over plain HTTP on a trusted
   network. Do not expose port 8484 to the internet as-is — if remote access
   is ever needed, put it behind a VPN.
+
+## Shadowing (video + your own voice)
+
+Put videos in the **`Shadowing`** folder next to `server.mjs` (the app creates it on start), then open the
+**Shadowing** tab and pick one. `.mp4` (H.264 + AAC), `.m4v`, `.webm` and `.mov` work, and so do audio files
+(`.mp3`, `.m4a`, `.wav`). If a subtitle file has the same name (`lesson1.mp4` + `lesson1.srt` or `.vtt`) it is shown
+automatically. Large videos stream, so they start quickly and you can skip around.
+
+Keys: **S** start / stop the video, **R** record your voice / stop, **P** play your voice / stop,
+**←** **→** back / forward 3 seconds, **0** back to the beginning, **L** repeat the video. The same actions are buttons
+for the phone and iPad. By default R also starts the video (and stops it when you stop), so you can speak along with it;
+use headphones so the video's sound doesn't leak into the recording. Your latest recording of each video is kept in your
+account, so P still works tomorrow, and a tick lets P replay the video (muted) alongside your voice. The microphone needs
+`http://localhost` on the PC or the `https://` address on an iPhone/iPad (see the Tailscale section above).

@@ -69,6 +69,13 @@ const BACKUP2 = process.env.GTN_BACKUP2 || join(HERE, "Backups");
 const PUBLIC = join(HERE, "public");
 /* Books (PDFs) you read on French > Book live in the "French Learning" folder beside this file. */
 const BOOKS_DIR = process.env.GTN_BOOKS || join(HERE, "French Learning");
+/* Videos (and audio) you shadow on the Shadowing tab live in the "Shadowing" folder beside this file. */
+const VIDEOS_DIR = process.env.GTN_VIDEOS || join(HERE, "Shadowing");
+const MEDIA_TYPES = { ".mp4": "video/mp4", ".m4v": "video/mp4", ".mov": "video/quicktime", ".webm": "video/webm", ".ogv": "video/ogg", ".mkv": "video/x-matroska",
+  ".mp3": "audio/mpeg", ".m4a": "audio/mp4", ".aac": "audio/aac", ".wav": "audio/wav", ".ogg": "audio/ogg", ".opus": "audio/ogg" };
+const isMedia = n => !!MEDIA_TYPES[extname(n).toLowerCase()];
+const isSubs = n => /\.(vtt|srt)$/i.test(n);
+try { mkdirSync(VIDEOS_DIR, { recursive: true }); } catch (e) {}
 if (!existsSync(DATA)) mkdirSync(DATA, { recursive: true });
 const DB_PATH = join(DATA, "goals.db");
 
@@ -249,7 +256,8 @@ const moduleBar = (active, sub) => MODULE_CSS + (active === "goal" ? "<style>hea
       .map(([t, h, k]) => `<a href="${h}"${active === "english" && sub === k ? ' class="cur" aria-current="page"' : ""}>${t}</a>`).join("")
   + `</span></span>`
   + `<a href="/feynman.html"${active === "feynman" ? ' class="on"' : ""}>Feynman</a>`
-  + `<span id="modbuild">build 10-21-a</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n<script>(function(){var bar=document.getElementById("modtabs");if(!bar)return;function closeAll(){bar.querySelectorAll(".mt-drop.open").forEach(function(x){x.classList.remove("open")})}bar.addEventListener("click",function(e){if(e.target.closest(".mt-menu a")){setTimeout(closeAll,0);return}var a=e.target.closest(".mt-drop>a");if(!a||!matchMedia("(hover:none)").matches)return;e.preventDefault();var d=a.parentElement,was=d.classList.contains("open");closeAll();if(!was){d.classList.add("open");var m=d.querySelector(".mt-menu");m.style.left=Math.max(6,a.getBoundingClientRect().left)+"px"}});document.addEventListener("click",function(e){if(!e.target.closest("#modtabs .mt-drop"))closeAll()});bar.addEventListener("scroll",closeAll,{passive:true})})();</script>\n`;
+  + `<a href="/shadowing.html"${active === "shadowing" ? ' class="on"' : ""}>Shadowing</a>`
+  + `<span id="modbuild">build 10-22-a</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n<script>(function(){var bar=document.getElementById("modtabs");if(!bar)return;function closeAll(){bar.querySelectorAll(".mt-drop.open").forEach(function(x){x.classList.remove("open")})}bar.addEventListener("click",function(e){if(e.target.closest(".mt-menu a")){setTimeout(closeAll,0);return}var a=e.target.closest(".mt-drop>a");if(!a||!matchMedia("(hover:none)").matches)return;e.preventDefault();var d=a.parentElement,was=d.classList.contains("open");closeAll();if(!was){d.classList.add("open");var m=d.querySelector(".mt-menu");m.style.left=Math.max(6,a.getBoundingClientRect().left)+"px"}});document.addEventListener("click",function(e){if(!e.target.closest("#modtabs .mt-drop"))closeAll()});bar.addEventListener("scroll",closeAll,{passive:true})})();</script>\n`;
 const HEAD_EXTRA = `<link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Goal Setting">`;
 function withModuleBar(html, active, sub) {
   html = html.replace("</head>", HEAD_EXTRA + "</head>");
@@ -290,12 +298,10 @@ const server = createServer(async (req, res) => {
         if (!u) { res.writeHead(302, { location: "/login.html" }); res.end(); return; }
         return serveApp(res);
       }
-      if (p.startsWith("/books/")) {                       // a PDF from the French Learning folder, with Range support so big books open fast
-        if (!u) { res.writeHead(401).end("Sign in first"); return; }
-        const name = p.slice(7), f = join(BOOKS_DIR, name);
-        if (!name || name !== basename(name) || extname(name).toLowerCase() !== ".pdf" || !existsSync(f) || !statSync(f).isFile()) { res.writeHead(404).end("Not found"); return; }
+      /* a file from the French Learning (PDF) or Shadowing (video / audio) folder, with Range support so big files open and seek fast */
+      const sendRanged = (f, type) => {
         const size = statSync(f).size, m = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || "");
-        const base = { "content-type": "application/pdf", "accept-ranges": "bytes", "cache-control": "private, max-age=3600" };
+        const base = { "content-type": type, "accept-ranges": "bytes", "cache-control": "private, max-age=3600" };
         if (m && (m[1] || m[2])) {
           let a = m[1] === "" ? Math.max(0, size - parseInt(m[2], 10)) : parseInt(m[1], 10), z = m[1] === "" || m[2] === "" ? size - 1 : Math.min(parseInt(m[2], 10), size - 1);
           if (!(a <= z) || a >= size) { res.writeHead(416, { "content-range": "bytes */" + size }).end(); return; }
@@ -305,7 +311,26 @@ const server = createServer(async (req, res) => {
         }
         res.writeHead(200, { ...base, "content-length": size });
         if (req.method === "HEAD") { res.end(); return; }
-        createReadStream(f).pipe(res); return;
+        createReadStream(f).pipe(res);
+      };
+      if (p.startsWith("/books/")) {
+        if (!u) { res.writeHead(401).end("Sign in first"); return; }
+        const name = p.slice(7);
+        const f = join(BOOKS_DIR, name);
+        if (!name || name !== basename(name) || extname(name).toLowerCase() !== ".pdf" || !existsSync(f) || !statSync(f).isFile()) { res.writeHead(404).end("Not found"); return; }
+        sendRanged(f, "application/pdf"); return;
+      }
+      if (p.startsWith("/videos/")) {
+        if (!u) { res.writeHead(401).end("Sign in first"); return; }
+        const name = p.slice(8);
+        const f = join(VIDEOS_DIR, name);
+        if (!name || name !== basename(name) || !(isMedia(name) || isSubs(name)) || !existsSync(f) || !statSync(f).isFile()) { res.writeHead(404).end("Not found"); return; }
+        if (isSubs(name)) {                                  // subtitles: .vtt as it is, .srt converted on the fly
+          let t = readFileSync(f, "utf8").replace(/^\uFEFF/, "");
+          if (/\.srt$/i.test(name)) t = "WEBVTT\n\n" + t.replace(/\r/g, "").replace(/(\d\d:\d\d:\d\d),(\d{3})/g, "$1.$2");
+          res.writeHead(200, { "content-type": "text/vtt; charset=utf-8", "cache-control": "no-store" }); res.end(t); return;
+        }
+        sendRanged(f, MEDIA_TYPES[extname(name).toLowerCase()]); return;
       }
       const rel = p.replace(/^\/+/, "");
       if (rel === "notes.html" || rel === "quick-notes.html") { res.writeHead(302, { location: "/french-notes.html" }); res.end(); return; }   // the notes live under French and English now
@@ -317,6 +342,7 @@ const server = createServer(async (req, res) => {
       let b = readFileSync(file);
       if (rel === "french-ipa.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "french"));
       if (rel === "feynman.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "feynman"));
+      if (rel === "shadowing.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "shadowing"));
       if (rel === "french-book.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "french", "book"));
       if (NOTES_PAGES[rel]) {
         const html = b.toString("utf8").replace("<head>", `<head>\n<script>window.NOTES_LANG=${JSON.stringify(NOTES_PAGES[rel])}</script>`);
@@ -379,6 +405,16 @@ const server = createServer(async (req, res) => {
       let books = [];
       try { books = readdirSync(BOOKS_DIR, { withFileTypes: true }).filter(d => d.isFile() && extname(d.name).toLowerCase() === ".pdf").map(d => ({ name: d.name, size: statSync(join(BOOKS_DIR, d.name)).size })).sort((a, b) => a.name.localeCompare(b.name)); } catch (e) {}
       return json(res, 200, { dir: BOOKS_DIR, books });
+    }
+    if (p === "/api/videos") {                             // the videos / audio files in the Shadowing folder, each with its subtitle file if there is one
+      let videos = [];
+      try {
+        const all = readdirSync(VIDEOS_DIR, { withFileTypes: true }).filter(d => d.isFile());
+        const subs = new Map(all.filter(d => isSubs(d.name)).map(d => [d.name.replace(/\.[^.]+$/, "").toLowerCase(), d.name]));
+        videos = all.filter(d => isMedia(d.name)).map(d => ({ name: d.name, size: statSync(join(VIDEOS_DIR, d.name)).size, audio: (MEDIA_TYPES[extname(d.name).toLowerCase()] || "").startsWith("audio"), sub: subs.get(d.name.replace(/\.[^.]+$/, "").toLowerCase()) || "" }))
+          .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+      } catch (e) {}
+      return json(res, 200, { dir: VIDEOS_DIR, videos });
     }
     if (p === "/api/me") return json(res, 200, { user: { id: u.id, username: u.username, displayName: u.display_name, role: u.role } });
 

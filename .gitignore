@@ -3,3 +3,4 @@ update-backup/
 *.db
 goal-app.log
 Data/
+Shadowing/
