@@ -57,6 +57,12 @@
   .btn.both { background: var(--ok); border-color: var(--ok); color: #fff; }
   .btn.both.on { background: var(--danger); border-color: var(--danger); animation: pulse 1.2s infinite; }
   .bar .status { flex: 1; min-width: 220px; margin: 0; min-height: 0; }
+  /* the current transcript line stays pinned under the top bar while you scroll */
+  .now-line { position: sticky; top: 42px; z-index: 60; display: flex; gap: 12px; align-items: baseline; margin: 0 0 10px; padding: 9px 14px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); box-shadow: 0 4px 14px rgba(15, 25, 60, .28); cursor: pointer; font-size: 1.15rem; line-height: 1.45; }
+  .now-line[hidden] { display: none; }
+  .now-line .nts { flex: none; font: 700 .8rem ui-monospace, Consolas, monospace; opacity: .8; }
+  .now-line .ntx { min-width: 0; overflow-wrap: anywhere; }
+  .now-line.loop { background: var(--danger); color: #fff; }
   .tx { margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--bg); }
   .txh { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 8px; color: var(--mute); font-size: .88rem; }
   .txh b { color: var(--ink); font-size: .95rem; }
@@ -100,6 +106,7 @@
   <section class="main">
     <div class="none" id="none">Pick a video above.</div>
     <div id="work" hidden>
+      <div class="now-line" id="nowLine" hidden title="The line being said now — click to hear it again"><span class="nts" id="nowTs"></span><span class="ntx" id="nowTx"></span></div>
       <div class="head">
         <button class="btn alt small" id="bList" type="button" title="Show or hide the list of videos">📁 Videos</button>
         <h2 id="title"></h2>
@@ -362,7 +369,7 @@
   function loadTx() {
     if (!cur) return;
     var text = TX[cur.name] || "";
-    $("txEdit").value = text; setMode(text.trim() ? "read" : "edit");
+    $("txEdit").value = text; cues = parseTx(text); curCue = -2; setMode(text.trim() ? "read" : "edit"); markCue();
   }
   function setMode(m) {
     var read = m === "read";
@@ -370,8 +377,8 @@
     if (read) renderTx();
   }
   function renderTx() {
-    var box = $("txRead"); box.textContent = ""; cues = parseTx($("txEdit").value); curCue = -1;
-    if (!cues.length) { box.innerHTML = '<div class="empty">Nothing yet — press Edit and paste your transcript.</div>'; return; }
+    var box = $("txRead"); box.textContent = ""; cues = parseTx($("txEdit").value); curCue = -2;
+    if (!cues.length) { box.innerHTML = '<div class="empty">Nothing yet — press Edit and paste your transcript.</div>'; markCue(); return; }
     cues.forEach(function (c, i) {
       var d = document.createElement("div"); d.className = "cue" + (c.t == null ? " plain" : ""); d.dataset.i = i;
       var ts = document.createElement("span"); ts.className = "ts"; ts.textContent = c.t == null ? "" : fmtT(c.t);
@@ -384,6 +391,7 @@
   var txT = 0;
   $("txEdit").addEventListener("input", function () {
     if (!cur) return; var name = cur.name, val = this.value;
+    cues = parseTx(val); curCue = -2; markCue();
     clearTimeout(txT); txT = setTimeout(function () { if (val.trim()) TX[name] = val; else delete TX[name]; Store.save("shadow-tx", TX); }, 500);
   });
   $("txSize").value = LS("shadow-txsize", "1.15"); if (!$("txSize").value) $("txSize").value = "1.15";
@@ -393,14 +401,16 @@
   $("oLine").onchange = function () { LSset("shadow-oLine", this.checked ? "1" : "0"); if (!this.checked) { lineLoop = null; markCue(); } };
   function cueAt(t) { var k = -1; for (var i = 0; i < cues.length; i++) { if (cues[i].t != null && cues[i].t <= t + 0.05) k = i; else if (cues[i].t != null) break; } return k; }
   function markCue() {
-    var box = $("txRead"); if (box.hidden) return;
-    var k = cueAt(v.currentTime), kids = box.children;
+    var box = $("txRead"), k = cueAt(v.currentTime), kids = box.hidden ? [] : box.children, now = $("nowLine");
     if (k !== curCue) {
       if (kids[curCue]) kids[curCue].classList.remove("now");
       curCue = k;
       if (kids[k]) { kids[k].classList.add("now"); var top = kids[k].offsetTop - box.offsetTop - box.clientHeight / 3; box.scrollTo ? box.scrollTo({ top: Math.max(0, top) }) : (box.scrollTop = Math.max(0, top)); }
+      var c = k >= 0 ? cues[k] : null;
+      now.hidden = !c; if (c) { $("nowTs").textContent = fmtT(c.t); $("nowTx").textContent = c.text; }
     }
     for (var i = 0; i < kids.length; i++) kids[i].classList.toggle("loop", !!lineLoop && lineLoop.i === i);
+    now.classList.toggle("loop", !!lineLoop && lineLoop.i === k);
   }
   v.addEventListener("timeupdate", markCue);
   v.addEventListener("seeked", function () { ourSeek = false; markCue(); });
@@ -412,15 +422,16 @@
     if (!v.paused && v.currentTime >= lineLoop.b - 0.04) { ourSeek = true; v.currentTime = lineLoop.a; }
     requestAnimationFrame(loopTick);
   }
-  $("txRead").addEventListener("click", function (e) {
-    var d = e.target.closest(".cue"); if (!d || !cur) return;
-    var i = +d.dataset.i, c = cues[i]; if (!c || c.t == null) return;
+  $("txRead").addEventListener("click", function (e) { var d = e.target.closest(".cue"); if (d) playCue(+d.dataset.i); });
+  $("nowLine").addEventListener("click", function () { if (curCue >= 0) playCue(curCue); });     // the pinned line: click to hear it again
+  function playCue(i) {
+    var c = cues[i]; if (!c || c.t == null || !cur) return;
     stopMine();
     var nx = null; for (var j = i + 1; j < cues.length; j++) if (cues[j].t != null && cues[j].t > c.t) { nx = cues[j].t; break; }
     if ($("oLine").checked) { lineLoop = { a: c.t, b: nx != null ? nx : (v.duration || 1e9), i: i }; if (!rafOn) { rafOn = true; requestAnimationFrame(loopTick); } } else lineLoop = null;
     ourSeek = true; try { v.currentTime = c.t; } catch (x) {}
     v.play().catch(function () {}); markCue();
-  });
+  }
 
   /* ---------- keyboard ---------- */
   document.addEventListener("keydown", function (e) {            // capture phase: the page's keys win over the video's own
