@@ -142,7 +142,7 @@ Put videos in the **`Shadowing`** folder next to `server.mjs` (the app creates i
 (`.mp3`, `.m4a`, `.wav`). If a subtitle file has the same name (`lesson1.mp4` + `lesson1.srt` or `.vtt`) it is shown
 automatically. Large videos stream, so they start quickly and you can skip around.
 
-Keys: **S** start / stop the video, **R** record your voice / stop, **P** play your voice / stop,
+Keys: **S** start / stop the video, **R** record your voice / stop, **P** play your voice / stop, **O** play the original video from the point where your recording started,
 **←** **→** back / forward 3 seconds, **0** back to the beginning, **L** repeat the video. The same actions are buttons
 for the phone and iPad. By default R also starts the video (and stops it when you stop), so you can speak along with it;
 use headphones so the video's sound doesn't leak into the recording. Your latest recording of each video is kept in your

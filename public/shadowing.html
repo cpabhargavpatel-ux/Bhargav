@@ -87,6 +87,7 @@
         <button class="btn" id="bStart" type="button">▶ Start<kbd>S</kbd></button>
         <button class="btn rec" id="bRec" type="button">● Record my voice<kbd>R</kbd></button>
         <button class="btn alt" id="bPlay" type="button">▶ My voice<kbd>P</kbd></button>
+        <button class="btn alt" id="bOrig" type="button" title="Play the original video from the point where my recording started">▶ Original from my start<kbd>O</kbd></button>
       </div>
       <div class="status" id="status" role="status" aria-live="polite"></div>
       <div class="mine" id="mine"></div>
@@ -102,6 +103,7 @@
         <span><kbd>S</kbd> start / stop the video</span>
         <span><kbd>R</kbd> record my voice / stop recording</span>
         <span><kbd>P</kbd> play my voice / stop playing</span>
+        <span><kbd>O</kbd> original video from where my recording started</span>
         <span><kbd>←</kbd> <kbd>→</kbd> back / forward 3 seconds</span>
         <span><kbd>0</kbd> back to the beginning</span>
         <span><kbd>L</kbd> repeat the video on / off</span>
@@ -238,7 +240,7 @@
     var blob = new Blob(chunks, { type: mr.mimeType || "audio/webm" }), dur = (Date.now() - started) / 1000;
     if (blob.size < 1500) { say("Nothing was recorded — check the microphone.", "rec"); return; }
     mine = { name: item.name, blob: blob };
-    meta[item.name] = { has: true, dur: Math.round(dur), t0: withVideo ? Math.round(t0 * 100) / 100 : null, at: Date.now() };
+    meta[item.name] = { has: true, dur: Math.round(dur), t0: Math.round(t0 * 100) / 100, wv: withVideo, at: Date.now() };
     saveMeta(); paintList(); showMine();
     say("Saved your voice (" + clock(dur) + "). Press P to hear it.", "");
     var ok = await Store.putBlob(blobKey(item.name), blob);
@@ -268,6 +270,21 @@
     say("▶ Playing your voice…");
   }
   $("bPlay").onclick = playMine;
+  /* the original video, from the point where my recording started — to hear what I was copying */
+  function playOriginal() {
+    if (!cur) return;
+    stopMine();
+    var m = meta[cur.name];
+    if (!v.paused && origOn) { v.pause(); say(""); return; }
+    if (recNow()) { say("Stop recording first (R).", "rec"); return; }
+    var from = m && m.has ? (m.t0 || 0) : 0;
+    try { v.currentTime = from; } catch (e) {}
+    origOn = true; v.play().catch(function () { say("The browser blocked playing — press again.", "rec"); });
+    say("▶ Original video from " + clock(from) + (m && m.has ? " — where your recording started" : " (no recording yet, so the beginning)"));
+  }
+  var origOn = false;
+  v.addEventListener("pause", function () { origOn = false; });
+  $("bOrig").onclick = playOriginal;
   function showMine() {
     var m = cur && meta[cur.name], el = $("mine"); el.textContent = "";
     if (!m || !m.has) return;
@@ -286,6 +303,7 @@
     if (k === "s") toggleVideo();
     else if (k === "r") recNow() ? stopRec() : startRec();
     else if (k === "p") playMine();
+    else if (k === "o") playOriginal();
     else if (k === "l") { $("oLoop").checked = !$("oLoop").checked; $("oLoop").onchange.call($("oLoop")); }
     else if (k === "0") { try { v.currentTime = 0; } catch (x) {} }
     else if (e.key === "ArrowLeft") { v.currentTime = Math.max(0, v.currentTime - 3); }
