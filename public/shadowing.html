@@ -58,8 +58,12 @@
   .btn.both.on { background: var(--danger); border-color: var(--danger); animation: pulse 1.2s infinite; }
   .bar .status { flex: 1; min-width: 220px; margin: 0; min-height: 0; }
   /* the current transcript line stays pinned under the top bar while you scroll */
-  .now-line { position: sticky; top: 42px; z-index: 60; display: flex; gap: 12px; align-items: baseline; margin: 0 0 10px; padding: 9px 14px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); box-shadow: 0 4px 14px rgba(15, 25, 60, .28); cursor: pointer; font-size: 1.15rem; line-height: 1.45; }
+  .now-line { position: sticky; top: 42px; z-index: 60; display: block; margin: 0 0 10px; padding: 9px 14px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); box-shadow: 0 4px 14px rgba(15, 25, 60, .28); cursor: pointer; font-size: 1.15rem; line-height: 1.45; }
   .now-line[hidden] { display: none; }
+  .now-line .nrow { display: flex; gap: 12px; align-items: baseline; }
+  .now-line .nxt { margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(255, 255, 255, .3); font-size: .86em; opacity: .85; }
+  .now-line .nxt:hover { opacity: 1; }
+  .now-line .nxt[hidden] { display: none; }
   .now-line .nts { flex: none; font: 700 .8rem ui-monospace, Consolas, monospace; opacity: .8; }
   .now-line .ntx { min-width: 0; overflow-wrap: anywhere; }
   .now-line.loop { background: var(--danger); color: #fff; }
@@ -106,7 +110,7 @@
   <section class="main">
     <div class="none" id="none">Pick a video above.</div>
     <div id="work" hidden>
-      <div class="now-line" id="nowLine" hidden title="The line being said now — click to hear it again"><span class="nts" id="nowTs"></span><span class="ntx" id="nowTx"></span></div>
+      <div class="now-line" id="nowLine" hidden title="The line being said now — click to hear it again"><div class="nrow"><span class="nts" id="nowTs"></span><span class="ntx" id="nowTx"></span></div><div class="nrow nxt" id="nextRow" title="Next line — click to jump to it"><span class="nts" id="nextTs"></span><span class="ntx" id="nextTx"></span></div></div>
       <div class="head">
         <button class="btn alt small" id="bList" type="button" title="Show or hide the list of videos">📁 Videos</button>
         <h2 id="title"></h2>
@@ -406,8 +410,12 @@
       if (kids[curCue]) kids[curCue].classList.remove("now");
       curCue = k;
       if (kids[k]) { kids[k].classList.add("now"); var top = kids[k].offsetTop - box.offsetTop - box.clientHeight / 3; box.scrollTo ? box.scrollTo({ top: Math.max(0, top) }) : (box.scrollTop = Math.max(0, top)); }
-      var c = k >= 0 ? cues[k] : null;
-      now.hidden = !c; if (c) { $("nowTs").textContent = fmtT(c.t); $("nowTx").textContent = c.text; }
+      var c = k >= 0 ? cues[k] : null, nx = null;
+      for (var j = k + 1; j < cues.length; j++) if (cues[j].t != null) { nx = j; break; }
+      now.hidden = !c && nx == null;                                   // before the first line: show only what is coming
+      $("nowTs").textContent = c ? fmtT(c.t) : "▶"; $("nowTx").textContent = c ? c.text : "Starting soon…";
+      $("nextRow").hidden = nx == null; nextCue = nx == null ? -1 : nx;
+      if (nx != null) { $("nextTs").textContent = "next " + fmtT(cues[nx].t); $("nextTx").textContent = cues[nx].text; }
     }
     for (var i = 0; i < kids.length; i++) kids[i].classList.toggle("loop", !!lineLoop && lineLoop.i === i);
     now.classList.toggle("loop", !!lineLoop && lineLoop.i === k);
@@ -423,7 +431,8 @@
     requestAnimationFrame(loopTick);
   }
   $("txRead").addEventListener("click", function (e) { var d = e.target.closest(".cue"); if (d) playCue(+d.dataset.i); });
-  $("nowLine").addEventListener("click", function () { if (curCue >= 0) playCue(curCue); });     // the pinned line: click to hear it again
+  var nextCue = -1;
+  $("nowLine").addEventListener("click", function (e) { if (e.target.closest("#nextRow")) { if (nextCue >= 0) playCue(nextCue); } else if (curCue >= 0) playCue(curCue); });     // the pinned line: click to hear it again
   function playCue(i) {
     var c = cues[i]; if (!c || c.t == null || !cur) return;
     stopMine();
