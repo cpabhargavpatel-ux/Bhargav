@@ -23,15 +23,14 @@
   button, input, select { font: inherit; color: inherit; }
   button:focus-visible, input:focus-visible, select:focus-visible, video:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-  .sh { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 16px; max-width: 1500px; margin: 0 auto; padding: 16px 16px 48px; align-items: start; }
-  @media (max-width: 860px) { .sh { grid-template-columns: 1fr; } }
+  .sh { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; max-width: 1800px; margin: 0 auto; padding: 12px 14px 48px; }
 
-  .side { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; position: sticky; top: 56px; max-height: calc(100vh - 72px); display: flex; flex-direction: column; }
-  @media (max-width: 860px) { .side { position: static; max-height: 300px; } }
+  .side { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .side[hidden] { display: none; }
   .side h1 { margin: 0; font-size: 1.2rem; }
   .side .sub { margin: 2px 0 10px; color: var(--mute); font-size: .86rem; }
-  .vl { list-style: none; margin: 0; padding: 0; overflow: auto; flex: 1; min-height: 60px; }
-  .vl li { margin: 0 0 6px; }
+  .vl { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; max-height: 50vh; overflow: auto; }
+  .vl li { margin: 0; }
   .vl button { width: 100%; text-align: left; background: var(--soft); border: 1px solid transparent; border-radius: 9px; padding: 8px 10px; cursor: pointer; display: block; }
   .vl button:hover { border-color: var(--line); }
   .vl button.on { background: var(--accent-soft); border-color: var(--accent); }
@@ -52,9 +51,29 @@
   .main { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-width: 0; }
   .main h2 { margin: 0 0 8px; font-size: 1.05rem; word-break: break-word; }
   .stage { background: #000; border-radius: 10px; overflow: hidden; }
-  video { display: block; width: 100%; max-height: 68vh; background: #000; }
+  video { display: block; width: 100%; max-height: 62vh; background: #000; }
+  .head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .head h2 { margin: 0; flex: 1; min-width: 0; }
+  .btn.both { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .btn.both.on { background: var(--danger); border-color: var(--danger); animation: pulse 1.2s infinite; }
+  .bar .status { flex: 1; min-width: 220px; margin: 0; min-height: 0; }
+  .tx { margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--bg); }
+  .txh { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 8px; color: var(--mute); font-size: .88rem; }
+  .txh b { color: var(--ink); font-size: .95rem; }
+  .txh label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+  .txh .sp { flex: 1; }
+  #txEdit { width: 100%; min-height: 220px; resize: vertical; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font: 400 1.05rem/1.6 inherit; font-family: inherit; }
+  .txread { position: relative; max-height: 46vh; overflow: auto; font-size: 1.15rem; line-height: 1.65; padding: 2px 4px; scroll-behavior: smooth; }
+  .txread .cue { display: flex; gap: 12px; padding: 4px 8px; border-radius: 8px; cursor: pointer; }
+  .txread .cue:hover { background: var(--soft); }
+  .txread .cue.now { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+  .txread .cue.loop { box-shadow: inset 3px 0 0 var(--danger); background: var(--danger-soft); }
+  .txread .ts { flex: none; min-width: 3.6em; color: var(--accent); font: 700 .82rem ui-monospace, Consolas, monospace; padding-top: .35em; }
+  .txread .plain { cursor: default; }
+  .txread .plain:hover { background: none; }
+  .txread .tt { white-space: pre-wrap; }
   video.aud { height: 54px; }
-  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0 6px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 10px; }
   .opts { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; color: var(--mute); font-size: .88rem; margin: 6px 0; }
   .opts label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
   .opts select { background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 3px 6px; }
@@ -70,27 +89,44 @@
 </head>
 <body>
 <div class="sh">
-  <aside class="side">
+  <aside class="side" id="picker">
     <h1>Shadowing</h1>
-    <p class="sub">Videos from your <b>Shadowing</b> folder.</p>
+    <p class="sub">Videos from your <b>Shadowing</b> folder — pick one.</p>
     <ul class="vl" id="vl"></ul>
     <div class="empty" id="empty" hidden></div>
     <button class="btn alt small" id="refresh" type="button" style="margin-top:8px">↻ Refresh the list</button>
   </aside>
 
   <section class="main">
-    <div class="none" id="none">Pick a video on the left.</div>
+    <div class="none" id="none">Pick a video above.</div>
     <div id="work" hidden>
-      <h2 id="title"></h2>
-      <div class="stage"><video id="v" controls playsinline preload="metadata"></video></div>
+      <div class="head">
+        <button class="btn alt small" id="bList" type="button" title="Show or hide the list of videos">📁 Videos</button>
+        <h2 id="title"></h2>
+      </div>
       <div class="bar">
+        <button class="btn both" id="bBoth" type="button" title="Start the video and the recording together; press again to stop both">▶● Start video + record<kbd>B</kbd></button>
         <button class="btn" id="bStart" type="button">▶ Start<kbd>S</kbd></button>
         <button class="btn rec" id="bRec" type="button">● Record my voice<kbd>R</kbd></button>
         <button class="btn alt" id="bPlay" type="button">▶ My voice<kbd>P</kbd></button>
         <button class="btn alt" id="bOrig" type="button" title="Play the original video from the point where my recording started">▶ Original from my start<kbd>O</kbd></button>
+        <div class="status" id="status" role="status" aria-live="polite"></div>
       </div>
-      <div class="status" id="status" role="status" aria-live="polite"></div>
-      <div class="mine" id="mine"></div>
+      <div class="stage"><video id="v" controls playsinline preload="metadata"></video></div>
+
+      <div class="tx" id="tx">
+        <div class="txh">
+          <b>Transcript</b>
+          <button class="btn alt small" id="txMode" type="button">✎ Edit</button>
+          <label><input type="checkbox" id="oLine"> Repeat the line I click</label>
+          <span class="sp"></span>
+          <label>Text size <select id="txSize"><option value="0.95">S</option><option value="1.15" selected>M</option><option value="1.4">L</option><option value="1.8">XL</option></select></label>
+        </div>
+        <textarea id="txEdit" spellcheck="false" placeholder="Paste the transcript here, one line per sentence, with its time stamp, for example:&#10;0:05 Bonjour à tous&#10;0:09 Je m’appelle Anne&#10;&#10;[00:12] and 1:02:30 – styles work too, and so does a .srt pasted as it is.&#10;Press “Read” to practise: click a line to jump the video there."></textarea>
+        <div class="txread" id="txRead" hidden></div>
+      </div>
+
+      <div class="mine" id="mine" style="margin-top:10px"></div>
       <div class="opts">
         <label>Speed <select id="rate"><option>0.5</option><option>0.6</option><option>0.7</option><option>0.75</option><option>0.8</option><option>0.9</option><option selected>1</option><option>1.1</option><option>1.25</option></select></label>
         <label><input type="checkbox" id="oLoop"> Repeat the video (<kbd>L</kbd>)</label>
@@ -100,6 +136,7 @@
         <label><input type="checkbox" id="oBoth"> P also plays the video (muted) to watch with my voice</label>
       </div>
       <div class="keys">
+        <span><kbd>B</kbd> start video + recording / stop both</span>
         <span><kbd>S</kbd> start / stop the video</span>
         <span><kbd>R</kbd> record my voice / stop recording</span>
         <span><kbd>P</kbd> play my voice / stop playing</span>
@@ -147,10 +184,11 @@
       if (!list.length) e.innerHTML = "No videos yet. Put a video (<b>.mp4</b>, <b>.m4v</b>, <b>.webm</b> or <b>.mov</b>; audio files work too) in this folder, then press Refresh:<br><code>" + esc(d.dir || "Shadowing") + "</code><br>A subtitle file with the same name (<b>.vtt</b> or <b>.srt</b>) is picked up automatically.";
       paintList();
       if (!cur && list.length) { var last = LS("shadow-last", ""), it = list.filter(function (x) { return x.name === last; })[0]; if (it) open(it); }
-      if (cur && !list.some(function (x) { return x.name === cur.name; })) { cur = null; $("work").hidden = true; $("none").hidden = false; }
+      if (cur && !list.some(function (x) { return x.name === cur.name; })) { cur = null; $("work").hidden = true; $("none").hidden = false; $("picker").hidden = false; }
     }).catch(function () { $("empty").hidden = false; $("empty").textContent = "Couldn’t read the list — is the server running?"; });
   }
   $("refresh").onclick = loadList;
+  $("bList").onclick = function () { $("picker").hidden = !$("picker").hidden; if (!$("picker").hidden) $("picker").scrollIntoView({ block: "nearest" }); };
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") loadList(); });
 
   /* ---------- open a video ---------- */
@@ -158,6 +196,7 @@
     stopRec(true); stopMine();
     cur = it; LSset("shadow-last", it.name); paintList();
     $("none").hidden = true; $("work").hidden = false; $("title").textContent = it.name.replace(/\.[^.]+$/, "");
+    $("picker").hidden = true; lineLoop = null; loadTx();
     v.classList.toggle("aud", !!it.audio);
     while (v.firstChild) v.removeChild(v.firstChild);
     v.pause(); v.src = "/videos/" + encodeURIComponent(it.name);
@@ -196,7 +235,7 @@
   /* ---------- record my voice ---------- */
   var stream = null, starting = false;
   function recNow() { return !!rec; }
-  async function startRec() {
+  async function startRec(forceVideo) {
     if (!cur || starting) return;
     if (!window.isSecureContext || !navigator.mediaDevices || !window.MediaRecorder) { say("Recording needs a secure page: on the PC open http://localhost:… ; on an iPhone/iPad use the https:// address (Tailscale Serve — see SETUP.md).", "rec"); return; }
     stopMine(); starting = true;
@@ -207,14 +246,14 @@
     starting = false;
     var chunks = [], mr;
     try { mr = new MediaRecorder(stream, { audioBitsPerSecond: 48000 }); } catch (e) { mr = new MediaRecorder(stream); }
-    var withVideo = $("oRecPlay").checked, t0 = v.currentTime || 0, started = Date.now();
+    var withVideo = forceVideo === true || $("oRecPlay").checked, t0 = v.currentTime || 0, started = Date.now();
     rec = { mr: mr, withVideo: withVideo, t0: t0, chunks: chunks, started: started, cur: cur };
     mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
     mr.onstop = function () { finishRec(rec && rec.mr === mr ? rec : null, mr, chunks, t0, started, cur, withVideo); };
     mr.start(1000);
     $("bRec").classList.add("on"); $("bRec").innerHTML = "■ Stop recording<kbd>R</kbd>";
     if (withVideo) v.play().catch(function () {});
-    tickRec();
+    syncBoth(); tickRec();
   }
   var tickT = 0;
   function tickRec() {
@@ -231,11 +270,12 @@
     $("bRec").classList.remove("on"); $("bRec").innerHTML = "● Record my voice<kbd>R</kbd>";
     clearTimeout(tickT);
     try { r.mr.stop(); } catch (e) { rec = null; }
+    setTimeout(syncBoth, 0);
     if (r.withVideo && !discard) v.pause();
     if (discard) rec = null;
   }
   async function finishRec(r, mr, chunks, t0, started, item, withVideo) {
-    var discarded = !r || r.discard; rec = null;
+    var discarded = !r || r.discard; rec = null; syncBoth();
     if (discarded) return;
     var blob = new Blob(chunks, { type: mr.mimeType || "audio/webm" }), dur = (Date.now() - started) / 1000;
     if (blob.size < 1500) { say("Nothing was recorded — check the microphone.", "rec"); return; }
@@ -247,6 +287,13 @@
     if (!ok) say("Recorded, but it could not be saved to your account (too large or offline). It is still here until you leave the page — press P.", "rec");
   }
   $("bRec").onclick = function () { recNow() ? stopRec() : startRec(); };
+  /* one button: start the video and the recording together, press again to stop both */
+  function syncBoth() { var on = recNow(); $("bBoth").classList.toggle("on", on); $("bBoth").innerHTML = (on ? "■ Stop video + recording" : "▶● Start video + record") + "<kbd>B</kbd>"; }
+  function toggleBoth() {
+    if (recNow()) { stopRec(); v.pause(); return; }
+    startRec(true);
+  }
+  $("bBoth").onclick = toggleBoth;
 
   /* ---------- play my voice ---------- */
   function stopMine() {
@@ -294,13 +341,95 @@
     el.appendChild(d);
   }
 
+  /* ---------- transcript: paste it with time stamps; click a line to jump there ---------- */
+  var TX = {}, txReady = false, cues = [], curCue = -1, lineLoop = null, ourSeek = false, rafOn = false;
+  Store.load("shadow-tx", {}, null).then(function (m) { TX = m || {}; txReady = true; if (cur) loadTx(); });
+  var TS = /^\s*[\[(]?\s*(?:(\d{1,2}):)?(\d{1,2}):(\d{2})(?:[.,](\d{1,3}))?\s*[\])]?\s*(.*)$/;
+  var fmtT = function (t) { t = Math.floor(t); var h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, x = t % 60; return (h ? h + ":" + (m < 10 ? "0" : "") : "") + m + ":" + (x < 10 ? "0" : "") + x; };
+  function parseTx(text) {                                       // -> [{t: seconds | null, text}]
+    var out = [], last = null, lines = String(text || "").replace(/\r/g, "").split("\n");
+    for (var i = 0; i < lines.length; i++) {
+      var ln = lines[i], m = TS.exec(ln);
+      if (m) {
+        var t = (m[1] ? +m[1] * 3600 : 0) + +m[2] * 60 + +m[3] + (m[4] ? +("0." + m[4]) : 0), rest = m[5].replace(/^(?:-->\s*(?:\d{1,2}:)?\d{1,2}:\d{2}(?:[.,]\d{1,3})?\s*)?[-\u2013\u2014:]?\s*/, "");
+        last = { t: t, text: rest.trim() }; out.push(last);
+      } else if (/^\s*\d+\s*$/.test(ln) && i + 1 < lines.length && /-->/.test(lines[i + 1])) { /* a .srt cue number */ }
+      else if (ln.trim()) { if (last) last.text = (last.text ? last.text + " " : "") + ln.trim(); else { last = { t: null, text: ln.trim() }; out.push(last); } }
+      else if (last && last.t == null) last = null;
+    }
+    return out.filter(function (c) { return c.text || c.t != null; });
+  }
+  function loadTx() {
+    if (!cur) return;
+    var text = TX[cur.name] || "";
+    $("txEdit").value = text; setMode(text.trim() ? "read" : "edit");
+  }
+  function setMode(m) {
+    var read = m === "read";
+    $("txEdit").hidden = read; $("txRead").hidden = !read; $("txMode").textContent = read ? "✎ Edit" : "📖 Read";
+    if (read) renderTx();
+  }
+  function renderTx() {
+    var box = $("txRead"); box.textContent = ""; cues = parseTx($("txEdit").value); curCue = -1;
+    if (!cues.length) { box.innerHTML = '<div class="empty">Nothing yet — press Edit and paste your transcript.</div>'; return; }
+    cues.forEach(function (c, i) {
+      var d = document.createElement("div"); d.className = "cue" + (c.t == null ? " plain" : ""); d.dataset.i = i;
+      var ts = document.createElement("span"); ts.className = "ts"; ts.textContent = c.t == null ? "" : fmtT(c.t);
+      var tt = document.createElement("span"); tt.className = "tt"; tt.textContent = c.text;
+      d.appendChild(ts); d.appendChild(tt); box.appendChild(d);
+    });
+    markCue();
+  }
+  $("txMode").onclick = function () { setMode($("txRead").hidden ? "read" : "edit"); };
+  var txT = 0;
+  $("txEdit").addEventListener("input", function () {
+    if (!cur) return; var name = cur.name, val = this.value;
+    clearTimeout(txT); txT = setTimeout(function () { if (val.trim()) TX[name] = val; else delete TX[name]; Store.save("shadow-tx", TX); }, 500);
+  });
+  $("txSize").value = LS("shadow-txsize", "1.15"); if (!$("txSize").value) $("txSize").value = "1.15";
+  function applySize() { $("txRead").style.fontSize = $("txSize").value + "rem"; $("txEdit").style.fontSize = $("txSize").value + "rem"; }
+  $("txSize").onchange = function () { LSset("shadow-txsize", this.value); applySize(); this.blur(); }; applySize();
+  $("oLine").checked = LS("shadow-oLine", "0") === "1";
+  $("oLine").onchange = function () { LSset("shadow-oLine", this.checked ? "1" : "0"); if (!this.checked) { lineLoop = null; markCue(); } };
+  function cueAt(t) { var k = -1; for (var i = 0; i < cues.length; i++) { if (cues[i].t != null && cues[i].t <= t + 0.05) k = i; else if (cues[i].t != null) break; } return k; }
+  function markCue() {
+    var box = $("txRead"); if (box.hidden) return;
+    var k = cueAt(v.currentTime), kids = box.children;
+    if (k !== curCue) {
+      if (kids[curCue]) kids[curCue].classList.remove("now");
+      curCue = k;
+      if (kids[k]) { kids[k].classList.add("now"); var top = kids[k].offsetTop - box.offsetTop - box.clientHeight / 3; box.scrollTo ? box.scrollTo({ top: Math.max(0, top) }) : (box.scrollTop = Math.max(0, top)); }
+    }
+    for (var i = 0; i < kids.length; i++) kids[i].classList.toggle("loop", !!lineLoop && lineLoop.i === i);
+  }
+  v.addEventListener("timeupdate", markCue);
+  v.addEventListener("seeked", function () { ourSeek = false; markCue(); });
+  v.addEventListener("seeking", function () {                      // you dragged the video bar somewhere else: leave the line loop
+    if (!ourSeek && lineLoop && (v.currentTime < lineLoop.a - 0.3 || v.currentTime > lineLoop.b + 0.3)) { lineLoop = null; markCue(); }
+  });
+  function loopTick() {
+    if (!lineLoop) { rafOn = false; return; }
+    if (!v.paused && v.currentTime >= lineLoop.b - 0.04) { ourSeek = true; v.currentTime = lineLoop.a; }
+    requestAnimationFrame(loopTick);
+  }
+  $("txRead").addEventListener("click", function (e) {
+    var d = e.target.closest(".cue"); if (!d || !cur) return;
+    var i = +d.dataset.i, c = cues[i]; if (!c || c.t == null) return;
+    stopMine();
+    var nx = null; for (var j = i + 1; j < cues.length; j++) if (cues[j].t != null && cues[j].t > c.t) { nx = cues[j].t; break; }
+    if ($("oLine").checked) { lineLoop = { a: c.t, b: nx != null ? nx : (v.duration || 1e9), i: i }; if (!rafOn) { rafOn = true; requestAnimationFrame(loopTick); } } else lineLoop = null;
+    ourSeek = true; try { v.currentTime = c.t; } catch (x) {}
+    v.play().catch(function () {}); markCue();
+  });
+
   /* ---------- keyboard ---------- */
   document.addEventListener("keydown", function (e) {            // capture phase: the page's keys win over the video's own
     if (e.ctrlKey || e.metaKey || e.altKey || !cur || $("work").hidden) return;
     var t = e.target, tag = t && t.tagName;
     if (tag === "INPUT" && t.type !== "checkbox" || tag === "TEXTAREA" || tag === "SELECT" || (t && t.isContentEditable)) return;
     var k = e.key.toLowerCase(), used = true;
-    if (k === "s") toggleVideo();
+    if (k === "b") toggleBoth();
+    else if (k === "s") toggleVideo();
     else if (k === "r") recNow() ? stopRec() : startRec();
     else if (k === "p") playMine();
     else if (k === "o") playOriginal();
