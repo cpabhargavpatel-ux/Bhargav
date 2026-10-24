@@ -164,3 +164,7 @@ Under the buttons is a **Repeat A→B** row. Press **[** (or *A start*) where th
 the video jumps to A and repeats A to B until you press **\\** (or *Repeat*) to turn it off. **X** clears A and B. A bar under the
 video shows where the part is. Seeking somewhere else with the video's own bar is left alone. The pinned transcript bar has
 **A−** / **A+** buttons (and the **+** / **−** keys) to make its text smaller or bigger; the size is remembered.
+
+The buttons (start + record, Start, Record, My voice, Original, Repeat A→B) sit **below** the video, and the video is sized to
+fill the window under the top menu and the pinned transcript, so you see the whole picture; the page scrolls to put it in
+view when you open or start a video. The keyboard shortcuts work without scrolling down.

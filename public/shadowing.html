@@ -51,7 +51,7 @@
   .main { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-width: 0; }
   .main h2 { margin: 0 0 8px; font-size: 1.05rem; word-break: break-word; }
   .stage { background: #000; border-radius: 10px; overflow: hidden; }
-  video { display: block; width: 100%; max-height: 62vh; background: #000; }
+  video { display: block; width: 100%; max-height: 70vh; min-height: 200px; background: #000; }
   .head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
   .head h2 { margin: 0; flex: 1; min-width: 0; }
   .btn.both { background: var(--ok); border-color: var(--ok); color: #fff; }
@@ -130,7 +130,10 @@
         <button class="btn alt small" id="bList" type="button" title="Show or hide the list of videos">📁 Videos</button>
         <h2 id="title"></h2>
       </div>
-      <div class="bar">
+      <div class="stage"><video id="v" controls playsinline preload="metadata"></video></div>
+      <div class="abstrip" id="abStrip" hidden><span class="seg" id="abSeg"></span></div>
+
+      <div class="bar" style="margin-top:10px">
         <button class="btn both" id="bBoth" type="button" title="Start the video and the recording together; press again to stop both">▶● Start video + record<kbd>B</kbd></button>
         <button class="btn" id="bStart" type="button">▶ Start<kbd>S</kbd></button>
         <button class="btn rec" id="bRec" type="button">● Record my voice<kbd>R</kbd></button>
@@ -138,7 +141,7 @@
         <button class="btn alt" id="bOrig" type="button" title="Play the original video from the point where my recording started">▶ Original from my start<kbd>O</kbd></button>
         <div class="status" id="status" role="status" aria-live="polite"></div>
       </div>
-      <div class="ab" id="abRow">
+      <div class="ab" id="abRow" style="margin-top:0">
         <span class="lab">Repeat A→B</span>
         <button class="btn alt small" id="bA" type="button" title="Mark the start (A) at the current time">A start<kbd>[</kbd></button>
         <button class="btn alt small" id="bB" type="button" title="Mark the end (B) at the current time and start repeating">B end<kbd>]</kbd></button>
@@ -146,8 +149,6 @@
         <button class="btn alt small" id="bABx" type="button" title="Clear A and B">✕ Clear<kbd>X</kbd></button>
         <span class="abinfo" id="abInfo">Mark where to start and stop; that part repeats until you turn it off.</span>
       </div>
-      <div class="stage"><video id="v" controls playsinline preload="metadata"></video></div>
-      <div class="abstrip" id="abStrip" hidden><span class="seg" id="abSeg"></span></div>
 
       <div class="tx" id="tx">
         <div class="txh">
@@ -513,6 +514,23 @@
   setNL(NL);
   $("nlMinus").addEventListener("click", function (e) { e.stopPropagation(); setNL(NL - 0.25); });
   $("nlPlus").addEventListener("click", function (e) { e.stopPropagation(); setNL(NL + 0.25); });
+
+  /* ---------- full-size video: it gets the whole window under the top menu and the pinned transcript ---------- */
+  function topEdge() { var n = $("nowLine"); return 42 + (n.hidden ? 0 : n.offsetHeight + 10); }
+  function fitVideo() {
+    if ($("work").hidden) return;
+    v.style.maxHeight = Math.max(200, innerHeight - topEdge() - 14) + "px";
+  }
+  function showVideo() {                                                // scroll so the whole picture is in view, just under the pinned bar
+    if ($("work").hidden) return; fitVideo();
+    var r = v.getBoundingClientRect(), top = topEdge() + 4;
+    if (r.top < top - 2 || r.bottom > innerHeight - 2) window.scrollTo({ top: Math.max(0, scrollY + r.top - top) });
+  }
+  addEventListener("resize", fitVideo);
+  if (window.ResizeObserver) new ResizeObserver(fitVideo).observe($("nowLine"));
+  v.addEventListener("loadedmetadata", showVideo);
+  v.addEventListener("play", function () { setTimeout(showVideo, 0); });
+  setTimeout(showVideo, 300);
 
   /* ---------- keyboard ---------- */
   document.addEventListener("keydown", function (e) {            // capture phase: the page's keys win over the video's own
