@@ -150,3 +150,10 @@ for the phone and iPad. By default R also starts the video (and stops it when yo
 use headphones so the video's sound doesn't leak into the recording. Your latest recording of each video is kept in your
 account, so P still works tomorrow, and a tick lets P replay the video (muted) alongside your voice. The microphone needs
 `http://localhost` on the PC or the `https://` address on an iPhone/iPad (see the Tailscale section above).
+
+## Word suggestions in the Vocabulary search
+
+Click the **Vocabulary** search box and it lists the words you searched or opened lately; start typing and it suggests
+words (matching with or without accents, and English meanings too — typing `hous` offers *maison*), with your earlier
+searches and looked-at words first. Use the arrow keys and Enter, or click one, and the list filters to that word.
+Your search history is saved in your account.

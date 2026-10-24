@@ -286,6 +286,15 @@
   /* ---------- Vocabulary ---------- */
   .vocab-sec { margin-top: 40px; }
   .vcount { color: var(--gray); font-family: var(--sans); font-size: 0.85rem; font-weight: 400; margin-left: 8px; }
+  .vsearch-wrap { position: relative; }
+  .vsug { position: absolute; left: 0; right: 0; top: calc(100% - 4px); z-index: 40; background: #fff; border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 10px 28px rgba(20, 30, 60, .18); max-height: 360px; overflow: auto; }
+  .vsug[hidden] { display: none; }
+  .vsug .vs-h { padding: 6px 12px 2px; font: 600 .72rem var(--sans); letter-spacing: .05em; text-transform: uppercase; color: var(--gray); }
+  .vsug .vs-i { display: flex; gap: 10px; align-items: baseline; padding: 8px 12px; cursor: pointer; font-family: var(--sans); font-size: .95rem; }
+  .vsug .vs-i:hover, .vsug .vs-i.on { background: #eef2ff; }
+  .vsug .vs-i .vs-w { font-weight: 700; color: var(--ink); white-space: nowrap; }
+  .vsug .vs-i .vs-m { color: var(--gray); font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .vsug .vs-i .vs-k { margin-left: auto; font-size: .78rem; color: var(--gray); flex: none; }
   .vsearch {
     width: 100%;
     padding: 11px 14px;
@@ -782,7 +791,7 @@
 
   <section class="vocab-sec">
     <h2><span>Vocabulary <span class="vcount" id="vcount"></span></span><button class="gloop" id="vGroupBtn" data-label="Loop list">Loop list</button></h2>
-    <input type="search" id="vsearch" class="vsearch" placeholder="Search a French word or English meaning…" autocomplete="off">
+    <div class="vsearch-wrap"><input type="search" id="vsearch" class="vsearch" placeholder="Search a French word or English meaning…" autocomplete="off" autocapitalize="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="vsug"><div class="vsug" id="vsug" role="listbox" hidden></div></div>
     <div id="vlist"></div>
     <button class="play loop vmore" id="vmoreBtn">Show more</button>
     <p class="credits">Word list built from open data: OpenSubtitles frequency counts (hermitdave/FrequencyWords), ipa-dict pronunciations, and the MUSE and FreeDict French–English dictionaries. The first 5,000 are the most common words; the rest follow. Auto-merged — occasional gloss or homograph quirks are possible.</p>
@@ -2210,6 +2219,69 @@ vsearch.addEventListener("input", () => {
     vRender(true);
   }, 120);
 });
+/* ---------- word suggestions for the Vocabulary search: words you searched or looked at before first, then the list ---------- */
+{
+  const sug = $("vsug"), norm = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  let VHIST = Store.cached("fr-vsearches", [], null); if (!Array.isArray(VHIST)) VHIST = [];
+  Store.load("fr-vsearches", [], null).then(v => { if (Array.isArray(v)) VHIST = v; });
+  const vhAdd = t => {
+    t = String(t || "").trim(); if (t.length < 2) return;
+    const k = norm(t); VHIST = VHIST.filter(x => norm(x) !== k); VHIST.unshift(t); VHIST.length = Math.min(VHIST.length, 40);
+    Store.save("fr-vsearches", VHIST);
+  };
+  let VN = null, items = [], on = -1;
+  const vnorm = () => VN || (VN = VOCAB.map(e => [norm(e[0]), e[2].toLowerCase()]));
+  function build(q) {
+    const nq = norm(q.trim()), out = [], seen = new Set(), N = 8;
+    const push = (w, m, kind) => { const k = norm(w); if (!w || seen.has(k) || out.length >= N) return; seen.add(k); out.push({ w, m: m || "", kind }); };
+    const looked = Object.values(DECK || {}).filter(r => r && r.w).sort((a, b) => (b.last || 0) - (a.last || 0));
+    const meaning = h => { const e = vocabLookup(h); return e ? e[2] : ""; };
+    if (!nq) {                                                            // nothing typed yet: what you searched and opened lately
+      VHIST.slice(0, 5).forEach(h => push(h, meaning(h), "search"));
+      looked.slice(0, 8).forEach(r => push(r.w, r.m, "seen"));
+      return out;
+    }
+    VHIST.forEach(h => { if (norm(h).startsWith(nq)) push(h, meaning(h), "search"); });
+    looked.forEach(r => { if (norm(r.w).startsWith(nq) || (r.m || "").toLowerCase().split(/[^a-z]+/).some(x => x.startsWith(nq))) push(r.w, r.m, "seen"); });
+    const vn = vnorm();
+    for (let i = 0; i < vn.length && out.length < N; i++) if (vn[i][0].startsWith(nq)) push(VOCAB[i][0], VOCAB[i][2], "");
+    for (let i = 0; i < vn.length && out.length < N; i++) if (vn[i][1].split(/[^a-z]+/).some(x => x.startsWith(nq))) push(VOCAB[i][0], VOCAB[i][2], "");   // English meaning
+    for (let i = 0; i < vn.length && out.length < N; i++) if (vn[i][0].includes(nq)) push(VOCAB[i][0], VOCAB[i][2], "");
+    return out;
+  }
+  function paint() {
+    items = build(vsearch.value); on = -1; sug.textContent = "";
+    if (!items.length) { sug.hidden = true; vsearch.setAttribute("aria-expanded", "false"); return; }
+    if (!vsearch.value.trim()) { const h = document.createElement("div"); h.className = "vs-h"; h.textContent = "Recent"; sug.appendChild(h); }
+    items.forEach((it, i) => {
+      const d = document.createElement("div"); d.className = "vs-i"; d.setAttribute("role", "option"); d.dataset.i = i;
+      d.innerHTML = '<span class="vs-w"></span><span class="vs-m"></span><span class="vs-k"></span>';
+      d.children[0].textContent = it.w; d.children[1].textContent = it.m; d.children[2].textContent = it.kind === "search" ? "\uD83D\uDD58 searched" : it.kind === "seen" ? "looked at" : "";
+      sug.appendChild(d);
+    });
+    sug.hidden = false; vsearch.setAttribute("aria-expanded", "true");
+  }
+  const close = () => { sug.hidden = true; on = -1; vsearch.setAttribute("aria-expanded", "false"); };
+  function pick(i) {
+    const it = items[i]; if (!it) return;
+    vsearch.value = it.w; vhAdd(it.w);
+    vsearch.dispatchEvent(new Event("input")); close();                  // filters the list to that word
+  }
+  function mark(i) { [...sug.querySelectorAll(".vs-i")].forEach((d, k) => { d.classList.toggle("on", k === i); if (k === i) d.scrollIntoView({ block: "nearest" }); }); on = i; }
+  vsearch.addEventListener("focus", paint);
+  vsearch.addEventListener("input", paint);
+  vsearch.addEventListener("blur", () => setTimeout(close, 150));
+  sug.addEventListener("mousedown", e => e.preventDefault());           // keep the focus in the box while you click
+  sug.addEventListener("click", e => { const d = e.target.closest(".vs-i"); if (d) pick(+d.dataset.i); });
+  vsearch.addEventListener("keydown", e => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      if (sug.hidden) { paint(); if (sug.hidden) return; }
+      e.preventDefault(); const n = items.length; mark(e.key === "ArrowDown" ? (on + 1) % n : (on - 1 + n) % n);
+    } else if (e.key === "Enter") {
+      if (!sug.hidden && on >= 0) { e.preventDefault(); pick(on); } else { vhAdd(vsearch.value); close(); }
+    } else if (e.key === "Escape" && !sug.hidden) { e.preventDefault(); close(); }
+  });
+}
 vmoreBtn.addEventListener("click", () => vRender(false));
 const vGroupBtn = $("vGroupBtn");
 vGroupBtn.addEventListener("click", () => {
