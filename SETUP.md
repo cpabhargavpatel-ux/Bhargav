@@ -157,3 +157,10 @@ Click the **Vocabulary** search box and it lists the words you searched or opene
 words (matching with or without accents, and English meanings too — typing `hous` offers *maison*), with your earlier
 searches and looked-at words first. Use the arrow keys and Enter, or click one, and the list filters to that word.
 Your search history is saved in your account.
+
+### Repeat any part of a video (A to B), and the top transcript size
+
+Under the buttons is a **Repeat A→B** row. Press **[** (or *A start*) where the part begins and **]** (or *B end*) where it ends:
+the video jumps to A and repeats A to B until you press **\\** (or *Repeat*) to turn it off. **X** clears A and B. A bar under the
+video shows where the part is. Seeking somewhere else with the video's own bar is left alone. The pinned transcript bar has
+**A−** / **A+** buttons (and the **+** / **−** keys) to make its text smaller or bigger; the size is remembered.

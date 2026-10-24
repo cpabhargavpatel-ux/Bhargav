@@ -59,6 +59,11 @@
   .bar .status { flex: 1; min-width: 220px; margin: 0; min-height: 0; }
   /* the current transcript line stays pinned under the top bar while you scroll */
   .now-line { position: sticky; top: 42px; z-index: 60; display: block; width: fit-content; min-width: min(100%, 520px); max-width: min(100%, 980px); margin-left: auto !important; margin-right: auto !important; text-align: center; margin: 0 0 10px; padding: 9px 14px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); box-shadow: 0 4px 14px rgba(15, 25, 60, .28); cursor: pointer; font-size: var(--nl, 1.75rem); line-height: 1.4; }
+  .now-line { padding-left: 78px !important; padding-right: 78px !important; }
+  @media (max-width: 700px) { .now-line { padding-left: 14px !important; padding-right: 60px !important; } }
+  .now-line .nfs { position: absolute; top: 6px; right: 8px; display: flex; gap: 4px; }
+  .now-line .nfs button { border: 1px solid rgba(255, 255, 255, .55); background: rgba(255, 255, 255, .16); color: inherit; border-radius: 6px; padding: 1px 7px; font: 700 .8rem system-ui, sans-serif; cursor: pointer; touch-action: manipulation; }
+  .now-line .nfs button:hover { background: rgba(255, 255, 255, .3); }
   .now-line[hidden] { display: none; }
   .now-line .nrow { display: flex; gap: 12px; align-items: baseline; justify-content: center; }
   .now-line .nxt { margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(255, 255, 255, .3); font-size: .86em; opacity: .85; }
@@ -67,6 +72,16 @@
   .now-line .nts { flex: none; font: 700 .8rem ui-monospace, Consolas, monospace; opacity: .8; }
   .now-line .ntx { min-width: 0; overflow-wrap: anywhere; }
   .now-line.loop { background: var(--danger); color: #fff; }
+  .ab { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: -2px 0 10px; }
+  .ab .lab { font-weight: 700; color: var(--mute); font-size: .88rem; }
+  .ab .abinfo { color: var(--mute); font-size: .9rem; font-variant-numeric: tabular-nums; }
+  .ab .abinfo b { color: var(--ink); }
+  .ab .btn.on { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .ab .btn.on kbd { background: rgba(255,255,255,.22); border-color: rgba(255,255,255,.5); color: #fff; }
+  .abstrip { position: relative; height: 8px; margin-top: 4px; border-radius: 4px; background: var(--soft); overflow: hidden; }
+  .abstrip .seg { position: absolute; top: 0; bottom: 0; background: var(--accent); opacity: .65; }
+  .abstrip .seg.on { background: var(--danger); opacity: .9; }
+  .abstrip .pt { position: absolute; top: 0; bottom: 0; width: 3px; background: var(--accent); }
   .tx { margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--bg); }
   .txh { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 8px; color: var(--mute); font-size: .88rem; }
   .txh b { color: var(--ink); font-size: .95rem; }
@@ -110,7 +125,7 @@
   <section class="main">
     <div class="none" id="none">Pick a video above.</div>
     <div id="work" hidden>
-      <div class="now-line" id="nowLine" hidden title="The line being said now — click to hear it again"><div class="nrow"><span class="nts" id="nowTs"></span><span class="ntx" id="nowTx"></span></div><div class="nrow nxt" id="nextRow" title="Next line — click to jump to it"><span class="nts" id="nextTs"></span><span class="ntx" id="nextTx"></span></div></div>
+      <div class="now-line" id="nowLine" hidden title="The line being said now — click to hear it again"><span class="nfs"><button type="button" id="nlMinus" title="Smaller text (−)">A−</button><button type="button" id="nlPlus" title="Bigger text (+)">A+</button></span><div class="nrow"><span class="nts" id="nowTs"></span><span class="ntx" id="nowTx"></span></div><div class="nrow nxt" id="nextRow" title="Next line — click to jump to it"><span class="nts" id="nextTs"></span><span class="ntx" id="nextTx"></span></div></div>
       <div class="head">
         <button class="btn alt small" id="bList" type="button" title="Show or hide the list of videos">📁 Videos</button>
         <h2 id="title"></h2>
@@ -123,7 +138,16 @@
         <button class="btn alt" id="bOrig" type="button" title="Play the original video from the point where my recording started">▶ Original from my start<kbd>O</kbd></button>
         <div class="status" id="status" role="status" aria-live="polite"></div>
       </div>
+      <div class="ab" id="abRow">
+        <span class="lab">Repeat A→B</span>
+        <button class="btn alt small" id="bA" type="button" title="Mark the start (A) at the current time">A start<kbd>[</kbd></button>
+        <button class="btn alt small" id="bB" type="button" title="Mark the end (B) at the current time and start repeating">B end<kbd>]</kbd></button>
+        <button class="btn alt small" id="bAB" type="button" title="Repeat A to B on / off">↻ Repeat<kbd>\</kbd></button>
+        <button class="btn alt small" id="bABx" type="button" title="Clear A and B">✕ Clear<kbd>X</kbd></button>
+        <span class="abinfo" id="abInfo">Mark where to start and stop; that part repeats until you turn it off.</span>
+      </div>
       <div class="stage"><video id="v" controls playsinline preload="metadata"></video></div>
+      <div class="abstrip" id="abStrip" hidden><span class="seg" id="abSeg"></span></div>
 
       <div class="tx" id="tx">
         <div class="txh">
@@ -154,7 +178,10 @@
         <span><kbd>O</kbd> original video from where my recording started</span>
         <span><kbd>←</kbd> <kbd>→</kbd> back / forward 3 seconds</span>
         <span><kbd>0</kbd> back to the beginning</span>
-        <span><kbd>L</kbd> repeat the video on / off</span>
+        <span><kbd>L</kbd> repeat the whole video on / off</span>
+        <span><kbd>[</kbd> mark A (start) · <kbd>]</kbd> mark B (end) and repeat</span>
+        <span><kbd>\</kbd> repeat A→B on / off · <kbd>X</kbd> clear A and B</span>
+        <span><kbd>+</kbd> <kbd>−</kbd> bigger / smaller top transcript</span>
       </div>
       <p class="tip">Shadowing: play the video and speak along with it, a split second behind, copying the rhythm, the melody and the sounds. <b>Use headphones</b> so the video's sound doesn't leak into your recording. On an iPhone or iPad the microphone needs the <code>https://</code> address (see SETUP.md); the keyboard shortcuts need a keyboard, the buttons work everywhere.</p>
     </div>
@@ -207,7 +234,7 @@
     stopRec(true); stopMine();
     cur = it; LSset("shadow-last", it.name); paintList();
     $("none").hidden = true; $("work").hidden = false; $("title").textContent = it.name.replace(/\.[^.]+$/, "");
-    $("picker").hidden = true; lineLoop = null; loadTx();
+    $("picker").hidden = true; lineLoop = null; ab = { a: null, b: null, on: false }; refreshAB(); loadTx();
     v.classList.toggle("aud", !!it.audio);
     while (v.firstChild) v.removeChild(v.firstChild);
     v.pause(); v.src = "/videos/" + encodeURIComponent(it.name);
@@ -399,7 +426,7 @@
     clearTimeout(txT); txT = setTimeout(function () { if (val.trim()) TX[name] = val; else delete TX[name]; Store.save("shadow-tx", TX); }, 500);
   });
   $("txSize").value = LS("shadow-txsize", "1.15"); if (!$("txSize").value) $("txSize").value = "1.15";
-  function applySize() { $("nowLine").style.setProperty("--nl", (parseFloat($("txSize").value) * 1.55).toFixed(2) + "rem"); $("txRead").style.fontSize = $("txSize").value + "rem"; $("txEdit").style.fontSize = $("txSize").value + "rem"; }
+  function applySize() { $("txRead").style.fontSize = $("txSize").value + "rem"; $("txEdit").style.fontSize = $("txSize").value + "rem"; }
   $("txSize").onchange = function () { LSset("shadow-txsize", this.value); applySize(); this.blur(); }; applySize();
   $("oLine").checked = LS("shadow-oLine", "0") === "1";
   $("oLine").onchange = function () { LSset("shadow-oLine", this.checked ? "1" : "0"); if (!this.checked) { lineLoop = null; markCue(); } };
@@ -425,11 +452,17 @@
   v.addEventListener("seeking", function () {                      // you dragged the video bar somewhere else: leave the line loop
     if (!ourSeek && lineLoop && (v.currentTime < lineLoop.a - 0.3 || v.currentTime > lineLoop.b + 0.3)) { lineLoop = null; markCue(); }
   });
+  var ab = { a: null, b: null, on: false };
   function loopTick() {
-    if (!lineLoop) { rafOn = false; return; }
-    if (!v.paused && v.currentTime >= lineLoop.b - 0.04) { ourSeek = true; v.currentTime = lineLoop.a; }
+    if (!lineLoop && !ab.on) { rafOn = false; return; }
+    if (!v.paused) {
+      var t = v.currentTime;
+      if (lineLoop && t >= lineLoop.b - 0.04) { ourSeek = true; v.currentTime = lineLoop.a; }
+      else if (ab.on && t >= ab.b - 0.04 && t < ab.b + 0.8) { ourSeek = true; v.currentTime = ab.a; }   // reached B: back to A (a seek elsewhere is left alone)
+    }
     requestAnimationFrame(loopTick);
   }
+  function ensureTick() { if (!rafOn) { rafOn = true; requestAnimationFrame(loopTick); } }
   $("txRead").addEventListener("click", function (e) { var d = e.target.closest(".cue"); if (d) playCue(+d.dataset.i); });
   var nextCue = -1;
   $("nowLine").addEventListener("click", function (e) { if (e.target.closest("#nextRow")) { if (nextCue >= 0) playCue(nextCue); } else if (curCue >= 0) playCue(curCue); });     // the pinned line: click to hear it again
@@ -437,10 +470,49 @@
     var c = cues[i]; if (!c || c.t == null || !cur) return;
     stopMine();
     var nx = null; for (var j = i + 1; j < cues.length; j++) if (cues[j].t != null && cues[j].t > c.t) { nx = cues[j].t; break; }
-    if ($("oLine").checked) { lineLoop = { a: c.t, b: nx != null ? nx : (v.duration || 1e9), i: i }; if (!rafOn) { rafOn = true; requestAnimationFrame(loopTick); } } else lineLoop = null;
+    if ($("oLine").checked) { lineLoop = { a: c.t, b: nx != null ? nx : (v.duration || 1e9), i: i }; ensureTick(); ab.on = false; refreshAB(); } else lineLoop = null;
     ourSeek = true; try { v.currentTime = c.t; } catch (x) {}
     v.play().catch(function () {}); markCue();
   }
+
+  /* ---------- A -> B repeat: any part of the video, over and over ---------- */
+  var tf = function (t) { t = Math.max(0, t); var m = Math.floor(t / 60), x = t - m * 60; return m + ":" + (x < 10 ? "0" : "") + x.toFixed(1); };
+  function refreshAB() {
+    var info = $("abInfo"), strip = $("abStrip"), seg = $("abSeg"), dur = v.duration || 0;
+    $("bAB").classList.toggle("on", ab.on); $("bAB").innerHTML = (ab.on ? "■ Repeating" : "↻ Repeat") + "<kbd>\\</kbd>";
+    if (ab.a == null) { info.textContent = "Mark where to start and stop; that part repeats until you turn it off."; strip.hidden = true; return; }
+    info.innerHTML = "<b>A</b> " + tf(ab.a) + (ab.b != null ? "  →  <b>B</b> " + tf(ab.b) + "  (" + (ab.b - ab.a).toFixed(1) + " s)" + (ab.on ? " — repeating" : " — paused") : "  →  press ] to mark B");
+    if (dur > 0) {
+      strip.hidden = false; seg.className = "seg" + (ab.on ? " on" : "");
+      seg.style.left = (ab.a / dur * 100) + "%"; seg.style.width = (ab.b != null ? (ab.b - ab.a) / dur * 100 : 0.6) + "%";
+    } else strip.hidden = true;
+  }
+  function abPlayFromA() { stopMine(); ab.on = true; lineLoop = null; ensureTick(); ourSeek = true; try { v.currentTime = ab.a; } catch (e) {} v.play().catch(function () {}); refreshAB(); markCue(); }
+  function setA() {
+    if (!cur) return; var t = Math.round(v.currentTime * 100) / 100;
+    ab.a = t; if (ab.b != null && ab.b <= t + 0.2) { ab.b = null; ab.on = false; } refreshAB(); say("A set at " + tf(t) + " — now go to the end and press ]");
+  }
+  function setB() {
+    if (!cur) return; var t = Math.round(v.currentTime * 100) / 100;
+    if (ab.a == null) { ab.a = 0; }
+    if (t <= ab.a + 0.2) { say("B must come after A (A is at " + tf(ab.a) + ").", "rec"); return; }
+    ab.b = t; abPlayFromA(); say("Repeating " + tf(ab.a) + " → " + tf(ab.b));
+  }
+  function toggleAB() {
+    if (ab.a == null || ab.b == null) { say("Mark A ( [ ) and B ( ] ) first.", "rec"); return; }
+    if (ab.on) { ab.on = false; refreshAB(); say("Repeat A→B off."); } else abPlayFromA();
+  }
+  function clearAB() { ab = { a: null, b: null, on: false }; refreshAB(); say("A and B cleared."); }
+  $("bA").onclick = setA; $("bB").onclick = setB; $("bAB").onclick = toggleAB; $("bABx").onclick = clearAB;
+  v.addEventListener("loadedmetadata", refreshAB); v.addEventListener("durationchange", refreshAB);
+  ["bA", "bB", "bAB", "bABx"].forEach(function (id) { $(id).addEventListener("click", function () { this.blur(); }); });
+
+  /* ---------- the pinned top transcript: size buttons ---------- */
+  var NL = parseFloat(LS("shadow-nl", "1.75")); if (!(NL >= 1 && NL <= 4.6)) NL = 1.75;
+  function setNL(x) { NL = Math.min(4.5, Math.max(1, Math.round(x * 100) / 100)); $("nowLine").style.setProperty("--nl", NL + "rem"); LSset("shadow-nl", String(NL)); $("nlMinus").disabled = NL <= 1; $("nlPlus").disabled = NL >= 4.5; }
+  setNL(NL);
+  $("nlMinus").addEventListener("click", function (e) { e.stopPropagation(); setNL(NL - 0.25); });
+  $("nlPlus").addEventListener("click", function (e) { e.stopPropagation(); setNL(NL + 0.25); });
 
   /* ---------- keyboard ---------- */
   document.addEventListener("keydown", function (e) {            // capture phase: the page's keys win over the video's own
@@ -455,6 +527,12 @@
     else if (k === "o") playOriginal();
     else if (k === "l") { $("oLoop").checked = !$("oLoop").checked; $("oLoop").onchange.call($("oLoop")); }
     else if (k === "0") { try { v.currentTime = 0; } catch (x) {} }
+    else if (e.key === "[") setA();
+    else if (e.key === "]") setB();
+    else if (e.key === "\\") toggleAB();
+    else if (k === "x") clearAB();
+    else if (e.key === "+" || e.key === "=") setNL(NL + 0.25);
+    else if (e.key === "-" || e.key === "_") setNL(NL - 0.25);
     else if (e.key === "ArrowLeft") { v.currentTime = Math.max(0, v.currentTime - 3); }
     else if (e.key === "ArrowRight") { v.currentTime = Math.min(v.duration || 1e9, v.currentTime + 3); }
     else used = false;
