@@ -59,12 +59,14 @@
   .bar .status { flex: 1; min-width: 220px; margin: 0; min-height: 0; }
   /* the current transcript line stays pinned under the top bar while you scroll */
   .now-line { position: sticky; top: 42px; z-index: 60; display: block; width: fit-content; min-width: min(100%, 520px); max-width: min(100%, 980px); margin-left: auto !important; margin-right: auto !important; text-align: center; margin: 0 0 10px; padding: 9px 14px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); box-shadow: 0 4px 14px rgba(15, 25, 60, .28); cursor: pointer; font-size: var(--nl, 1.75rem); line-height: 1.4; }
-  .now-line { padding-left: 78px !important; padding-right: 78px !important; }
-  @media (max-width: 700px) { .now-line { padding-left: 14px !important; padding-right: 60px !important; } }
-  .now-line .nfs { position: absolute; top: 6px; right: 8px; display: flex; gap: 4px; }
+  .now-line { display: flex !important; align-items: center; gap: 14px; }
+  .now-line .nmain { flex: 1; min-width: 0; }
+  .now-line .nfs { order: 2; flex: none; display: flex; gap: 4px; align-self: flex-start; }
+  .now-line .nfs button[hidden] { display: none; }
+  @media (max-width: 700px) { .now-line { flex-wrap: wrap; } .now-line .nfs { width: 100%; justify-content: flex-end; align-self: auto; } }
   .now-line .nfs button { border: 1px solid rgba(255, 255, 255, .55); background: rgba(255, 255, 255, .16); color: inherit; border-radius: 6px; padding: 1px 7px; font: 700 .8rem system-ui, sans-serif; cursor: pointer; touch-action: manipulation; }
   .now-line .nfs button:hover { background: rgba(255, 255, 255, .3); }
-  .now-line[hidden] { display: none; }
+  .now-line[hidden] { display: none !important; }
   .now-line .nrow { display: flex; gap: 12px; align-items: baseline; justify-content: center; }
   .now-line .nxt { margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(255, 255, 255, .3); font-size: .86em; opacity: .85; }
   .now-line .nxt:hover { opacity: 1; }
@@ -125,7 +127,7 @@
   <section class="main">
     <div class="none" id="none">Pick a video above.</div>
     <div id="work" hidden>
-      <div class="now-line" id="nowLine" hidden title="The line being said now — click to hear it again"><span class="nfs"><button type="button" id="nlStop" hidden title="Stop repeating this line (Esc)">■ Stop repeat</button><button type="button" id="nlMinus" title="Smaller text (−)">A−</button><button type="button" id="nlPlus" title="Bigger text (+)">A+</button></span><div class="nrow"><span class="nts" id="nowTs"></span><span class="ntx" id="nowTx"></span></div><div class="nrow nxt" id="nextRow" title="Next line — click to jump to it"><span class="nts" id="nextTs"></span><span class="ntx" id="nextTx"></span></div></div>
+      <div class="now-line" id="nowLine" hidden title="The line being said now — click to hear it again"><span class="nfs"><button type="button" id="nlStop" hidden title="Stop repeating this line (Esc)">■ Stop repeat</button><button type="button" id="nlMinus" title="Smaller text (−)">A−</button><button type="button" id="nlPlus" title="Bigger text (+)">A+</button></span><div class="nmain"><div class="nrow"><span class="nts" id="nowTs"></span><span class="ntx" id="nowTx"></span></div><div class="nrow nxt" id="nextRow" title="Next line — click to jump to it"><span class="nts" id="nextTs"></span><span class="ntx" id="nextTx"></span></div></div></div>
       <div class="head">
         <button class="btn alt small" id="bList" type="button" title="Show or hide the list of videos">📁 Videos</button>
         <h2 id="title"></h2>
@@ -516,7 +518,7 @@
   ["bA", "bB", "bAB", "bABx"].forEach(function (id) { $(id).addEventListener("click", function () { this.blur(); }); });
 
   /* ---------- the pinned top transcript: size buttons ---------- */
-  var NL = parseFloat(LS("shadow-nl", "1.75")); if (!(NL >= 1 && NL <= 4.6)) NL = 1.75;
+  var NL0 = innerWidth < 700 ? 1.25 : 1.75, NL = parseFloat(LS("shadow-nl", String(NL0))); if (!(NL >= 1 && NL <= 4.6)) NL = NL0;
   function setNL(x) { NL = Math.min(4.5, Math.max(1, Math.round(x * 100) / 100)); $("nowLine").style.setProperty("--nl", NL + "rem"); LSset("shadow-nl", String(NL)); $("nlMinus").disabled = NL <= 1; $("nlPlus").disabled = NL >= 4.5; }
   setNL(NL);
   $("nlMinus").addEventListener("click", function (e) { e.stopPropagation(); setNL(NL - 0.25); });
