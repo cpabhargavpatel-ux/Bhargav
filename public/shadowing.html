@@ -125,7 +125,7 @@
   <section class="main">
     <div class="none" id="none">Pick a video above.</div>
     <div id="work" hidden>
-      <div class="now-line" id="nowLine" hidden title="The line being said now — click to hear it again"><span class="nfs"><button type="button" id="nlMinus" title="Smaller text (−)">A−</button><button type="button" id="nlPlus" title="Bigger text (+)">A+</button></span><div class="nrow"><span class="nts" id="nowTs"></span><span class="ntx" id="nowTx"></span></div><div class="nrow nxt" id="nextRow" title="Next line — click to jump to it"><span class="nts" id="nextTs"></span><span class="ntx" id="nextTx"></span></div></div>
+      <div class="now-line" id="nowLine" hidden title="The line being said now — click to hear it again"><span class="nfs"><button type="button" id="nlStop" hidden title="Stop repeating this line (Esc)">■ Stop repeat</button><button type="button" id="nlMinus" title="Smaller text (−)">A−</button><button type="button" id="nlPlus" title="Bigger text (+)">A+</button></span><div class="nrow"><span class="nts" id="nowTs"></span><span class="ntx" id="nowTx"></span></div><div class="nrow nxt" id="nextRow" title="Next line — click to jump to it"><span class="nts" id="nextTs"></span><span class="ntx" id="nextTx"></span></div></div>
       <div class="head">
         <button class="btn alt small" id="bList" type="button" title="Show or hide the list of videos">📁 Videos</button>
         <h2 id="title"></h2>
@@ -155,6 +155,7 @@
           <b>Transcript</b>
           <button class="btn alt small" id="txMode" type="button">✎ Edit</button>
           <label><input type="checkbox" id="oLine"> Repeat the line I click</label>
+          <button class="btn small" id="lnStop" type="button" hidden title="Stop repeating the line (Esc, or click the line again)">■ Stop repeating</button>
           <span class="sp"></span>
           <label>Text size <select id="txSize"><option value="0.95">S</option><option value="1.15" selected>M</option><option value="1.4">L</option><option value="1.8">XL</option></select></label>
         </div>
@@ -182,6 +183,7 @@
         <span><kbd>L</kbd> repeat the whole video on / off</span>
         <span><kbd>[</kbd> mark A (start) · <kbd>]</kbd> mark B (end) and repeat</span>
         <span><kbd>\</kbd> repeat A→B on / off · <kbd>X</kbd> clear A and B</span>
+        <span><kbd>Esc</kbd> stop repeating the transcript line (or click it again)</span>
         <span><kbd>+</kbd> <kbd>−</kbd> bigger / smaller top transcript</span>
       </div>
       <p class="tip">Shadowing: play the video and speak along with it, a split second behind, copying the rhythm, the melody and the sounds. <b>Use headphones</b> so the video's sound doesn't leak into your recording. On an iPhone or iPad the microphone needs the <code>https://</code> address (see SETUP.md); the keyboard shortcuts need a keyboard, the buttons work everywhere.</p>
@@ -446,6 +448,7 @@
       if (nx != null) { $("nextTs").textContent = "next " + fmtT(cues[nx].t); $("nextTx").textContent = cues[nx].text; }
     }
     for (var i = 0; i < kids.length; i++) kids[i].classList.toggle("loop", !!lineLoop && lineLoop.i === i);
+    $("nlStop").hidden = $("lnStop").hidden = !lineLoop;
     now.classList.toggle("loop", !!lineLoop && lineLoop.i === k);
   }
   v.addEventListener("timeupdate", markCue);
@@ -467,8 +470,12 @@
   $("txRead").addEventListener("click", function (e) { var d = e.target.closest(".cue"); if (d) playCue(+d.dataset.i); });
   var nextCue = -1;
   $("nowLine").addEventListener("click", function (e) { if (e.target.closest("#nextRow")) { if (nextCue >= 0) playCue(nextCue); } else if (curCue >= 0) playCue(curCue); });     // the pinned line: click to hear it again
+  function stopLine(quiet) { if (!lineLoop) return false; lineLoop = null; markCue(); if (!quiet) say("Line repeat stopped."); return true; }
+  $("nlStop").addEventListener("click", function (e) { e.stopPropagation(); stopLine(); });
+  $("lnStop").addEventListener("click", function () { stopLine(); });
   function playCue(i) {
     var c = cues[i]; if (!c || c.t == null || !cur) return;
+    if (lineLoop && lineLoop.i === i) { stopLine(); return; }                  // clicking the repeating line again stops the repeat (the video plays on)
     stopMine();
     var nx = null; for (var j = i + 1; j < cues.length; j++) if (cues[j].t != null && cues[j].t > c.t) { nx = cues[j].t; break; }
     if ($("oLine").checked) { lineLoop = { a: c.t, b: nx != null ? nx : (v.duration || 1e9), i: i }; ensureTick(); ab.on = false; refreshAB(); } else lineLoop = null;
@@ -547,8 +554,9 @@
     else if (k === "0") { try { v.currentTime = 0; } catch (x) {} }
     else if (e.key === "[") setA();
     else if (e.key === "]") setB();
-    else if (e.key === "\\") toggleAB();
-    else if (k === "x") clearAB();
+    else if (e.key === "\\") { if (!stopLine()) toggleAB(); }
+    else if (e.key === "Escape") { if (!stopLine()) used = false; }
+    else if (k === "x") { stopLine(true); clearAB(); }
     else if (e.key === "+" || e.key === "=") setNL(NL + 0.25);
     else if (e.key === "-" || e.key === "_") setNL(NL - 0.25);
     else if (e.key === "ArrowLeft") { v.currentTime = Math.max(0, v.currentTime - 3); }

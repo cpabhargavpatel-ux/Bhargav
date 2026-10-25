@@ -168,3 +168,6 @@ video shows where the part is. Seeking somewhere else with the video's own bar i
 The buttons (start + record, Start, Record, My voice, Original, Repeat A→B) sit **below** the video, and the video is sized to
 fill the window under the top menu and the pinned transcript, so you see the whole picture; the page scrolls to put it in
 view when you open or start a video. The keyboard shortcuts work without scrolling down.
+
+To stop a transcript-line repeat: click the repeating line again, press **Esc** (or **\\**), press **■ Stop repeat** (it appears in
+the pinned transcript bar and in the transcript header while a line repeats), or untick *Repeat the line I click*. The video keeps playing.
