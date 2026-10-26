@@ -171,3 +171,7 @@ view when you open or start a video. The keyboard shortcuts work without scrolli
 
 To stop a transcript-line repeat: click the repeating line again, press **Esc** (or **\\**), press **■ Stop repeat** (it appears in
 the pinned transcript bar and in the transcript header while a line repeats), or untick *Repeat the line I click*. The video keeps playing.
+
+The pinned transcript bar can be **dragged anywhere** — over the video, to a corner, wherever you like: press on it (or on its **⠿** handle,
+which is the only part that drags on a touch screen) and move. It then floats there while you scroll, remembers its place, and stays
+inside the window. **⤒ Dock** puts it back under the top menu.

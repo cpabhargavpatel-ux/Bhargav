@@ -63,6 +63,10 @@
   .now-line .nmain { flex: 1; min-width: 0; }
   .now-line .nfs { order: 2; flex: none; display: flex; gap: 4px; align-self: flex-start; }
   .now-line .nfs button[hidden] { display: none; }
+  .now-line .grip { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; font-size: 1.1rem; line-height: 1; padding: 3px 6px; opacity: .85; align-self: center; }
+  .now-line { touch-action: auto; }
+  .now-line.float { position: fixed !important; margin: 0 !important; z-index: 900; max-width: min(980px, calc(100vw - 16px)); }
+  .now-line.dragging { cursor: grabbing; box-shadow: 0 10px 30px rgba(15, 25, 60, .45); user-select: none; -webkit-user-select: none; }
   @media (max-width: 700px) { .now-line { flex-wrap: wrap; } .now-line .nfs { width: 100%; justify-content: flex-end; align-self: auto; } }
   .now-line .nfs button { border: 1px solid rgba(255, 255, 255, .55); background: rgba(255, 255, 255, .16); color: inherit; border-radius: 6px; padding: 1px 7px; font: 700 .8rem system-ui, sans-serif; cursor: pointer; touch-action: manipulation; }
   .now-line .nfs button:hover { background: rgba(255, 255, 255, .3); }
@@ -127,7 +131,7 @@
   <section class="main">
     <div class="none" id="none">Pick a video above.</div>
     <div id="work" hidden>
-      <div class="now-line" id="nowLine" hidden title="The line being said now — click to hear it again"><span class="nfs"><button type="button" id="nlStop" hidden title="Stop repeating this line (Esc)">■ Stop repeat</button><button type="button" id="nlMinus" title="Smaller text (−)">A−</button><button type="button" id="nlPlus" title="Bigger text (+)">A+</button></span><div class="nmain"><div class="nrow"><span class="nts" id="nowTs"></span><span class="ntx" id="nowTx"></span></div><div class="nrow nxt" id="nextRow" title="Next line — click to jump to it"><span class="nts" id="nextTs"></span><span class="ntx" id="nextTx"></span></div></div></div>
+      <div class="now-line" id="nowLine" hidden title="The line being said now — click to hear it again"><span class="nfs"><span class="grip" id="nlGrip" title="Drag to move this box anywhere on the screen">⠿</span><button type="button" id="nlDock" hidden title="Put it back under the top menu">⤒ Dock</button><button type="button" id="nlStop" hidden title="Stop repeating this line (Esc)">■ Stop repeat</button><button type="button" id="nlMinus" title="Smaller text (−)">A−</button><button type="button" id="nlPlus" title="Bigger text (+)">A+</button></span><div class="nmain"><div class="nrow"><span class="nts" id="nowTs"></span><span class="ntx" id="nowTx"></span></div><div class="nrow nxt" id="nextRow" title="Next line — click to jump to it"><span class="nts" id="nextTs"></span><span class="ntx" id="nextTx"></span></div></div></div>
       <div class="head">
         <button class="btn alt small" id="bList" type="button" title="Show or hide the list of videos">📁 Videos</button>
         <h2 id="title"></h2>
@@ -445,6 +449,7 @@
       var c = k >= 0 ? cues[k] : null, nx = null;
       for (var j = k + 1; j < cues.length; j++) if (cues[j].t != null) { nx = j; break; }
       now.hidden = !c && nx == null;                                   // before the first line: show only what is coming
+      if (!now.hidden && typeof nlBox !== "undefined" && nlBox && nlBox.classList.contains("float")) floatAt(parseFloat(nlBox.style.left) || 0, parseFloat(nlBox.style.top) || 42);
       $("nowTs").textContent = c ? fmtT(c.t) : "▶"; $("nowTx").textContent = c ? c.text : "Starting soon…";
       $("nextRow").hidden = nx == null; nextCue = nx == null ? -1 : nx;
       if (nx != null) { $("nextTs").textContent = "next " + fmtT(cues[nx].t); $("nextTx").textContent = cues[nx].text; }
@@ -517,6 +522,32 @@
   v.addEventListener("loadedmetadata", refreshAB); v.addEventListener("durationchange", refreshAB);
   ["bA", "bB", "bAB", "bABx"].forEach(function (id) { $(id).addEventListener("click", function () { this.blur(); }); });
 
+  /* ---------- the pinned top transcript: drag it anywhere (it floats), or dock it back ---------- */
+  var nlBox = $("nowLine"), drag = null, dragged = false;
+  function clampPos(x, y) { var w = nlBox.offsetWidth, h = nlBox.offsetHeight; return [Math.min(Math.max(0, x), Math.max(0, innerWidth - w)), Math.min(Math.max(42, y), Math.max(42, innerHeight - h))]; }
+  function floatAt(x, y) { var c = clampPos(x, y); nlBox.classList.add("float"); nlBox.style.left = c[0] + "px"; nlBox.style.top = c[1] + "px"; $("nlDock").hidden = false; return c; }
+  function dock() { nlBox.classList.remove("float"); nlBox.style.left = nlBox.style.top = ""; $("nlDock").hidden = true; LSset("shadow-nlpos", ""); fitVideo(); }
+  nlBox.addEventListener("pointerdown", function (e) {
+    if (e.target.closest("button") || (e.pointerType === "mouse" && e.button !== 0)) return;
+    if (e.pointerType !== "mouse" && !e.target.closest("#nlGrip")) return;               // on a touch screen only the ⠿ handle drags, so the bar can still be scrolled past
+    var r = nlBox.getBoundingClientRect(); drag = { id: e.pointerId, dx: e.clientX - r.left, dy: e.clientY - r.top, x0: e.clientX, y0: e.clientY, moved: false };
+  });
+  document.addEventListener("pointermove", function (e) {                  // on the document, so a fast drag that leaves the box is still followed
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.moved) { if (Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 5) return; drag.moved = true; nlBox.classList.add("dragging"); }
+    floatAt(e.clientX - drag.dx, e.clientY - drag.dy); fitVideo(); e.preventDefault();
+  });
+  function endDrag(e) {
+    if (!drag || (e && e.pointerId !== drag.id)) return;
+    if (drag.moved) { dragged = true; setTimeout(function () { dragged = false; }, 0); nlBox.classList.remove("dragging"); LSset("shadow-nlpos", JSON.stringify({ x: parseFloat(nlBox.style.left), y: parseFloat(nlBox.style.top) })); }
+    drag = null;
+  }
+  document.addEventListener("pointerup", endDrag); document.addEventListener("pointercancel", endDrag);
+  nlBox.addEventListener("click", function (e) { if (dragged) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);   // letting go after a drag is not a click
+  $("nlDock").addEventListener("click", function (e) { e.stopPropagation(); dock(); });
+  addEventListener("resize", function () { if (nlBox.classList.contains("float")) floatAt(parseFloat(nlBox.style.left) || 0, parseFloat(nlBox.style.top) || 42); });
+  try { var sp = JSON.parse(LS("shadow-nlpos", "") || "null"); if (sp && isFinite(sp.x) && isFinite(sp.y)) { nlBox.classList.add("float"); nlBox.style.left = sp.x + "px"; nlBox.style.top = sp.y + "px"; $("nlDock").hidden = false; } } catch (e) {}
+
   /* ---------- the pinned top transcript: size buttons ---------- */
   var NL0 = innerWidth < 700 ? 1.25 : 1.75, NL = parseFloat(LS("shadow-nl", String(NL0))); if (!(NL >= 1 && NL <= 4.6)) NL = NL0;
   function setNL(x) { NL = Math.min(4.5, Math.max(1, Math.round(x * 100) / 100)); $("nowLine").style.setProperty("--nl", NL + "rem"); LSset("shadow-nl", String(NL)); $("nlMinus").disabled = NL <= 1; $("nlPlus").disabled = NL >= 4.5; }
@@ -525,7 +556,7 @@
   $("nlPlus").addEventListener("click", function (e) { e.stopPropagation(); setNL(NL + 0.25); });
 
   /* ---------- full-size video: it gets the whole window under the top menu and the pinned transcript ---------- */
-  function topEdge() { var n = $("nowLine"); return 42 + (n.hidden ? 0 : n.offsetHeight + 10); }
+  function topEdge() { var n = $("nowLine"); return 42 + (n.hidden || n.classList.contains("float") ? 0 : n.offsetHeight + 10); }
   function fitVideo() {
     if ($("work").hidden) return;
     v.style.maxHeight = Math.max(200, innerHeight - topEdge() - 14) + "px";
