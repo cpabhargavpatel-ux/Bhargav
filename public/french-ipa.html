@@ -399,7 +399,20 @@
   .lm-an.now b { background: transparent; color: #fff; }
   .lmap i.now { background: #1f9d55 !important; color: #fff !important; border-color: #1f9d55 !important; box-shadow: 0 0 0 4px #bfe8cf; transform: scale(1.18); }
   .chipwrap.now .chip { outline: 3px solid #1f9d55; outline-offset: 1px; background: #e5f7ec; }
-  body.show-anc .lm-ar, body.show-anc .lm-an { display: block; }
+  body.show-anc .lm-ar:not(.g), body.show-anc .lm-an { display: block; }
+  /* Gujarati row, under the English one */
+  .lm-ar.g { background: #8a3fb5; }
+  .lm-ar.g::after { border-top-color: #8a3fb5; }
+  .lm-gu { display: none; font: 600 1.02rem/1.25 "Nirmala UI", "Noto Sans Gujarati", "Gujarati Sangam MN", "Shruti", system-ui, sans-serif; color: #6b2d94; padding: 0 5px; border-radius: 6px; background: #f5eefb; white-space: nowrap; cursor: default; }
+  .lm-gu.ap { text-decoration: underline dotted #8a3fb5; text-underline-offset: 3px; }
+  .lm-gu:hover { outline: 2px solid #8a3fb5; }
+  .lm-gu.now { background: #8a3fb5; color: #fff; box-shadow: 0 0 0 3px #e3cdf3; transform: scale(1.15); }
+  body.show-gu .lm-ar.g { display: block; }
+  body.show-gu .lm-gu { display: inline-block; }
+  .gu-only { display: none; margin-top: 3px; }
+  body.show-gu .gu-only { display: block; }
+  .gu-only b { color: #6b2d94; }
+  .gu-line { font-family: "Nirmala UI", "Noto Sans Gujarati", "Gujarati Sangam MN", "Shruti", system-ui, sans-serif; color: #6b2d94; }
   body.show-anc .lm-an { display: inline-block; }
   .lm-s i { font: normal 700 1.02rem/1.2 var(--serif); padding: 0 6px; border-radius: 6px; cursor: default; }
   .lm-s i.v { background: #e3e9ff; color: #1b2f9e; } .lm-s i.s { background: #e1f4e6; color: #17653a; } .lm-s i.c { background: #fff0d9; color: #8a4b00; }
@@ -733,12 +746,14 @@
           <label class="enlab" title="Show the closest English IPA next to every French IPA"><input type="checkbox" id="enToggle" checked> English IPA ≈</label>
           <label class="enlab" title="Under the letters of the word, show the French sound each one makes (IPA)"><input type="checkbox" id="mapToggle" checked> French sounds</label>
           <label class="enlab" title="Under each French sound, show an arrow to the English sound (ee, sh, eh…)"><input type="checkbox" id="ancToggle" checked> English sounds</label>
+          <label class="enlab" title="Under the English sound, show the closest Gujarati sound (ઈ, શ, આં…)"><input type="checkbox" id="guToggle" checked> Gujarati sounds</label>
           <label class="enlab" title="On each sound tile (and under the player): the English word that has the sound, with a speaker to hear it"><input type="checkbox" id="tancToggle" checked> Anchor words</label>
           <label class="enlab" title="A picture of the tongue and lips for the sound being said"><input type="checkbox" id="mouthToggle" checked> Mouth</label>
         </span>
         <span class="optgrp" role="group" aria-label="What to highlight while the voice speaks"><span class="optlab">Highlight</span>
           <label class="enlab" title="While the voice speaks, light up the French sound (and its letters, and the word in a sentence) being said"><input type="checkbox" id="hlToggle" checked> French</label>
           <label class="enlab" title="While the voice speaks, light up the English sound under the French sound being said (needs English sounds ticked)"><input type="checkbox" id="hlenToggle" checked> English</label>
+          <label class="enlab" title="While the voice speaks, light up the Gujarati sound under the French sound being said (needs Gujarati sounds ticked)"><input type="checkbox" id="hlguToggle" checked> Gujarati</label>
         </span>
         <button class="notebtn" id="noteBtn" type="button" aria-expanded="false" aria-controls="noteBox" title="Write your own note about the sound or word shown above">📝 Notes</button>
       </div>
@@ -891,6 +906,7 @@
 
 <script src="/store.js"></script>
 <script src="/fr-en-ipa.js"></script>
+<script src="/fr-gu.js"></script>
 <script src="/fr-vocab-more.js"></script>
 <script src="/fr-sound-words.js"></script>
 <script src="/fr-align.js"></script>
@@ -1202,7 +1218,7 @@ function drawUnits(parent, units, seps) {
     if (un.silent) svg += '<line x1="50" y1="0" x2="50" y2="12"/>';
     else un.p.forEach((s, i) => { const x = (i + 0.5) / k * 100; svg += '<line x1="50" y1="0" x2="' + x + '" y2="11"/><path d="M' + (x - 5) + ' 9 L' + (x + 5) + ' 9 L' + x + ' 15 Z"/>'; });
     svg += "</svg>";
-    cell.innerHTML = '<span class="lm-l">' + esc(un.l) + "</span>" + svg + '<span class="lm-s">' + (un.silent ? '<span class="lm-sc"><i class="none" title="silent letter">\u00B7</i></span>' : un.p.map(s => { const a = FRIPA.sound(s); return '<span class="lm-sc"><i class="' + FRALIGN.kind(s) + '" data-s="' + esc(s) + '" tabindex="0" role="button" title="Hear /' + esc(s) + '/">' + esc(s) + "</i>" + (a && a.ex ? '<span class="lm-ar" aria-hidden="true"></span><span class="lm-an" data-w="' + esc(a.ex) + '" title="English sound: like the ' + esc(a.hit || "") + ' in \u201C' + esc(a.ex) + '\u201D \u2014 click to hear it">' + esc((FRIPA.say && FRIPA.say(s)) || a.hit || a.ex) + "</span>" : "") + "</span>"; }).join("")) + "</span>";
+    cell.innerHTML = '<span class="lm-l">' + esc(un.l) + "</span>" + svg + '<span class="lm-s">' + (un.silent ? '<span class="lm-sc"><i class="none" title="silent letter">\u00B7</i></span>' : un.p.map(s => { const a = FRIPA.sound(s); return '<span class="lm-sc"><i class="' + FRALIGN.kind(s) + '" data-s="' + esc(s) + '" tabindex="0" role="button" title="Hear /' + esc(s) + '/">' + esc(s) + "</i>" + (a && a.ex ? '<span class="lm-ar" aria-hidden="true"></span><span class="lm-an" data-w="' + esc(a.ex) + '" title="English sound: like the ' + esc(a.hit || "") + ' in \u201C' + esc(a.ex) + '\u201D \u2014 click to hear it">' + esc((FRIPA.say && FRIPA.say(s)) || a.hit || a.ex) + "</span>" : "") + (window.FRGU && FRGU.say(s) ? '<span class="lm-ar g" aria-hidden="true"></span><span class="lm-gu' + (FRGU.approx(s) ? " ap" : "") + '" title="Gujarati sound: ' + esc(FRGU.note(s)) + '">' + esc(FRGU.say(s)) + "</span>" : "") + "</span>"; }).join("")) + "</span>";
     cell.title = un.silent ? "\u201C" + un.l + "\u201D is silent here" : "\u201C" + un.l + "\u201D \u2192 /" + un.p.join("") + "/  \u2014 click to hear it";
     parent.appendChild(cell);
     eaten += un0.l.length; put(eaten);
@@ -1369,7 +1385,7 @@ addEventListener("resize", fitMouth);
 /* FOLLOW-ALONG: while the voice speaks, the word (sentences) and the sound (inside each word) being said light up, in the map and on the French sound tiles */
 const normTxt = t => String(t || "").normalize("NFC").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 let WFOCUS = null;                                     // a single word of the practice sentence being repeated: {box, tok, text, pinned}
-let kStop = null, hlOn = true, hlEn = true;           // the "Highlight French sounds" / "Highlight English sounds" ticks
+let kStop = null, hlOn = true, hlEn = true, hlGu = true;           // the "Highlight French sounds" / "Highlight English sounds" ticks
 function karaokeStop() {
   if (kStop) { kStop(); kStop = null; }
   document.querySelectorAll(".now").forEach(e => e.classList.remove("now"));
@@ -1384,7 +1400,8 @@ function kdurSave(key, ms) {
 function karaokeStart(text, rate, voiceName) {
   karaokeStop();
   const showEn = hlEn && document.body.classList.contains("show-anc");   // English: its own tick, and only while the English row is shown
-  if (!hlOn && !showEn && !mouthOn) return null;
+  const showGu = hlGu && document.body.classList.contains("show-gu");     // Gujarati: its own tick too
+  if (!hlOn && !showEn && !showGu && !mouthOn) return null;
   const want = normTxt(text);
   let box = [document.getElementById("lmap"), document.getElementById("spMap")].find(b => b && !b.hidden && b.dataset.src && normTxt(b.dataset.src) === want && b.offsetParent !== null), only = null;
   if (!box && WFOCUS && WFOCUS.box && !WFOCUS.box.hidden && WFOCUS.box.offsetParent !== null && want === normTxt(WFOCUS.text)) { box = WFOCUS.box; only = WFOCUS.tok; }   // one word of the sentence on repeat: light up just that word
@@ -1412,6 +1429,7 @@ function karaokeStart(text, rate, voiceName) {
       const it = tileFor(el.dataset.s); if (it && it._chip) (it._chip.closest(".chipwrap") || it._chip).classList.add("now");
     }
     if (showEn) { const col = el.closest(".lm-sc"), en = col && col.querySelector(".lm-an"); if (en) en.classList.add("now"); }
+    if (showGu) { const col = el.closest(".lm-sc"), gu = col && col.querySelector(".lm-gu"); if (gu) gu.classList.add("now"); }
   };
   const tick = () => {
     if (done) return;
@@ -1486,6 +1504,14 @@ function karaokeStart(text, rate, voiceName) {
   const hl = document.getElementById("hlToggle");
   try { hlOn = localStorage.getItem("fr-hl") !== "0"; } catch (e) {}
   hl.checked = hlOn;
+  const gt = document.getElementById("guToggle"); let ong = true;
+  try { ong = localStorage.getItem("fr-showgu") !== "0"; } catch (e) {}
+  gt.checked = ong; document.body.classList.toggle("show-gu", ong);
+  gt.addEventListener("change", () => { document.body.classList.toggle("show-gu", gt.checked); karaokeStop(); try { localStorage.setItem("fr-showgu", gt.checked ? "1" : "0"); } catch (e) {} });
+  const hg = document.getElementById("hlguToggle");
+  try { hlGu = localStorage.getItem("fr-hlgu") !== "0"; } catch (e) {}
+  hg.checked = hlGu;
+  hg.addEventListener("change", () => { hlGu = hg.checked; karaokeStop(); try { localStorage.setItem("fr-hlgu", hlGu ? "1" : "0"); } catch (e) {} });
   const he = document.getElementById("hlenToggle");
   try { hlEn = localStorage.getItem("fr-hlen") !== "0"; } catch (e) {}
   he.checked = hlEn;
@@ -1526,7 +1552,12 @@ function enChip(item) {                   // the amber lines on each sound tile:
   const e = FRIPA.forItem(item); if (!e || !e.en) return "";
   return '<span class="en" title="Closest English sound' + (e.ex ? ": the " + (e.hit ? "\u201C" + e.hit + "\u201D in " : "") + "\u201C" + e.ex + "\u201D" : "") + (e.note ? ". " + e.note : "") + '">\u2248 <b>' + enSlash(e.en) + "</b>" + (e.ex ? ' <span class="anc">\u00B7 ' + anchorWord(e) + "</span>" : "") + "</span>";
 }
-function enLine(item) {                   // the line under the big sound in the player
+function enLine(item) {                   // the line under the big sound in the player: English, then (when ticked) Gujarati
+  const base = enLine0(item); if (!base) return base;
+  const g = window.FRGU && item && !item.letter && item.sym ? FRGU.sound(item.sym) : null;
+  return g ? base + '<div class="gu-only"><b>Gujarati <span class="gu-line"' + (g.ap ? ' title="approximate"' : "") + ">" + esc(g.gu) + "</span></b> \u2014 " + esc(g.note) + "</div>" : base;
+}
+function enLine0(item) {
   const e = FRIPA.forItem(item); if (!e || !e.en) return "";
   return "\u2248 English <b>" + enSlash(e.en) + "</b>" + (e.ex ? '<span class="anline"> \u2014 like ' + (e.hit ? "<b>" + esc(e.hit) + "</b> in " : "") + "\u201C" + anchorWord(e) + "\u201D" + ' <button type="button" class="anplay" data-w="' + esc(e.ex) + '" title="Hear the English word">\uD83D\uDD0A</button></span>' : "") + (e.note ? ". " + e.note : "");
 }

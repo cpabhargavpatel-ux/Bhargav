@@ -2,6 +2,7 @@ server.mjs
 public/french-ipa.html
 public/english.html
 public/fr-en-ipa.js
+public/fr-gu.js
 public/fr-vocab-more.js
 public/fr-sound-words.js
 public/fr-align.js

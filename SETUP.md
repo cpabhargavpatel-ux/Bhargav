@@ -175,3 +175,11 @@ the pinned transcript bar and in the transcript header while a line repeats), or
 The pinned transcript bar can be **dragged anywhere** — over the video, to a corner, wherever you like: press on it (or on its **⠿** handle,
 which is the only part that drags on a touch screen) and move. It then floats there while you scroll, remembers its place, and stays
 inside the window. **⤒ Dock** puts it back under the top menu.
+
+## Gujarati sounds (French > Sounds / Vocabulary / Sentences)
+
+Under the English sound in each word's letters→sounds map there is a third row with the closest **Gujarati** sound
+(ઈ, શ, આં …), shown by the **Gujarati sounds** tick in the Options and lit up in step with the voice by **Highlight > Gujarati**.
+A sound with a dotted underline has no exact Gujarati letter (ü, eu, the throaty r, …): hover it, or open the sound in the
+player, to read how to adjust. The table is in `public/fr-gu.js` — it is easy to correct a letter there if one does not sound right to you.
+The Gujarati letters use your device's own Gujarati font (Nirmala UI on Windows, the built-in one on iPhone and iPad).

@@ -257,7 +257,7 @@ const moduleBar = (active, sub) => MODULE_CSS + (active === "goal" ? "<style>hea
   + `</span></span>`
   + `<a href="/feynman.html"${active === "feynman" ? ' class="on"' : ""}>Feynman</a>`
   + `<a href="/shadowing.html"${active === "shadowing" ? ' class="on"' : ""}>Shadowing</a>`
-  + `<span id="modbuild">build 10-26-a</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n<script>(function(){var bar=document.getElementById("modtabs");if(!bar)return;function closeAll(){bar.querySelectorAll(".mt-drop.open").forEach(function(x){x.classList.remove("open")})}bar.addEventListener("click",function(e){if(e.target.closest(".mt-menu a")){setTimeout(closeAll,0);return}var a=e.target.closest(".mt-drop>a");if(!a||!matchMedia("(hover:none)").matches)return;e.preventDefault();var d=a.parentElement,was=d.classList.contains("open");closeAll();if(!was){d.classList.add("open");var m=d.querySelector(".mt-menu");m.style.left=Math.max(6,a.getBoundingClientRect().left)+"px"}});document.addEventListener("click",function(e){if(!e.target.closest("#modtabs .mt-drop"))closeAll()});bar.addEventListener("scroll",closeAll,{passive:true})})();</script>\n`;
+  + `<span id="modbuild">build 10-29-a</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n<script>(function(){var bar=document.getElementById("modtabs");if(!bar)return;function closeAll(){bar.querySelectorAll(".mt-drop.open").forEach(function(x){x.classList.remove("open")})}bar.addEventListener("click",function(e){if(e.target.closest(".mt-menu a")){setTimeout(closeAll,0);return}var a=e.target.closest(".mt-drop>a");if(!a||!matchMedia("(hover:none)").matches)return;e.preventDefault();var d=a.parentElement,was=d.classList.contains("open");closeAll();if(!was){d.classList.add("open");var m=d.querySelector(".mt-menu");m.style.left=Math.max(6,a.getBoundingClientRect().left)+"px"}});document.addEventListener("click",function(e){if(!e.target.closest("#modtabs .mt-drop"))closeAll()});bar.addEventListener("scroll",closeAll,{passive:true})})();</script>\n`;
 const HEAD_EXTRA = `<link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Goal Setting">`;
 function withModuleBar(html, active, sub) {
   html = html.replace("</head>", HEAD_EXTRA + "</head>");
@@ -268,7 +268,7 @@ function withModuleBar(html, active, sub) {
 
 /* pages and assets that need no sign-in (they hold no server data) */
 const ENGLISH_SUB = { "english.html": "idioms", "vocabulary.html": "vocabulary", "grammar.html": "grammar", "irregular-verbs.html": "verbs", "english-notes.html": "notes" };
-const PUBLIC_PAGES = new Set(["login.html", "server-shim.js", "timer.js", "reminders.js", "store.js", "apple-touch-icon.png", "fr-en-ipa.js", "study.js", "study.css", "srs.js"]);   // assets only; the French / English pages need a sign-in because their data lives in your account
+const PUBLIC_PAGES = new Set(["login.html", "server-shim.js", "timer.js", "reminders.js", "store.js", "apple-touch-icon.png", "fr-en-ipa.js", "fr-gu.js", "study.js", "study.css", "srs.js"]);   // assets only; the French / English pages need a sign-in because their data lives in your account
 const SHIM_TAG = `<script src="/server-shim.js"></script>\n`;
 function serveApp(res) {
   const f = join(PUBLIC, "app.html");
