@@ -96,6 +96,19 @@ sends only the parts of a large PDF you look at. The PDF reader is
 [PDF.js](https://mozilla.github.io/pdf.js/) (Apache-2.0), bundled as `pdf.min.js`,
 `pdf.worker.min.js` and `pdf_viewer.css`, so it works offline.
 
+## Shadowing (video practice tab)
+
+Put videos or audio (MP4 plays everywhere; WebM, MOV, MP3, M4A also work) in the **`Shadowing`** folder next to
+`server.mjs` — sub-folders are fine — then open the **Shadowing** tab and press the refresh button.
+Add subtitles by putting `.srt` or `.vtt` files beside the video with the same name, for example
+`lesson1.mp4`, `lesson1.fr.srt` (the language you are learning) and `lesson1.en.srt` (the translation).
+Keys: **S** start/stop, **R** record your voice, **P** play your voice, **← →** previous/next line, **L** replay the line,
+**K** loop the line, **A** pause after each line, **T** translation on/off, **[ ]** slower/faster.
+Click any word in the subtitles to see its meaning and save it; saved words have a review mode.
+Word and line translations use a free online service, so they need an internet connection (everything else works offline).
+Recording needs the microphone, so open the app at `http://localhost:<port>` on the PC (or https on a phone, see above).
+Your latest recording of each video and your saved words are stored in your account.
+
 ## Run it automatically at sign-in (optional)
 
 Task Scheduler → Create Task:
