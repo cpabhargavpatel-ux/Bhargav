@@ -96,6 +96,18 @@ sends only the parts of a large PDF you look at. The PDF reader is
 [PDF.js](https://mozilla.github.io/pdf.js/) (Apache-2.0), bundled as `pdf.min.js`,
 `pdf.worker.min.js` and `pdf_viewer.css`, so it works offline.
 
+## Watch & Learn (video with clickable subtitles)
+
+A second video tab that works like Lingopie. It uses the same **`Shadowing`** folder next to `server.mjs`
+(sub-folders are fine), so the videos you already have show up. Add subtitles by putting `.srt` or `.vtt` files beside a
+video with the same name, for example `lesson1.mp4`, `lesson1.fr.srt` (the language you are learning) and
+`lesson1.en.srt` (the translation).
+Keys: **S** start/stop, **R** record your voice, **P** play your voice, **← →** previous/next line, **L** replay the line,
+**K** loop the line, **A** pause after each line, **T** translation on/off, **[ ]** slower/faster.
+Click any word in the subtitles to see its meaning and save it; saved words have a review mode.
+Word and line translations use a free online service, so they need an internet connection (everything else works offline).
+Your latest recording of each video and your saved words are stored in your account.
+
 ## Run it automatically at sign-in (optional)
 
 Task Scheduler → Create Task:

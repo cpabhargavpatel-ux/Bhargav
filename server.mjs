@@ -257,7 +257,8 @@ const moduleBar = (active, sub) => MODULE_CSS + (active === "goal" ? "<style>hea
   + `</span></span>`
   + `<a href="/feynman.html"${active === "feynman" ? ' class="on"' : ""}>Feynman</a>`
   + `<a href="/shadowing.html"${active === "shadowing" ? ' class="on"' : ""}>Shadowing</a>`
-  + `<span id="modbuild">build 10-29-a</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n<script>(function(){var bar=document.getElementById("modtabs");if(!bar)return;function closeAll(){bar.querySelectorAll(".mt-drop.open").forEach(function(x){x.classList.remove("open")})}bar.addEventListener("click",function(e){if(e.target.closest(".mt-menu a")){setTimeout(closeAll,0);return}var a=e.target.closest(".mt-drop>a");if(!a||!matchMedia("(hover:none)").matches)return;e.preventDefault();var d=a.parentElement,was=d.classList.contains("open");closeAll();if(!was){d.classList.add("open");var m=d.querySelector(".mt-menu");m.style.left=Math.max(6,a.getBoundingClientRect().left)+"px"}});document.addEventListener("click",function(e){if(!e.target.closest("#modtabs .mt-drop"))closeAll()});bar.addEventListener("scroll",closeAll,{passive:true})})();</script>\n`;
+  + `<a href="/watch.html"${active === "watch" ? ' class="on"' : ""}>Watch &amp; Learn</a>`
+  + `<span id="modbuild">build 10-30-a</span></nav>\n<script src="/store.js"></script>\n<script src="/timer.js"></script>\n<script src="/reminders.js"></script>\n<script>(function(){var bar=document.getElementById("modtabs");if(!bar)return;function closeAll(){bar.querySelectorAll(".mt-drop.open").forEach(function(x){x.classList.remove("open")})}bar.addEventListener("click",function(e){if(e.target.closest(".mt-menu a")){setTimeout(closeAll,0);return}var a=e.target.closest(".mt-drop>a");if(!a||!matchMedia("(hover:none)").matches)return;e.preventDefault();var d=a.parentElement,was=d.classList.contains("open");closeAll();if(!was){d.classList.add("open");var m=d.querySelector(".mt-menu");m.style.left=Math.max(6,a.getBoundingClientRect().left)+"px"}});document.addEventListener("click",function(e){if(!e.target.closest("#modtabs .mt-drop"))closeAll()});bar.addEventListener("scroll",closeAll,{passive:true})})();</script>\n`;
 const HEAD_EXTRA = `<link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Goal Setting">`;
 function withModuleBar(html, active, sub) {
   html = html.replace("</head>", HEAD_EXTRA + "</head>");
@@ -280,6 +281,44 @@ function serveApp(res) {
   const b = Buffer.from(html);
   res.writeHead(200, { "content-type": MIME[".html"], "content-length": b.length, "cache-control": "no-store" });
   res.end(b);
+}
+
+/* Watch & Learn: the Shadowing folder plus its sub-folders (up to 3 levels), each video with all the .srt / .vtt files named after it. */
+function watchPath(rel) {       // a path inside VIDEOS_DIR, or null if it points anywhere else
+  if (!rel || rel.includes("\0")) return null;
+  const f = join(VIDEOS_DIR, ...rel.split("/"));
+  if (!f.startsWith(VIDEOS_DIR + sep) || !existsSync(f) || !statSync(f).isFile()) return null;
+  return f;
+}
+function watchList() {
+  const out = [];
+  (function walk(dir, rel, depth) {
+    let ents = []; try { ents = readdirSync(dir, { withFileTypes: true }); } catch (e) { return; }
+    const files = ents.filter(d => d.isFile()).map(d => d.name);
+    for (const name of files.filter(isMedia)) {
+      const ext = extname(name), stem = name.slice(0, -ext.length), subs = [];
+      for (const sn of files.filter(isSubs)) {
+        const ss = sn.slice(0, -extname(sn).length);
+        if (ss === stem) subs.push({ path: rel + sn, label: "" });
+        else if (ss.startsWith(stem + ".")) subs.push({ path: rel + sn, label: ss.slice(stem.length + 1) });
+      }
+      subs.sort((a, b) => a.label.localeCompare(b.label));
+      out.push({ path: rel + name, name: stem, size: statSync(join(dir, name)).size, audio: MEDIA_TYPES[ext.toLowerCase()].startsWith("audio"), subs });
+    }
+    if (depth < 3) for (const d of ents) if (d.isDirectory() && !d.name.startsWith(".")) walk(join(dir, d.name), rel + d.name + "/", depth + 1);
+  })(VIDEOS_DIR, "", 0);
+  return out.sort((a, b) => a.path.localeCompare(b.path, undefined, { numeric: true }));
+}
+const trCache = new Map();
+async function translateText(text, from, to) {
+  const key = from + "|" + to + "|" + text.toLowerCase();
+  if (trCache.has(key)) return trCache.get(key);
+  const r = await fetch("https://api.mymemory.translated.net/get?q=" + encodeURIComponent(text) + "&langpair=" + from + "|" + to, { signal: AbortSignal.timeout(8000) });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const j = await r.json(), t = String(j && j.responseData && j.responseData.translatedText || "").trim();
+  if (!t || /^(MYMEMORY WARNING|INVALID)/i.test(t)) throw new Error(t || "no translation");
+  if (trCache.size > 5000) trCache.clear();
+  trCache.set(key, t); return t;
 }
 
 /* A saved document must at least look like the app's state. */
@@ -320,6 +359,12 @@ const server = createServer(async (req, res) => {
         if (!name || name !== basename(name) || extname(name).toLowerCase() !== ".pdf" || !existsSync(f) || !statSync(f).isFile()) { res.writeHead(404).end("Not found"); return; }
         sendRanged(f, "application/pdf"); return;
       }
+      if (p.startsWith("/watch/")) {                       // Watch & Learn: a video / audio / subtitle file from the Shadowing folder or a sub-folder of it
+        if (!u) { res.writeHead(401).end("Sign in first"); return; }
+        const f = watchPath(p.slice(7)), ext = f && extname(f).toLowerCase();
+        if (!f || !(MEDIA_TYPES[ext] || isSubs(f))) { res.writeHead(404).end("Not found"); return; }
+        sendRanged(f, MEDIA_TYPES[ext] || "text/plain; charset=utf-8"); return;
+      }
       if (p.startsWith("/videos/")) {
         if (!u) { res.writeHead(401).end("Sign in first"); return; }
         const name = p.slice(8);
@@ -342,6 +387,7 @@ const server = createServer(async (req, res) => {
       let b = readFileSync(file);
       if (rel === "french-ipa.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "french"));
       if (rel === "feynman.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "feynman"));
+      if (rel === "watch.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "watch"));
       if (rel === "shadowing.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "shadowing"));
       if (rel === "french-book.html") b = Buffer.from(withModuleBar(b.toString("utf8"), "french", "book"));
       if (NOTES_PAGES[rel]) {
@@ -405,6 +451,13 @@ const server = createServer(async (req, res) => {
       let books = [];
       try { books = readdirSync(BOOKS_DIR, { withFileTypes: true }).filter(d => d.isFile() && extname(d.name).toLowerCase() === ".pdf").map(d => ({ name: d.name, size: statSync(join(BOOKS_DIR, d.name)).size })).sort((a, b) => a.name.localeCompare(b.name)); } catch (e) {}
       return json(res, 200, { dir: BOOKS_DIR, books });
+    }
+    if (p === "/api/watch/list") return json(res, 200, { dir: VIDEOS_DIR, items: watchList() });
+    if (p === "/api/translate") {                          // click-a-word translation (MyMemory's free service; needs internet)
+      const text = (url.searchParams.get("q") || "").trim(), from = url.searchParams.get("from") || "fr", to = url.searchParams.get("to") || "en";
+      if (!text || text.length > 400 || !/^[a-z]{2,3}$/.test(from) || !/^[a-z]{2,3}$/.test(to)) return json(res, 400, { error: "Bad request." });
+      try { return json(res, 200, { t: await translateText(text, from, to) }); }
+      catch (e) { return json(res, 502, { error: "Translation needs an internet connection (" + e.message + ")." }); }
     }
     if (p === "/api/videos") {                             // the videos / audio files in the Shadowing folder, each with its subtitle file if there is one
       let videos = [];
