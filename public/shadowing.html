@@ -144,6 +144,8 @@
         <button class="btn" id="bStart" type="button">▶ Start<kbd>S</kbd></button>
         <button class="btn rec" id="bRec" type="button">● Record my voice<kbd>R</kbd></button>
         <button class="btn alt" id="bPlay" type="button">▶ My voice<kbd>P</kbd></button>
+        <button class="btn alt small" id="bVBack" type="button" title="My voice: back 3 seconds (← while my voice plays)">⏪ −3 s</button>
+        <button class="btn alt small" id="bVFwd" type="button" title="My voice: forward 3 seconds (→ while my voice plays)">+3 s ⏩</button>
         <button class="btn alt" id="bOrig" type="button" title="Play the original video from the point where my recording started">▶ Original from my start<kbd>O</kbd></button>
         <div class="status" id="status" role="status" aria-live="polite"></div>
       </div>
@@ -184,7 +186,7 @@
         <span><kbd>R</kbd> record my voice / stop recording</span>
         <span><kbd>P</kbd> play my voice / stop playing</span>
         <span><kbd>O</kbd> original video from where my recording started</span>
-        <span><kbd>←</kbd> <kbd>→</kbd> back / forward 3 seconds</span>
+        <span><kbd>←</kbd> <kbd>→</kbd> back / forward 3 seconds — of my voice while it plays, otherwise of the video</span>
         <span><kbd>0</kbd> back to the beginning</span>
         <span><kbd>L</kbd> repeat the whole video on / off</span>
         <span><kbd>[</kbd> mark A (start) · <kbd>]</kbd> mark B (end) and repeat</span>
@@ -358,11 +360,31 @@
     var a = new Audio(URL.createObjectURL(blob)); mineAudio = a;
     var m = meta[cur.name], together = $("oBoth").checked && m && m.t0 != null;
     a.onended = a.onerror = function () { if (mineAudio === a) { stopMine(); if (together) v.pause(); say(""); } };
+    a.ontimeupdate = function () { if (mineAudio === a) say("▶ Playing your voice… " + clock(a.currentTime) + (isFinite(a.duration) ? " / " + clock(a.duration) : "")); };
+    mineTogether = together ? m.t0 : null;
     $("bPlay").innerHTML = "■ Stop my voice<kbd>P</kbd>";
+    await new Promise(function (r) { if (a.readyState >= 1) r(); else { a.onloadedmetadata = r; setTimeout(r, 1500); } });
+    if (a.duration === Infinity) {                    // a fresh browser recording has no length stored; asking for the end makes the browser work it out, so going back and forward works
+      await new Promise(function (r) { a.ontimeupdate = function () { a.ontimeupdate = null; a.currentTime = 0; r(); }; a.currentTime = 1e101; setTimeout(r, 1500); });
+      a.ontimeupdate = function () { if (mineAudio === a) say("▶ Playing your voice… " + clock(a.currentTime) + (isFinite(a.duration) ? " / " + clock(a.duration) : "")); };
+    }
+    if (mineAudio !== a) return;                      // stopped while it was loading
     try { await a.play(); } catch (e) { stopMine(); say("The browser blocked playing — press P again.", "rec"); return; }
     if (together) { v.muted = true; try { v.currentTime = m.t0; } catch (e) {} v.play().catch(function () {}); }
     say("▶ Playing your voice…");
   }
+  /* my voice: back / forward 3 seconds (the video, muted, follows when it is playing along) */
+  var mineTogether = null;
+  function seekMine(d) {
+    var a = mineAudio;
+    if (!a) { say("Press P to play your voice first, then go back / forward 3 seconds (← → or these buttons).", "rec"); return; }
+    var m = cur && meta[cur.name], end = isFinite(a.duration) ? a.duration : (m && m.dur) || 1e9;
+    a.currentTime = Math.max(0, Math.min(a.currentTime + d, end - 0.1));
+    if (mineTogether != null) { try { v.currentTime = mineTogether + a.currentTime; } catch (e) {} }
+    say("▶ Playing your voice… " + clock(a.currentTime) + (isFinite(a.duration) ? " / " + clock(a.duration) : ""));
+  }
+  $("bVBack").onclick = function () { seekMine(-3); };
+  $("bVFwd").onclick = function () { seekMine(3); };
   $("bPlay").onclick = playMine;
   /* the original video, from the point where my recording started — to hear what I was copying */
   function playOriginal() {
@@ -592,8 +614,8 @@
     else if (k === "x") { stopLine(true); clearAB(); }
     else if (e.key === "+" || e.key === "=") setNL(NL + 0.25);
     else if (e.key === "-" || e.key === "_") setNL(NL - 0.25);
-    else if (e.key === "ArrowLeft") { v.currentTime = Math.max(0, v.currentTime - 3); }
-    else if (e.key === "ArrowRight") { v.currentTime = Math.min(v.duration || 1e9, v.currentTime + 3); }
+    else if (e.key === "ArrowLeft") { if (mineAudio) seekMine(-3); else v.currentTime = Math.max(0, v.currentTime - 3); }
+    else if (e.key === "ArrowRight") { if (mineAudio) seekMine(3); else v.currentTime = Math.min(v.duration || 1e9, v.currentTime + 3); }
     else used = false;
     if (used) { e.preventDefault(); e.stopPropagation(); }
   }, true);
