@@ -4,625 +4,602 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shadowing</title>
+<script>try{var p=parseInt(localStorage.getItem("en-fontsize"));if(p>=80&&p<=180)document.documentElement.style.fontSize=p+"%"}catch(e){}</script>
 <style>
   :root {
     --bg: #f3f5f9; --card: #ffffff; --ink: #1b2433; --mute: #667085; --line: #d9dfeb; --soft: #eef1f8;
     --accent: #2f4bd8; --accent-ink: #ffffff; --accent-soft: #e4e9ff; --danger: #c0392b; --danger-soft: #fde8e5;
-    --ok: #1f8a4c; --ok-soft: #e3f5ea; --warn: #b45309; --warn-soft: #fdf1d8; --hint: #fff8e1; --hint-line: #ecd98a;
+    --ok: #1f8a4c; --ok-soft: #e3f5ea; --hint: #fff8e1; --hint-line: #ecd98a;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #10151f; --card: #19212f; --ink: #e6ebf5; --mute: #98a5bd; --line: #2b3850; --soft: #212c40;
       --accent: #8199ff; --accent-ink: #0b1230; --accent-soft: #25305a; --danger: #ff8a7a; --danger-soft: #3d2420;
-      --ok: #5fd08a; --ok-soft: #1c3a2a; --warn: #f0b45a; --warn-soft: #3a2f18; --hint: #2e2a14; --hint-line: #6b5a1c;
+      --ok: #5fd08a; --ok-soft: #1c3a2a; --hint: #2e2a14; --hint-line: #6b5a1c;
     }
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   button, input, select { font: inherit; color: inherit; }
-  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-  [hidden] { display: none !important; }
+  button:focus-visible, input:focus-visible, select:focus-visible, video:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-  .sh { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 16px; max-width: 1500px; margin: 0 auto; padding: 16px 16px 48px; align-items: start; }
-  @media (max-width: 900px) { .sh { grid-template-columns: 1fr; } }
+  .sh { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; max-width: 1800px; margin: 0 auto; padding: 12px 14px 48px; }
 
-  /* ---------- video list ---------- */
-  .side { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; position: sticky; top: 56px; max-height: calc(100vh - 72px); display: flex; flex-direction: column; }
-  @media (max-width: 900px) { .side { position: static; max-height: 340px; } }
+  .side { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .side[hidden] { display: none; }
   .side h1 { margin: 0; font-size: 1.2rem; }
   .side .sub { margin: 2px 0 10px; color: var(--mute); font-size: .86rem; }
-  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  input[type=search], select { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; min-width: 0; }
-  .side input[type=search] { flex: 1; }
-  .btn { font-weight: 600; font-size: .9rem; border-radius: 8px; padding: 7px 13px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); white-space: nowrap; }
-  .btn:disabled { opacity: .45; cursor: default; }
+  .vl { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; max-height: 50vh; overflow: auto; }
+  .vl li { margin: 0; }
+  .vl button { width: 100%; text-align: left; background: var(--soft); border: 1px solid transparent; border-radius: 9px; padding: 8px 10px; cursor: pointer; display: block; }
+  .vl button:hover { border-color: var(--line); }
+  .vl button.on { background: var(--accent-soft); border-color: var(--accent); }
+  .vl .nm { font-weight: 600; font-size: .92rem; word-break: break-word; }
+  .vl .mt { color: var(--mute); font-size: .78rem; }
+  .vl .rec { color: var(--ok); }
+  .empty { color: var(--mute); font-size: .9rem; margin: 6px 0; }
+  .empty code { background: var(--soft); border-radius: 5px; padding: 1px 5px; word-break: break-all; font-size: .82rem; }
+  .btn { font-weight: 600; font-size: .92rem; border-radius: 9px; padding: 9px 14px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); white-space: nowrap; touch-action: manipulation; }
   .btn.alt { background: transparent; color: var(--accent); }
-  .btn.danger { background: transparent; border-color: var(--danger); color: var(--danger); }
-  .btn.rec { background: var(--danger); border-color: var(--danger); color: #fff; }
-  .btn.small { padding: 3px 9px; font-size: .8rem; }
-  .btn.on { background: var(--ok); border-color: var(--ok); color: #fff; }
-  .btn.tog.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-  kbd { font: 700 .72rem/1 ui-monospace, Consolas, monospace; background: var(--soft); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 2px 5px; margin-left: 5px; color: var(--ink); }
-  .btn:not(.alt):not(.tog) kbd { background: rgba(255,255,255,.22); border-color: rgba(255,255,255,.4); color: inherit; }
-  .list { overflow: auto; margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
-  .item { text-align: left; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; cursor: pointer; width: 100%; }
-  .item:hover { border-color: var(--accent); }
-  .item.on { background: var(--accent-soft); border-color: var(--accent); }
-  .item b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .item .meta { color: var(--mute); font-size: .78rem; margin-top: 2px; }
-  .item .dir { color: var(--mute); font-size: .74rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .none { color: var(--mute); padding: 10px 4px; font-size: .88rem; }
-  .none code, .help code { background: var(--soft); border-radius: 4px; padding: 1px 5px; font-size: .82rem; word-break: break-all; }
+  .btn.rec.on { background: var(--danger); border-color: var(--danger); color: #fff; animation: pulse 1.2s infinite; }
+  .btn.small { font-size: .8rem; padding: 5px 10px; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  @keyframes pulse { 50% { opacity: .7; } }
+  .btn kbd { font: 700 .75rem ui-monospace, Consolas, monospace; background: rgba(255,255,255,.22); border: 1px solid rgba(255,255,255,.45); border-radius: 5px; padding: 0 6px; margin-left: 6px; }
+  .btn.alt kbd { background: var(--soft); border-color: var(--line); }
 
-  /* ---------- main ---------- */
-  .main { background: var(--card); border: 1px solid var(--line); border-radius: 12px; min-width: 0; padding: 14px 16px 18px; }
-  .views { display: flex; gap: 6px; margin-bottom: 12px; }
-  .views button { border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 6px 14px; cursor: pointer; font-weight: 600; }
-  .views button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-  .title { font-size: 1.1rem; font-weight: 700; margin: 0 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .main { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-width: 0; }
+  .main h2 { margin: 0 0 8px; font-size: 1.05rem; word-break: break-word; }
   .stage { background: #000; border-radius: 10px; overflow: hidden; }
-  .stage video { display: block; width: 100%; max-height: 56vh; background: #000; }
-  .vmsg { padding: 8px 12px; background: var(--warn-soft); color: var(--warn); font-size: .88rem; border-radius: 8px; margin-top: 8px; }
-
-  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
-  .bar .sp { flex: 1; }
-  .bar label { color: var(--mute); font-size: .85rem; display: inline-flex; align-items: center; gap: 5px; }
-
-  /* subtitles under the video */
-  .subs { margin-top: 10px; background: var(--soft); border-radius: 10px; padding: 12px 16px; min-height: 92px; text-align: center; }
-  .subs .l1 { font-size: 1.45rem; line-height: 1.5; font-weight: 600; }
-  .subs .l2 { margin-top: 4px; color: var(--mute); font-size: 1.02rem; }
-  .subs .ph { color: var(--mute); font-size: .9rem; }
-  .w { cursor: pointer; border-radius: 4px; padding: 0 1px; }
-  .w:hover { background: var(--accent-soft); color: var(--accent); }
-  .w.sel { background: var(--accent); color: var(--accent-ink); }
-  .w.saved { text-decoration: underline dotted var(--ok); text-underline-offset: 4px; }
-  .pop { margin-top: 8px; background: var(--card); border: 1px solid var(--accent); border-radius: 10px; padding: 10px 14px; text-align: left; font-size: 1rem; font-weight: 400; }
-  .pop .pw { font-size: 1.2rem; font-weight: 700; }
-  .pop .pt { margin: 2px 0 8px; font-size: 1.1rem; }
-  .pop .ptl { margin: 0 0 8px; color: var(--mute); font-size: .95rem; }
-  .pop .err { color: var(--danger); }
-
-  /* recording */
-  .rec { margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
-  .rec .st { color: var(--mute); font-size: .88rem; }
-  .rec .st.live { color: var(--danger); font-weight: 700; }
-  .help { margin-top: 12px; color: var(--mute); font-size: .86rem; }
-  .keys { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; }
-
-  /* transcript */
-  .tr { margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; max-height: 300px; overflow: auto; }
-  .cue { display: grid; grid-template-columns: 52px 1fr; gap: 8px; padding: 6px 10px; cursor: pointer; border-bottom: 1px solid var(--line); }
-  .cue:last-child { border-bottom: 0; }
-  .cue:hover { background: var(--soft); }
-  .cue.on { background: var(--accent-soft); }
-  .cue .tm { color: var(--mute); font: 500 .78rem/1.9 ui-monospace, Consolas, monospace; }
-  .cue .t2 { color: var(--mute); font-size: .86rem; }
-
-  /* saved words */
-  .wl { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
-  .wi { display: grid; grid-template-columns: minmax(110px, 180px) 1fr auto; gap: 10px; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; background: var(--bg); }
-  .wi b { font-size: 1.05rem; }
-  .wi .ctx { color: var(--mute); font-size: .82rem; }
-  @media (max-width: 640px) { .wi { grid-template-columns: 1fr auto; } .wi .mid { grid-column: 1 / -1; order: 3; } }
-  .card { max-width: 560px; margin: 16px auto; text-align: center; border: 1px solid var(--line); border-radius: 14px; padding: 26px 20px; background: var(--bg); }
-  .card .big { font-size: 2rem; font-weight: 700; }
-  .card .ctx { margin-top: 10px; color: var(--mute); }
-  .card .ans { margin-top: 14px; font-size: 1.3rem; color: var(--accent); min-height: 2rem; }
-  .card .row { justify-content: center; margin-top: 18px; }
-  .note { color: var(--mute); font-size: .9rem; }
+  video { display: block; width: 100%; max-height: 70vh; min-height: 200px; background: #000; }
+  .head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .head h2 { margin: 0; flex: 1; min-width: 0; }
+  .btn.both { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .btn.both.on { background: var(--danger); border-color: var(--danger); animation: pulse 1.2s infinite; }
+  .bar .status { flex: 1; min-width: 220px; margin: 0; min-height: 0; }
+  /* the current transcript line stays pinned under the top bar while you scroll */
+  .now-line { position: sticky; top: 42px; z-index: 60; display: block; width: fit-content; min-width: min(100%, 520px); max-width: min(100%, 980px); margin-left: auto !important; margin-right: auto !important; text-align: center; margin: 0 0 10px; padding: 9px 14px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); box-shadow: 0 4px 14px rgba(15, 25, 60, .28); cursor: pointer; font-size: var(--nl, 1.75rem); line-height: 1.4; }
+  .now-line { display: flex !important; align-items: center; gap: 14px; }
+  .now-line .nmain { flex: 1; min-width: 0; }
+  .now-line .nfs { order: 2; flex: none; display: flex; gap: 4px; align-self: flex-start; }
+  .now-line .nfs button[hidden] { display: none; }
+  .now-line .grip { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; font-size: 1.1rem; line-height: 1; padding: 3px 6px; opacity: .85; align-self: center; }
+  .now-line { touch-action: auto; }
+  .now-line.float { position: fixed !important; margin: 0 !important; z-index: 900; max-width: min(980px, calc(100vw - 16px)); }
+  .now-line.dragging { cursor: grabbing; box-shadow: 0 10px 30px rgba(15, 25, 60, .45); user-select: none; -webkit-user-select: none; }
+  @media (max-width: 700px) { .now-line { flex-wrap: wrap; } .now-line .nfs { width: 100%; justify-content: flex-end; align-self: auto; } }
+  .now-line .nfs button { border: 1px solid rgba(255, 255, 255, .55); background: rgba(255, 255, 255, .16); color: inherit; border-radius: 6px; padding: 1px 7px; font: 700 .8rem system-ui, sans-serif; cursor: pointer; touch-action: manipulation; }
+  .now-line .nfs button:hover { background: rgba(255, 255, 255, .3); }
+  .now-line[hidden] { display: none !important; }
+  .now-line .nrow { display: flex; gap: 12px; align-items: baseline; justify-content: center; }
+  .now-line .nxt { margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(255, 255, 255, .3); font-size: .86em; opacity: .85; }
+  .now-line .nxt:hover { opacity: 1; }
+  .now-line .nxt[hidden] { display: none; }
+  .now-line .nts { flex: none; font: 700 .8rem ui-monospace, Consolas, monospace; opacity: .8; }
+  .now-line .ntx { min-width: 0; overflow-wrap: anywhere; }
+  .now-line.loop { background: var(--danger); color: #fff; }
+  .ab { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: -2px 0 10px; }
+  .ab .lab { font-weight: 700; color: var(--mute); font-size: .88rem; }
+  .ab .abinfo { color: var(--mute); font-size: .9rem; font-variant-numeric: tabular-nums; }
+  .ab .abinfo b { color: var(--ink); }
+  .ab .btn.on { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .ab .btn.on kbd { background: rgba(255,255,255,.22); border-color: rgba(255,255,255,.5); color: #fff; }
+  .abstrip { position: relative; height: 8px; margin-top: 4px; border-radius: 4px; background: var(--soft); overflow: hidden; }
+  .abstrip .seg { position: absolute; top: 0; bottom: 0; background: var(--accent); opacity: .65; }
+  .abstrip .seg.on { background: var(--danger); opacity: .9; }
+  .abstrip .pt { position: absolute; top: 0; bottom: 0; width: 3px; background: var(--accent); }
+  .tx { margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--bg); }
+  .txh { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 8px; color: var(--mute); font-size: .88rem; }
+  .txh b { color: var(--ink); font-size: .95rem; }
+  .txh label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+  .txh .sp { flex: 1; }
+  #txEdit { width: 100%; min-height: 220px; resize: vertical; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font: 400 1.05rem/1.6 inherit; font-family: inherit; }
+  .txread { position: relative; max-height: 46vh; overflow: auto; font-size: 1.15rem; line-height: 1.65; padding: 2px 4px; scroll-behavior: smooth; }
+  .txread .cue { display: flex; gap: 12px; padding: 4px 8px; border-radius: 8px; cursor: pointer; }
+  .txread .cue:hover { background: var(--soft); }
+  .txread .cue.now { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+  .txread .cue.loop { box-shadow: inset 3px 0 0 var(--danger); background: var(--danger-soft); }
+  .txread .ts { flex: none; min-width: 3.6em; color: var(--accent); font: 700 .82rem ui-monospace, Consolas, monospace; padding-top: .35em; }
+  .txread .plain { cursor: default; }
+  .txread .plain:hover { background: none; }
+  .txread .tt { white-space: pre-wrap; }
+  video.aud { height: 54px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 10px; }
+  .opts { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; color: var(--mute); font-size: .88rem; margin: 6px 0; }
+  .opts label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+  .opts select { background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 3px 6px; }
+  .status { min-height: 1.6em; margin: 8px 0 2px; font-weight: 600; }
+  .status.rec { color: var(--danger); }
+  .mine { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--mute); font-size: .88rem; }
+  .keys { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; color: var(--mute); font-size: .86rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 4px 14px; }
+  .keys kbd { font: 700 .78rem ui-monospace, Consolas, monospace; background: var(--soft); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 6px; color: var(--ink); }
+  .tip { background: var(--hint); border: 1px solid var(--hint-line); border-radius: 9px; padding: 8px 12px; margin: 10px 0 0; font-size: .86rem; }
+  .none { padding: 40px 10px; text-align: center; color: var(--mute); }
+  @media (max-width: 700px) { .keys { display: none; } .btn { flex: 1 1 140px; } }
 </style>
 </head>
 <body>
 <div class="sh">
-  <aside class="side">
+  <aside class="side" id="picker">
     <h1>Shadowing</h1>
-    <p class="sub">Watch, repeat after the speaker, record yourself.</p>
-    <div class="row"><input type="search" id="q" placeholder="Search videos…" aria-label="Search videos"><button class="btn alt small" id="refresh" title="Look in the folder again">↻</button></div>
-    <div class="list" id="list"></div>
+    <p class="sub">Videos from your <b>Shadowing</b> folder — pick one.</p>
+    <ul class="vl" id="vl"></ul>
+    <div class="empty" id="empty" hidden></div>
+    <button class="btn alt small" id="refresh" type="button" style="margin-top:8px">↻ Refresh the list</button>
   </aside>
 
   <section class="main">
-    <div class="views">
-      <button id="vWatch" class="on">Watch</button>
-      <button id="vWords">Saved words <span id="wCount"></span></button>
-    </div>
-
-    <!-- WATCH -->
-    <div id="watch">
-      <div id="empty" class="note">Pick a video on the left. Put your videos in the <code id="dirHint">Shadowing</code> folder — see the box on the left for how to add subtitles.</div>
-      <div id="player" hidden>
-        <p class="title" id="vtitle"></p>
-        <div class="stage"><video id="vid" playsinline preload="metadata"></video></div>
-        <div class="vmsg" id="vmsg" hidden></div>
-
-        <div class="bar">
-          <button class="btn" id="bPlay">▶ Start<kbd>S</kbd></button>
-          <button class="btn alt" id="bPrev" title="Previous line">⏮<kbd>←</kbd></button>
-          <button class="btn alt" id="bRep" title="Replay this line">↺ Line<kbd>L</kbd></button>
-          <button class="btn alt" id="bNext" title="Next line">⏭<kbd>→</kbd></button>
-          <button class="btn alt tog" id="bLoop" title="Keep repeating the current line">Loop line<kbd>K</kbd></button>
-          <button class="btn alt tog" id="bAuto" title="Stop after every subtitle line">Pause each line<kbd>A</kbd></button>
-          <span class="sp"></span>
-          <label>Speed <select id="rate" aria-label="Speed"></select></label>
-        </div>
-
-        <div class="subs" id="subs" aria-live="polite">
-          <div class="ph" id="subPh">Subtitles appear here. Click any word to see what it means.</div>
-          <div class="l1" id="l1"></div>
-          <div class="l2" id="l2"></div>
-          <div class="pop" id="pop" hidden></div>
-        </div>
-
-        <div class="bar">
-          <label>Subtitles <select id="sub1" aria-label="Practice-language subtitles"></select></label>
-          <label>Translation <select id="sub2" aria-label="Translation subtitles"></select></label>
-          <button class="btn alt tog" id="bTr" title="Show or hide the translation line">Show translation<kbd>T</kbd></button>
-          <span class="sp"></span>
-          <label>I'm learning <select id="src" aria-label="Language of the video"></select></label>
-          <label>Translate into <select id="dst" aria-label="Your language"></select></label>
-        </div>
-
-        <div class="rec">
-          <div class="row">
-            <button class="btn" id="bRec">● Record my voice<kbd>R</kbd></button>
-            <button class="btn alt" id="bMine" disabled>▶ Play my voice<kbd>P</kbd></button>
-            <button class="btn danger small" id="bDelRec" hidden>Delete</button>
-            <span class="st" id="recSt">Use headphones so the video's sound isn't recorded with your voice.</span>
-          </div>
-          <audio id="mine" hidden></audio>
-        </div>
-
-        <div class="tr" id="tr" hidden></div>
-
-        <div class="help">
-          <b>Shortcuts</b>
-          <div class="keys">
-            <span><kbd>S</kbd> start / stop</span><span><kbd>R</kbd> record / stop recording</span><span><kbd>P</kbd> play / stop my voice</span>
-            <span><kbd>←</kbd> <kbd>→</kbd> previous / next line</span><span><kbd>L</kbd> replay line</span><span><kbd>K</kbd> loop line</span>
-            <span><kbd>A</kbd> pause after each line</span><span><kbd>T</kbd> translation on / off</span><span><kbd>[</kbd> <kbd>]</kbd> slower / faster</span><span><kbd>Esc</kbd> close word box</span>
-          </div>
-        </div>
+    <div class="none" id="none">Pick a video above.</div>
+    <div id="work" hidden>
+      <div class="now-line" id="nowLine" hidden title="The line being said now — click to hear it again"><span class="nfs"><span class="grip" id="nlGrip" title="Drag to move this box anywhere on the screen">⠿</span><button type="button" id="nlDock" hidden title="Put it back under the top menu">⤒ Dock</button><button type="button" id="nlStop" hidden title="Stop repeating this line (Esc)">■ Stop repeat</button><button type="button" id="nlMinus" title="Smaller text (−)">A−</button><button type="button" id="nlPlus" title="Bigger text (+)">A+</button></span><div class="nmain"><div class="nrow"><span class="nts" id="nowTs"></span><span class="ntx" id="nowTx"></span></div><div class="nrow nxt" id="nextRow" title="Next line — click to jump to it"><span class="nts" id="nextTs"></span><span class="ntx" id="nextTx"></span></div></div></div>
+      <div class="head">
+        <button class="btn alt small" id="bList" type="button" title="Show or hide the list of videos">📁 Videos</button>
+        <h2 id="title"></h2>
       </div>
-    </div>
+      <div class="stage"><video id="v" controls playsinline preload="metadata"></video></div>
+      <div class="abstrip" id="abStrip" hidden><span class="seg" id="abSeg"></span></div>
 
-    <!-- SAVED WORDS -->
-    <div id="words" hidden>
-      <div class="row"><button class="btn" id="bReview">Review due words</button><span class="note" id="revInfo"></span></div>
-      <div id="reviewBox" hidden></div>
-      <div class="wl" id="wl"></div>
+      <div class="bar" style="margin-top:10px">
+        <button class="btn both" id="bBoth" type="button" title="Start the video and the recording together; press again to stop both">▶● Start video + record<kbd>B</kbd></button>
+        <button class="btn" id="bStart" type="button">▶ Start<kbd>S</kbd></button>
+        <button class="btn rec" id="bRec" type="button">● Record my voice<kbd>R</kbd></button>
+        <button class="btn alt" id="bPlay" type="button">▶ My voice<kbd>P</kbd></button>
+        <button class="btn alt" id="bOrig" type="button" title="Play the original video from the point where my recording started">▶ Original from my start<kbd>O</kbd></button>
+        <div class="status" id="status" role="status" aria-live="polite"></div>
+      </div>
+      <div class="ab" id="abRow" style="margin-top:0">
+        <span class="lab">Repeat A→B</span>
+        <button class="btn alt small" id="bA" type="button" title="Mark the start (A) at the current time">A start<kbd>[</kbd></button>
+        <button class="btn alt small" id="bB" type="button" title="Mark the end (B) at the current time and start repeating">B end<kbd>]</kbd></button>
+        <button class="btn alt small" id="bAB" type="button" title="Repeat A to B on / off">↻ Repeat<kbd>\</kbd></button>
+        <button class="btn alt small" id="bABx" type="button" title="Clear A and B">✕ Clear<kbd>X</kbd></button>
+        <span class="abinfo" id="abInfo">Mark where to start and stop; that part repeats until you turn it off.</span>
+      </div>
+
+      <div class="tx" id="tx">
+        <div class="txh">
+          <b>Transcript</b>
+          <button class="btn alt small" id="txMode" type="button">✎ Edit</button>
+          <label><input type="checkbox" id="oLine"> Repeat the line I click</label>
+          <button class="btn small" id="lnStop" type="button" hidden title="Stop repeating the line (Esc, or click the line again)">■ Stop repeating</button>
+          <span class="sp"></span>
+          <label>Text size <select id="txSize"><option value="0.95">S</option><option value="1.15" selected>M</option><option value="1.4">L</option><option value="1.8">XL</option></select></label>
+        </div>
+        <textarea id="txEdit" spellcheck="false" placeholder="Paste the transcript here, one line per sentence, with its time stamp, for example:&#10;0:05 Bonjour à tous&#10;0:09 Je m’appelle Anne&#10;&#10;[00:12] and 1:02:30 – styles work too, and so does a .srt pasted as it is.&#10;Press “Read” to practise: click a line to jump the video there."></textarea>
+        <div class="txread" id="txRead" hidden></div>
+      </div>
+
+      <div class="mine" id="mine" style="margin-top:10px"></div>
+      <div class="opts">
+        <label>Speed <select id="rate"><option>0.5</option><option>0.6</option><option>0.7</option><option>0.75</option><option>0.8</option><option>0.9</option><option selected>1</option><option>1.1</option><option>1.25</option></select></label>
+        <label><input type="checkbox" id="oLoop"> Repeat the video (<kbd>L</kbd>)</label>
+        <label id="subLbl" hidden><input type="checkbox" id="oSubs" checked> Subtitles</label>
+        <label><input type="checkbox" id="oRecPlay" checked> R also starts the video, and stops it when recording stops</label>
+        <label><input type="checkbox" id="oRecEnd" checked> Stop recording when the video ends</label>
+        <label><input type="checkbox" id="oBoth"> P also plays the video (muted) to watch with my voice</label>
+      </div>
+      <div class="keys">
+        <span><kbd>B</kbd> start video + recording / stop both</span>
+        <span><kbd>S</kbd> start / stop the video</span>
+        <span><kbd>R</kbd> record my voice / stop recording</span>
+        <span><kbd>P</kbd> play my voice / stop playing</span>
+        <span><kbd>O</kbd> original video from where my recording started</span>
+        <span><kbd>←</kbd> <kbd>→</kbd> back / forward 3 seconds</span>
+        <span><kbd>0</kbd> back to the beginning</span>
+        <span><kbd>L</kbd> repeat the whole video on / off</span>
+        <span><kbd>[</kbd> mark A (start) · <kbd>]</kbd> mark B (end) and repeat</span>
+        <span><kbd>\</kbd> repeat A→B on / off · <kbd>X</kbd> clear A and B</span>
+        <span><kbd>Esc</kbd> stop repeating the transcript line (or click it again)</span>
+        <span><kbd>+</kbd> <kbd>−</kbd> bigger / smaller top transcript</span>
+      </div>
+      <p class="tip">Shadowing: play the video and speak along with it, a split second behind, copying the rhythm, the melody and the sounds. <b>Use headphones</b> so the video's sound doesn't leak into your recording. On an iPhone or iPad the microphone needs the <code>https://</code> address (see SETUP.md); the keyboard shortcuts need a keyboard, the buttons work everywhere.</p>
     </div>
   </section>
 </div>
-
+<script src="/store.js"></script>
 <script>
 (function () {
-  "use strict";
   var $ = function (id) { return document.getElementById(id); };
-  var LANGS = [["fr", "French"], ["en", "English"], ["es", "Spanish"], ["de", "German"], ["it", "Italian"], ["pt", "Portuguese"], ["nl", "Dutch"], ["ru", "Russian"], ["tr", "Turkish"], ["ar", "Arabic"], ["hi", "Hindi"], ["ja", "Japanese"], ["ko", "Korean"], ["zh", "Chinese"]];
-  var RATES = [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.25, 1.5];
-  var vid = $("vid");
+  var v = $("v"), statusEl = $("status"), cur = null, list = [], meta = {}, mine = null, mineAudio = null, rec = null;
+  var LS = function (k, d) { try { var x = localStorage.getItem(k); return x == null ? d : x; } catch (e) { return d; } };
+  var LSset = function (k, x) { try { localStorage.setItem(k, x); } catch (e) {} };
+  var h36 = function (s) { var a = 2166136261, b = 5381; for (var i = 0; i < s.length; i++) { var k = s.charCodeAt(i); a ^= k; a = Math.imul(a, 16777619); b = (Math.imul(b, 33) ^ k) | 0; } return (a >>> 0).toString(36) + (b >>> 0).toString(36); };
+  var blobKey = function (name) { return "shadow-" + h36(name); };
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+  var mb = function (n) { return n >= 1e9 ? (n / 1e9).toFixed(1) + " GB" : (n / 1e6).toFixed(n < 1e7 ? 1 : 0) + " MB"; };
+  var clock = function (s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60); };
+  function say(t, cls) { statusEl.textContent = t || ""; statusEl.className = "status" + (cls ? " " + cls : ""); }
 
-  var prefs = { src: "fr", dst: "en", autoPause: false, showTr: true, rate: 1, last: "" };
-  var pos = {}, words = [];
-  var items = [], cur = null, cues = [], cues2 = [], shown = -1, stopAt = Infinity, loopIdx = -1, lastSave = 0;
-  var rec = null, recStream = null, recChunks = [], recTimer = 0, recT0 = 0, mineUrl = "", mineBlob = null;
-  var sel = null;                                                           // the clicked word: { w, ctx, el }
-
-  /* ---------------------------------------------------------- helpers --- */
-  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
-  function fmt(t) { t = Math.max(0, Math.floor(t)); var h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60; return (h ? h + ":" + (m < 10 ? "0" : "") : "") + m + ":" + (s < 10 ? "0" : "") + s; }
-  function hash(s) { var h = 5381; for (var i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; return h.toString(36); }
-  function recKey() { return "shadow-rec-" + hash(cur.path); }
-  function savePrefs() { Store.save("shadow-prefs", prefs); }
-  function mb(n) { return n >= 1e9 ? (n / 1e9).toFixed(1) + " GB" : Math.max(1, Math.round(n / 1e6)) + " MB"; }
-  function fillLangs(box, val) { LANGS.forEach(function (l) { var o = el("option", "", l[1]); o.value = l[0]; box.appendChild(o); }); box.value = val; }
-
-  /* --------------------------------------------------------- subtitles --- */
-  function toSec(s) { var m = /^(?:(\d+):)?(\d+):(\d+)[.,](\d+)$/.exec(s.trim()); return m ? (+(m[1] || 0)) * 3600 + (+m[2]) * 60 + (+m[3]) + (+("0." + m[4])) : NaN; }
-  function parseSubs(txt) {
-    txt = txt.replace(/^﻿/, "").replace(/\r/g, "");
-    var out = [];
-    txt.split(/\n{2,}/).forEach(function (block) {
-      var lines = block.split("\n"), i = 0;
-      while (i < lines.length && lines[i].indexOf("-->") < 0) i++;
-      if (i >= lines.length) return;
-      var parts = lines[i].split("-->"), a = toSec(parts[0]), b = toSec(parts[1].trim().split(/\s+/)[0]);
-      if (isNaN(a) || isNaN(b)) return;
-      var text = lines.slice(i + 1).join(" ").replace(/\{\\[^}]*\}/g, "").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\s+/g, " ").trim();
-      if (text) out.push({ s: a, e: b, t: text });
-    });
-    return out.sort(function (x, y) { return x.s - y.s; });
-  }
-  function loadSubs(path) {
-    if (!path) return Promise.resolve([]);
-    return fetch("/shadow/" + path.split("/").map(encodeURIComponent).join("/"), { credentials: "same-origin" })
-      .then(function (r) { if (!r.ok) throw 0; return r.arrayBuffer(); })
-      .then(function (buf) { return parseSubs(new TextDecoder("utf-8").decode(buf)); })
-      .catch(function () { return []; });
-  }
-  function lastStarted(list, t) {                                         // index of the last cue that has started by time t, or -1
-    var lo = 0, hi = list.length - 1, r = -1;
-    while (lo <= hi) { var m = (lo + hi) >> 1; if (list[m].s <= t + 0.001) { r = m; lo = m + 1; } else hi = m - 1; }
-    return r;
-  }
-  function partner(c) {                                                    // the translation line that overlaps cue c most
-    var best = null, bo = 0;
-    for (var i = Math.max(0, lastStarted(cues2, c.s) - 2); i < cues2.length && cues2[i].s < c.e; i++) {
-      var o = Math.min(c.e, cues2[i].e) - Math.max(c.s, cues2[i].s);
-      if (o > bo) { bo = o; best = cues2[i]; }
-    }
-    return best;
-  }
-
-  /* ------------------------------------------------------ the subtitle box --- */
-  var TOKEN = /[\p{L}\p{M}\p{N}]+(?:-[\p{L}\p{M}\p{N}]+)*['’]?/gu;
-  function paintLine(i) {
-    var l1 = $("l1"), l2 = $("l2");
-    closePop();
-    l1.textContent = ""; l2.textContent = "";
-    if (i < 0) return;
-    var c = cues[i], text = c.t, last = 0, m;
-    TOKEN.lastIndex = 0;
-    while ((m = TOKEN.exec(text))) {
-      if (m.index > last) l1.appendChild(document.createTextNode(text.slice(last, m.index)));
-      var w = el("span", "w", m[0]); w.dataset.w = m[0].replace(/['’]$/, "");
-      if (isSaved(w.dataset.w)) w.classList.add("saved");
-      l1.appendChild(w); last = m.index + m[0].length;
-    }
-    if (last < text.length) l1.appendChild(document.createTextNode(text.slice(last)));
-    var p = partner(c);
-    l2.textContent = p ? p.t : "";
-    l2.hidden = !prefs.showTr;
-  }
-  function highlight(i) {
-    var rows = $("tr").children;
-    if (shown >= 0 && rows[shown]) rows[shown].classList.remove("on");
-    if (i >= 0 && rows[i]) {
-      rows[i].classList.add("on");
-      var box = $("tr"), top = rows[i].offsetTop - box.offsetTop;
-      if (top < box.scrollTop || top + rows[i].offsetHeight > box.scrollTop + box.clientHeight) box.scrollTop = Math.max(0, top - box.clientHeight / 3);
-    }
-  }
-  function sync() {
-    var i = lastStarted(cues, vid.currentTime);
-    if (i === shown) return;
-    highlight(i); paintLine(i); shown = i;
-  }
-  function buildTranscript() {
-    var box = $("tr"); box.textContent = "";
-    var frag = document.createDocumentFragment();
-    cues.forEach(function (c, i) {
-      var r = el("div", "cue"), body = el("div"), p = cues2.length ? partner(c) : null;
-      r.appendChild(el("span", "tm", fmt(c.s)));
-      body.appendChild(el("div", "t1", c.t));
-      if (p && prefs.showTr) body.appendChild(el("div", "t2", p.t));
-      r.appendChild(body); r.dataset.i = i; frag.appendChild(r);
-    });
-    box.appendChild(frag); box.hidden = !cues.length;
-  }
-
-  /* ----------------------------------------------------- playback control --- */
-  function lineEnd(t) {                                                    // where "pause each line" should stop, for playing from time t
-    for (var i = Math.max(0, lastStarted(cues, t)); i < cues.length; i++) if (cues[i].e > t + 0.15) return cues[i].e;
-    return Infinity;
-  }
-  function rearm() { stopAt = prefs.autoPause ? lineEnd(vid.currentTime) : Infinity; }
-  function playFrom(t) {
-    if (t != null) vid.currentTime = Math.max(0, t);
-    rearm();
-    var p = vid.play(); if (p && p.catch) p.catch(function () {});
-  }
-  function curLine() { var i = lastStarted(cues, vid.currentTime); return i < 0 ? 0 : i; }
-  function goLine(i) {
-    if (!cues.length) { vid.currentTime = Math.max(0, vid.currentTime + (i < curLine() ? -5 : 5)); return; }
-    i = Math.max(0, Math.min(cues.length - 1, i));
-    if (loopIdx >= 0) loopIdx = i;
-    playFrom(cues[i].s);
-  }
-  function toggleStart() { stopMine(); if (vid.paused) { if (vid.ended) vid.currentTime = 0; playFrom(); } else vid.pause(); }
-  function toggleLoop() {
-    if (loopIdx >= 0) loopIdx = -1;
-    else if (cues.length) { loopIdx = curLine(); if (vid.paused) playFrom(cues[loopIdx].s); }
-    paintButtons();
-  }
-  function tick() {
-    if (!vid.paused) {
-      var t = vid.currentTime;
-      if (loopIdx >= 0 && cues[loopIdx] && t >= cues[loopIdx].e - 0.04) vid.currentTime = cues[loopIdx].s;
-      else if (t >= stopAt - 0.03) { vid.pause(); }
-      sync();
-    }
-    requestAnimationFrame(tick);
-  }
-  function paintButtons() {
-    $("bPlay").firstChild.nodeValue = vid.paused ? "▶ Start" : "■ Stop";
-    $("bLoop").classList.toggle("on", loopIdx >= 0);
-    $("bAuto").classList.toggle("on", !!prefs.autoPause);
-    $("bTr").classList.toggle("on", !!prefs.showTr);
-    $("bTr").firstChild.nodeValue = prefs.showTr ? "Translation on" : "Translation off";
-  }
-  vid.addEventListener("play", function () { rearm(); paintButtons(); });
-  vid.addEventListener("pause", function () { paintButtons(); sync(); remember(true); });
-  vid.addEventListener("ended", paintButtons);
-  vid.addEventListener("seeked", function () { rearm(); sync(); });
-  vid.addEventListener("timeupdate", function () { remember(false); });
-  vid.addEventListener("error", function () {
-    var m = $("vmsg"); m.hidden = false;
-    m.textContent = "This browser can't play this file. Convert it to MP4 (H.264 video + AAC audio) — for example with HandBrake or VLC — and put the new file in the Shadowing folder.";
-  });
-  function remember(force) {
-    if (!cur) return;
-    var now = Date.now(); if (!force && now - lastSave < 4000) return;
-    lastSave = now; pos[cur.path] = vid.currentTime; Store.save("shadow-pos", pos);
-  }
-
-  /* ------------------------------------------------------------ recording --- */
-  function recStatus(t, live) { var s = $("recSt"); s.textContent = t; s.classList.toggle("live", !!live); }
-  function setMine(blob) {
-    if (mineUrl) URL.revokeObjectURL(mineUrl);
-    mineBlob = blob; mineUrl = blob ? URL.createObjectURL(blob) : "";
-    $("mine").src = mineUrl;
-    $("bMine").disabled = !blob; $("bDelRec").hidden = !blob;
-  }
-  function stopMine() { var a = $("mine"); if (!a.paused) a.pause(); a.currentTime = 0; $("bMine").firstChild.nodeValue = "▶ Play my voice"; }
-  async function startRec() {
-    if (!cur) return;
-    if (!window.isSecureContext || !navigator.mediaDevices || !window.MediaRecorder) {
-      recStatus("Recording needs a secure page: use http://localhost:… on the PC, or the https:// address on a phone (see SETUP.md).", false); return;
-    }
-    stopMine();
-    try { if (!recStream || !recStream.active) recStream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
-    catch (e) { recStatus("Microphone blocked — allow it in the browser's address bar, then press R again.", false); return; }
-    recChunks = []; rec = new MediaRecorder(recStream);
-    rec.ondataavailable = function (e) { if (e.data.size) recChunks.push(e.data); };
-    var key = recKey();
-    rec.onstop = function () {
-      clearInterval(recTimer);
-      var blob = new Blob(recChunks, { type: rec.mimeType || "audio/webm" });
-      rec = null; $("bRec").classList.remove("rec"); $("bRec").firstChild.nodeValue = "● Record my voice";
-      if (!blob.size) { recStatus("Nothing was recorded.", false); return; }
-      setMine(blob); recStatus("Saving your recording…", false);
-      Store.putBlob(key, blob).then(function (ok) { recStatus(ok ? "Saved to your account. Press P to listen." : "Recorded, but it couldn't be saved to your account (too large or offline). Press P to listen.", false); });
-    };
-    rec.start(); recT0 = Date.now();
-    $("bRec").classList.add("rec"); $("bRec").firstChild.nodeValue = "■ Stop recording";
-    recTimer = setInterval(function () { recStatus("Recording… " + fmt((Date.now() - recT0) / 1000) + " — say it along with the speaker", true); }, 250);
-    recStatus("Recording…", true);
-  }
-  function stopRec() { if (rec && rec.state !== "inactive") rec.stop(); }
-  function toggleRec() { if (rec) stopRec(); else startRec(); }
-  function toggleMine() {
-    var a = $("mine");
-    if (rec) { stopRec(); setTimeout(toggleMine, 400); return; }            // R then P: finish the take, then play it
-    if (!mineBlob) { recStatus("No recording yet — press R to record.", false); return; }
-    if (!a.paused) { stopMine(); return; }
-    vid.pause(); a.currentTime = 0; a.play(); $("bMine").firstChild.nodeValue = "■ Stop my voice";
-  }
-  $("mine").addEventListener("ended", function () { $("bMine").firstChild.nodeValue = "▶ Play my voice"; });
-  $("bDelRec").onclick = function () { if (!cur || !confirm("Delete your recording of this video?")) return; stopMine(); Store.delBlob(recKey()); setMine(null); recStatus("Recording deleted.", false); };
-
-  /* ----------------------------------------------------- click-a-word popup --- */
-  function isSaved(w) { w = w.toLowerCase(); return words.some(function (x) { return x.w.toLowerCase() === w; }); }
-  function closePop() { $("pop").hidden = true; if (sel && sel.el) sel.el.classList.remove("sel"); sel = null; }
-  function translate(text) {
-    return fetch("/api/translate?q=" + encodeURIComponent(text) + "&from=" + prefs.src + "&to=" + prefs.dst, { credentials: "same-origin" })
-      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || "Failed"); return j.t; }); });
-  }
-  function openWord(span) {
-    var w = span.dataset.w, c = cues[shown] || cues[curLine()];
-    vid.pause();
-    if (sel && sel.el) sel.el.classList.remove("sel");
-    span.classList.add("sel"); sel = { w: w, ctx: c ? c.t : "", el: span, tr: "" };
-    var pop = $("pop"); pop.hidden = false; pop.textContent = "";
-    pop.appendChild(el("div", "pw", w));
-    var pt = el("div", "pt", "Translating…"); pop.appendChild(pt);
-    var ptl = el("div", "ptl"); pop.appendChild(ptl);
-    var row = el("div", "row"), save = el("button", "btn small", isSaved(w) ? "Saved ✓" : "Save word"), line = el("button", "btn alt small", "Translate whole line"), say = el("button", "btn alt small", "🔊 Hear it"), close = el("button", "btn alt small", "Close");
-    save.disabled = isSaved(w);
-    row.appendChild(save); row.appendChild(line); row.appendChild(say); row.appendChild(close); pop.appendChild(row);
-    close.onclick = closePop;
-    var mine = sel;
-    translate(w).then(function (t) { if (sel === mine) { pt.textContent = t; mine.tr = t; } })
-      .catch(function (e) { if (sel === mine) { pt.textContent = e.message; pt.className = "pt err"; } });
-    save.onclick = function () {
-      if (isSaved(w)) return;
-      words.unshift({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), w: w, tr: mine.tr || "", ctx: mine.ctx, from: prefs.src, video: cur ? cur.name : "", added: Date.now(), due: 0, iv: 0, reps: 0 });
-      Store.save("shadow-words", words); save.textContent = "Saved ✓"; save.disabled = true; span.classList.add("saved"); paintWordCount();
-    };
-    line.onclick = function () {
-      ptl.textContent = "Translating the line…";
-      translate(mine.ctx).then(function (t) { ptl.textContent = t; ptl.className = "ptl"; }).catch(function (e) { ptl.textContent = e.message; ptl.className = "ptl err"; });
-    };
-    say.onclick = function () { speak(w); };
-  }
-  function speak(text) {
-    if (!window.speechSynthesis) return;
-    speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(text); u.lang = prefs.src; speechSynthesis.speak(u);
-  }
-  $("l1").addEventListener("click", function (e) { var s = e.target.closest(".w"); if (s) openWord(s); });
-
-  /* ------------------------------------------------------------ saved words --- */
-  function paintWordCount() { $("wCount").textContent = words.length ? "(" + words.length + ")" : ""; }
-  function due() { var n = Date.now(); return words.filter(function (x) { return (x.due || 0) <= n; }); }
-  function paintWords() {
-    var box = $("wl"); box.textContent = ""; $("reviewBox").hidden = true;
-    var d = due().length;
-    $("revInfo").textContent = words.length ? d + " of " + words.length + " due now" : "";
-    $("bReview").disabled = !d;
-    if (!words.length) { box.appendChild(el("div", "note", "No saved words yet. While watching, click a word in the subtitles and press Save word.")); return; }
-    words.forEach(function (x) {
-      var r = el("div", "wi"), a = el("div"), m = el("div", "mid"), b = el("div", "row");
-      a.appendChild(el("b", "", x.w));
-      m.appendChild(el("div", "", x.tr || "—"));
-      if (x.ctx) m.appendChild(el("div", "ctx", "“" + x.ctx + "”" + (x.video ? " — " + x.video : "")));
-      var h = el("button", "btn alt small", "🔊"), del = el("button", "btn danger small", "✕");
-      h.onclick = function () { prefs.src = x.from || prefs.src; speak(x.w); };
-      del.title = "Remove"; del.onclick = function () { words = words.filter(function (y) { return y !== x; }); Store.save("shadow-words", words); paintWordCount(); paintWords(); };
-      b.appendChild(h); b.appendChild(del);
-      r.appendChild(a); r.appendChild(m); r.appendChild(b); box.appendChild(r);
-    });
-  }
-  function review() {
-    var queue = due().sort(function (a, b) { return (a.due || 0) - (b.due || 0); }), box = $("reviewBox");
-    $("wl").textContent = ""; box.hidden = false;
-    (function next() {
-      box.textContent = "";
-      if (!queue.length) { box.appendChild(el("div", "card", "All done for now 🎉")); var done = el("button", "btn", "Back to the list"); done.onclick = paintWords; box.appendChild(done); return; }
-      var x = queue.shift(), card = el("div", "card");
-      card.appendChild(el("div", "big", x.w));
-      if (x.ctx) card.appendChild(el("div", "ctx", "“" + x.ctx + "”"));
-      var ans = el("div", "ans", ""), row = el("div", "row"), show = el("button", "btn", "Show meaning"), again = el("button", "btn danger", "Again"), know = el("button", "btn", "I know it");
-      again.hidden = know.hidden = true;
-      show.onclick = function () { ans.textContent = x.tr || "(no translation saved)"; show.hidden = true; again.hidden = know.hidden = false; };
-      again.onclick = function () { x.iv = 0; x.reps = 0; x.due = Date.now() + 10 * 60e3; Store.save("shadow-words", words); next(); };
-      know.onclick = function () { x.iv = x.iv ? Math.round(x.iv * 2.2) : 1; x.reps = (x.reps || 0) + 1; x.due = Date.now() + x.iv * 864e5; Store.save("shadow-words", words); next(); };
-      var hear = el("button", "btn alt", "🔊"); hear.onclick = function () { speak(x.w); };
-      row.appendChild(show); row.appendChild(again); row.appendChild(know); row.appendChild(hear);
-      card.appendChild(ans); card.appendChild(row); box.appendChild(card);
-      var left = el("div", "note", queue.length + " more after this one"); left.style.textAlign = "center"; box.appendChild(left);
-    })();
-  }
-  $("bReview").onclick = review;
-  function view(w) {
-    $("vWatch").classList.toggle("on", w === "watch"); $("vWords").classList.toggle("on", w === "words");
-    $("watch").hidden = w !== "watch"; $("words").hidden = w !== "words";
-    if (w === "words") { if (!vid.paused) vid.pause(); paintWords(); }
-  }
-  $("vWatch").onclick = function () { view("watch"); };
-  $("vWords").onclick = function () { view("words"); };
-
-  /* ---------------------------------------------------------------- list --- */
+  /* ---------- the list ---------- */
+  Store.load("shadow-meta", {}, null).then(function (m) { meta = m || {}; paintList(); showMine(); });
+  function saveMeta() { Store.save("shadow-meta", meta); }
   function paintList() {
-    var box = $("list"), q = $("q").value.trim().toLowerCase(); box.textContent = "";
-    var shownItems = items.filter(function (x) { return !q || x.path.toLowerCase().indexOf(q) >= 0; });
-    if (!items.length) {
-      var n = el("div", "none");
-      n.appendChild(document.createTextNode("No videos yet. Copy your video files (MP4 works everywhere; also WebM, MOV, MP3, M4A) into this folder:"));
-      n.appendChild(el("br")); n.appendChild(el("code", "", $("dirHint").textContent));
-      n.appendChild(el("br"));
-      n.appendChild(document.createTextNode("Then press ↻. For subtitles, put .srt or .vtt files next to the video with the same name: "));
-      n.appendChild(el("code", "", "lesson1.mp4"));
-      n.appendChild(document.createTextNode(" + "));
-      n.appendChild(el("code", "", "lesson1.fr.srt"));
-      n.appendChild(document.createTextNode(" (the language you're learning) + "));
-      n.appendChild(el("code", "", "lesson1.en.srt"));
-      n.appendChild(document.createTextNode(" (translation). Sub-folders are fine."));
-      box.appendChild(n); return;
+    var ul = $("vl"); ul.textContent = "";
+    list.forEach(function (it) {
+      var li = document.createElement("li"), b = document.createElement("button"), m = meta[it.name];
+      b.type = "button"; b.className = cur && cur.name === it.name ? "on" : "";
+      b.innerHTML = '<div class="nm">' + esc(it.name.replace(/\.[^.]+$/, "")) + '</div><div class="mt">' + mb(it.size) + (it.sub ? " · subtitles" : "") + (m && m.has ? ' · <span class="rec">● my voice ' + clock(m.dur || 0) + "</span>" : "") + "</div>";
+      b.onclick = function () { open(it); };
+      li.appendChild(b); ul.appendChild(li);
+    });
+  }
+  function loadList() {
+    return fetch("/api/videos", { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (d) {
+      list = d.videos || [];
+      var e = $("empty");
+      e.hidden = list.length > 0;
+      if (!list.length) e.innerHTML = "No videos yet. Put a video (<b>.mp4</b>, <b>.m4v</b>, <b>.webm</b> or <b>.mov</b>; audio files work too) in this folder, then press Refresh:<br><code>" + esc(d.dir || "Shadowing") + "</code><br>A subtitle file with the same name (<b>.vtt</b> or <b>.srt</b>) is picked up automatically.";
+      paintList();
+      if (!cur && list.length) { var last = LS("shadow-last", ""), it = list.filter(function (x) { return x.name === last; })[0]; if (it) open(it); }
+      if (cur && !list.some(function (x) { return x.name === cur.name; })) { cur = null; $("work").hidden = true; $("none").hidden = false; $("picker").hidden = false; }
+    }).catch(function () { $("empty").hidden = false; $("empty").textContent = "Couldn’t read the list — is the server running?"; });
+  }
+  $("refresh").onclick = loadList;
+  $("bList").onclick = function () { $("picker").hidden = !$("picker").hidden; if (!$("picker").hidden) $("picker").scrollIntoView({ block: "nearest" }); };
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") loadList(); });
+
+  /* ---------- open a video ---------- */
+  function open(it) {
+    stopRec(true); stopMine();
+    cur = it; LSset("shadow-last", it.name); paintList();
+    $("none").hidden = true; $("work").hidden = false; $("title").textContent = it.name.replace(/\.[^.]+$/, "");
+    $("picker").hidden = true; lineLoop = null; ab = { a: null, b: null, on: false }; refreshAB(); loadTx();
+    v.classList.toggle("aud", !!it.audio);
+    while (v.firstChild) v.removeChild(v.firstChild);
+    v.pause(); v.src = "/videos/" + encodeURIComponent(it.name);
+    if (it.sub) {
+      var t = document.createElement("track"); t.kind = "subtitles"; t.label = "Subtitles"; t.srclang = "fr"; t.src = "/videos/" + encodeURIComponent(it.sub); t.default = true; v.appendChild(t);
     }
-    if (!shownItems.length) { box.appendChild(el("div", "none", "No match.")); return; }
-    shownItems.forEach(function (x) {
-      var b = el("button", "item" + (cur && cur.path === x.path ? " on" : ""));
-      var i = x.path.lastIndexOf("/");
-      b.appendChild(el("b", "", x.name));
-      if (i > 0) b.appendChild(el("div", "dir", x.path.slice(0, i)));
-      b.appendChild(el("div", "meta", (x.audio ? "audio" : "video") + " · " + mb(x.size) + " · " + (x.subs.length ? x.subs.length + " subtitle file" + (x.subs.length > 1 ? "s" : "") : "no subtitles")));
-      b.onclick = function () { openItem(x); };
-      box.appendChild(b);
+    $("subLbl").hidden = !it.sub; applySubs();
+    v.playbackRate = parseFloat($("rate").value) || 1; v.load();
+    say(""); showMine();
+  }
+  function applySubs() { for (var i = 0; i < v.textTracks.length; i++) v.textTracks[i].mode = $("oSubs").checked ? "showing" : "hidden"; }
+  $("oSubs").onchange = function () { LSset("shadow-subs", this.checked ? "1" : "0"); applySubs(); };
+  v.addEventListener("loadedmetadata", applySubs);
+  v.addEventListener("error", function () { if (cur) say("This browser can’t play “" + cur.name + "”. Use an .mp4 (H.264 + AAC) or .webm file.", "rec"); });
+
+  /* ---------- video: start / stop ---------- */
+  function toggleVideo() {
+    if (!cur) return;
+    stopMine();
+    if (v.paused) { v.play().catch(function () { say("The browser blocked playing — press Start again.", "rec"); }); } else v.pause();
+  }
+  function syncStart() { $("bStart").innerHTML = (v.paused ? "▶ Start" : "■ Stop") + "<kbd>S</kbd>"; }
+  v.addEventListener("play", syncStart); v.addEventListener("pause", syncStart); v.addEventListener("ended", syncStart);
+  v.addEventListener("ended", function () { if (rec && $("oRecEnd").checked && rec.withVideo) stopRec(); });
+  $("bStart").onclick = toggleVideo;
+  $("rate").onchange = function () { v.playbackRate = parseFloat(this.value) || 1; LSset("shadow-rate", this.value); this.blur(); };
+  v.addEventListener("loadeddata", function () { v.playbackRate = parseFloat($("rate").value) || 1; });
+  $("oLoop").onchange = function () { v.loop = this.checked; LSset("shadow-loop", this.checked ? "1" : "0"); };
+  ["oRecPlay", "oRecEnd", "oBoth"].forEach(function (id) { $(id).onchange = function () { LSset("shadow-" + id, this.checked ? "1" : "0"); }; });
+  $("rate").value = LS("shadow-rate", "1"); if ($("rate").value !== LS("shadow-rate", "1")) $("rate").value = "1";
+  $("oLoop").checked = LS("shadow-loop", "0") === "1"; v.loop = $("oLoop").checked;
+  $("oSubs").checked = LS("shadow-subs", "1") === "1";
+  ["oRecPlay", "oRecEnd"].forEach(function (id) { $(id).checked = LS("shadow-" + id, "1") === "1"; });
+  $("oBoth").checked = LS("shadow-oBoth", "0") === "1";
+
+  /* ---------- record my voice ---------- */
+  var stream = null, starting = false;
+  function recNow() { return !!rec; }
+  async function startRec(forceVideo) {
+    if (!cur || starting) return;
+    if (!window.isSecureContext || !navigator.mediaDevices || !window.MediaRecorder) { say("Recording needs a secure page: on the PC open http://localhost:… ; on an iPhone/iPad use the https:// address (Tailscale Serve — see SETUP.md).", "rec"); return; }
+    stopMine(); starting = true;
+    if (!stream || !stream.active) {
+      try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+      catch (e) { starting = false; say("Microphone blocked — allow it in the browser’s address bar, then press R again.", "rec"); return; }
+    }
+    starting = false;
+    var chunks = [], mr;
+    try { mr = new MediaRecorder(stream, { audioBitsPerSecond: 48000 }); } catch (e) { mr = new MediaRecorder(stream); }
+    var withVideo = forceVideo === true || $("oRecPlay").checked, t0 = v.currentTime || 0, started = Date.now();
+    rec = { mr: mr, withVideo: withVideo, t0: t0, chunks: chunks, started: started, cur: cur };
+    mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+    mr.onstop = function () { finishRec(rec && rec.mr === mr ? rec : null, mr, chunks, t0, started, cur, withVideo); };
+    mr.start(1000);
+    $("bRec").classList.add("on"); $("bRec").innerHTML = "■ Stop recording<kbd>R</kbd>";
+    if (withVideo) v.play().catch(function () {});
+    syncBoth(); tickRec();
+  }
+  var tickT = 0;
+  function tickRec() {
+    clearTimeout(tickT);
+    if (!rec) return;
+    var s = (Date.now() - rec.started) / 1000;
+    say("● Recording " + clock(s) + " — speak along with the video. Press R to stop.", "rec");
+    if (s > 900) { stopRec(); return; }                                   // 15 minutes at most
+    tickT = setTimeout(tickRec, 500);
+  }
+  function stopRec(discard) {
+    if (!rec) return;
+    var r = rec; if (discard) r.discard = true;
+    $("bRec").classList.remove("on"); $("bRec").innerHTML = "● Record my voice<kbd>R</kbd>";
+    clearTimeout(tickT);
+    try { r.mr.stop(); } catch (e) { rec = null; }
+    setTimeout(syncBoth, 0);
+    if (r.withVideo && !discard) v.pause();
+    if (discard) rec = null;
+  }
+  async function finishRec(r, mr, chunks, t0, started, item, withVideo) {
+    var discarded = !r || r.discard; rec = null; syncBoth();
+    if (discarded) return;
+    var blob = new Blob(chunks, { type: mr.mimeType || "audio/webm" }), dur = (Date.now() - started) / 1000;
+    if (blob.size < 1500) { say("Nothing was recorded — check the microphone.", "rec"); return; }
+    mine = { name: item.name, blob: blob };
+    meta[item.name] = { has: true, dur: Math.round(dur), t0: Math.round(t0 * 100) / 100, wv: withVideo, at: Date.now() };
+    saveMeta(); paintList(); showMine();
+    say("Saved your voice (" + clock(dur) + "). Press P to hear it.", "");
+    var ok = await Store.putBlob(blobKey(item.name), blob);
+    if (!ok) say("Recorded, but it could not be saved to your account (too large or offline). It is still here until you leave the page — press P.", "rec");
+  }
+  $("bRec").onclick = function () { recNow() ? stopRec() : startRec(); };
+  /* one button: start the video and the recording together, press again to stop both */
+  function syncBoth() { var on = recNow(); $("bBoth").classList.toggle("on", on); $("bBoth").innerHTML = (on ? "■ Stop video + recording" : "▶● Start video + record") + "<kbd>B</kbd>"; }
+  function toggleBoth() {
+    if (recNow()) { stopRec(); v.pause(); return; }
+    startRec(true);
+  }
+  $("bBoth").onclick = toggleBoth;
+
+  /* ---------- play my voice ---------- */
+  function stopMine() {
+    if (mineAudio) { var a = mineAudio; mineAudio = null; a.pause(); try { URL.revokeObjectURL(a.src); } catch (e) {} }
+    v.muted = false; $("bPlay").innerHTML = "▶ My voice<kbd>P</kbd>";
+  }
+  async function playMine() {
+    if (!cur) return;
+    if (mineAudio) { stopMine(); say(""); return; }
+    if (recNow()) { say("Stop recording first (R).", "rec"); return; }
+    v.pause();
+    var blob = mine && mine.name === cur.name ? mine.blob : null;
+    if (!blob) { say("Loading your recording…"); blob = await Store.getBlob(blobKey(cur.name)); if (blob) mine = { name: cur.name, blob: blob }; }
+    if (!blob) { say("No recording of this video yet — press R to record your voice.", "rec"); return; }
+    var a = new Audio(URL.createObjectURL(blob)); mineAudio = a;
+    var m = meta[cur.name], together = $("oBoth").checked && m && m.t0 != null;
+    a.onended = a.onerror = function () { if (mineAudio === a) { stopMine(); if (together) v.pause(); say(""); } };
+    $("bPlay").innerHTML = "■ Stop my voice<kbd>P</kbd>";
+    try { await a.play(); } catch (e) { stopMine(); say("The browser blocked playing — press P again.", "rec"); return; }
+    if (together) { v.muted = true; try { v.currentTime = m.t0; } catch (e) {} v.play().catch(function () {}); }
+    say("▶ Playing your voice…");
+  }
+  $("bPlay").onclick = playMine;
+  /* the original video, from the point where my recording started — to hear what I was copying */
+  function playOriginal() {
+    if (!cur) return;
+    stopMine();
+    var m = meta[cur.name];
+    if (!v.paused && origOn) { v.pause(); say(""); return; }
+    if (recNow()) { say("Stop recording first (R).", "rec"); return; }
+    var from = m && m.has ? (m.t0 || 0) : 0;
+    try { v.currentTime = from; } catch (e) {}
+    origOn = true; v.play().catch(function () { say("The browser blocked playing — press again.", "rec"); });
+    say("▶ Original video from " + clock(from) + (m && m.has ? " — where your recording started" : " (no recording yet, so the beginning)"));
+  }
+  var origOn = false;
+  v.addEventListener("pause", function () { origOn = false; });
+  $("bOrig").onclick = playOriginal;
+  function showMine() {
+    var m = cur && meta[cur.name], el = $("mine"); el.textContent = "";
+    if (!m || !m.has) return;
+    el.appendChild(document.createTextNode("My latest recording: " + clock(m.dur || 0) + " · " + new Date(m.at || Date.now()).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })));
+    var d = document.createElement("button"); d.type = "button"; d.className = "btn alt small"; d.textContent = "Delete it";
+    d.onclick = function () { if (!confirm("Delete your recording of this video?")) return; stopMine(); Store.delBlob(blobKey(cur.name)); if (mine && mine.name === cur.name) mine = null; delete meta[cur.name]; saveMeta(); paintList(); showMine(); say(""); };
+    el.appendChild(d);
+  }
+
+  /* ---------- transcript: paste it with time stamps; click a line to jump there ---------- */
+  var TX = {}, txReady = false, cues = [], curCue = -1, lineLoop = null, ourSeek = false, rafOn = false;
+  Store.load("shadow-tx", {}, null).then(function (m) { TX = m || {}; txReady = true; if (cur) loadTx(); });
+  var TS = /^\s*[\[(]?\s*(?:(\d{1,2}):)?(\d{1,2}):(\d{2})(?:[.,](\d{1,3}))?\s*[\])]?\s*(.*)$/;
+  var fmtT = function (t) { t = Math.floor(t); var h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, x = t % 60; return (h ? h + ":" + (m < 10 ? "0" : "") : "") + m + ":" + (x < 10 ? "0" : "") + x; };
+  function parseTx(text) {                                       // -> [{t: seconds | null, text}]
+    var out = [], last = null, lines = String(text || "").replace(/\r/g, "").split("\n");
+    for (var i = 0; i < lines.length; i++) {
+      var ln = lines[i], m = TS.exec(ln);
+      if (m) {
+        var t = (m[1] ? +m[1] * 3600 : 0) + +m[2] * 60 + +m[3] + (m[4] ? +("0." + m[4]) : 0), rest = m[5].replace(/^(?:-->\s*(?:\d{1,2}:)?\d{1,2}:\d{2}(?:[.,]\d{1,3})?\s*)?[-\u2013\u2014:]?\s*/, "");
+        last = { t: t, text: rest.trim() }; out.push(last);
+      } else if (/^\s*\d+\s*$/.test(ln) && i + 1 < lines.length && /-->/.test(lines[i + 1])) { /* a .srt cue number */ }
+      else if (ln.trim()) { if (last) last.text = (last.text ? last.text + " " : "") + ln.trim(); else { last = { t: null, text: ln.trim() }; out.push(last); } }
+      else if (last && last.t == null) last = null;
+    }
+    return out.filter(function (c) { return c.text || c.t != null; });
+  }
+  function loadTx() {
+    if (!cur) return;
+    var text = TX[cur.name] || "";
+    $("txEdit").value = text; cues = parseTx(text); curCue = -2; setMode(text.trim() ? "read" : "edit"); markCue();
+  }
+  function setMode(m) {
+    var read = m === "read";
+    $("txEdit").hidden = read; $("txRead").hidden = !read; $("txMode").textContent = read ? "✎ Edit" : "📖 Read";
+    if (read) renderTx();
+  }
+  function renderTx() {
+    var box = $("txRead"); box.textContent = ""; cues = parseTx($("txEdit").value); curCue = -2;
+    if (!cues.length) { box.innerHTML = '<div class="empty">Nothing yet — press Edit and paste your transcript.</div>'; markCue(); return; }
+    cues.forEach(function (c, i) {
+      var d = document.createElement("div"); d.className = "cue" + (c.t == null ? " plain" : ""); d.dataset.i = i;
+      var ts = document.createElement("span"); ts.className = "ts"; ts.textContent = c.t == null ? "" : fmtT(c.t);
+      var tt = document.createElement("span"); tt.className = "tt"; tt.textContent = c.text;
+      d.appendChild(ts); d.appendChild(tt); box.appendChild(d);
     });
+    markCue();
   }
-  function fetchList() {
-    return fetch("/api/shadow/list", { credentials: "same-origin" }).then(function (r) {
-      if (r.status === 401) { location.href = "/login.html?next=" + encodeURIComponent(location.pathname); throw 0; }
-      return r.json();
-    }).then(function (j) { items = j.items || []; $("dirHint").textContent = j.dir || "Shadowing"; paintList(); });
-  }
-  $("refresh").onclick = function () { fetchList(); };
-  $("q").oninput = paintList;
-
-  /* ---------------------------------------------------------- open a video --- */
-  function subLabel(s) { return s.label ? s.label.toUpperCase() + " — " + s.path.split("/").pop() : s.path.split("/").pop(); }
-  function pickSubs(x) {
-    var s1 = x.subs.filter(function (s) { return s.label.toLowerCase() === prefs.src; })[0] || x.subs.filter(function (s) { return !s.label; })[0] || x.subs[0];
-    var s2 = x.subs.filter(function (s) { return s !== s1 && s.label.toLowerCase() === prefs.dst; })[0] || x.subs.filter(function (s) { return s !== s1; })[0];
-    return [s1, s2];
-  }
-  function fillSubSelects(x, s1, s2) {
-    var a = $("sub1"), b = $("sub2"); a.textContent = ""; b.textContent = "";
-    var n1 = el("option", "", "None"); n1.value = ""; a.appendChild(n1);
-    var n2 = el("option", "", "None"); n2.value = ""; b.appendChild(n2);
-    x.subs.forEach(function (s) { var o = el("option", "", subLabel(s)); o.value = s.path; a.appendChild(o); b.appendChild(o.cloneNode(true)); });
-    a.value = s1 ? s1.path : ""; b.value = s2 ? s2.path : "";
-  }
-  function applySubs() {
-    return Promise.all([loadSubs($("sub1").value), loadSubs($("sub2").value)]).then(function (r) {
-      cues = r[0]; cues2 = r[1]; shown = -2; loopIdx = -1; buildTranscript(); shown = -1; sync(); paintButtons(); rearm();
-      $("subPh").hidden = cues.length > 0; if (!cues.length) $("subPh").textContent = cur && cur.subs.length ? "No subtitles selected." : "No subtitle file found next to this video — add a .srt or .vtt with the same name.";
-    });
-  }
-  function openItem(x) {
-    if (cur) { remember(true); }
-    stopMine(); stopRec(); closePop();
-    cur = x; prefs.last = x.path; savePrefs();
-    view("watch"); $("empty").hidden = true; $("player").hidden = false; $("vtitle").textContent = x.name; $("vmsg").hidden = true;
-    vid.src = "/shadow/" + x.path.split("/").map(encodeURIComponent).join("/");
-    vid.playbackRate = prefs.rate; vid.load();
-    var t0 = pos[x.path] || 0;
-    vid.addEventListener("loadedmetadata", function once() { vid.removeEventListener("loadedmetadata", once); if (t0 > 1 && t0 < vid.duration - 2) vid.currentTime = t0 - 1; });
-    var s = pickSubs(x); fillSubSelects(x, s[0], s[1]);
-    $("l1").textContent = ""; $("l2").textContent = ""; $("subPh").hidden = false; $("subPh").textContent = "Loading subtitles…";
-    applySubs();
-    setMine(null); recStatus("Use headphones so the video's sound isn't recorded with your voice.", false);
-    Store.getBlob(recKey()).then(function (b) { if (cur === x && b && b.size) { setMine(b); recStatus("Your last recording of this video is loaded. Press P to listen.", false); } });
-    paintList(); paintButtons();
-  }
-
-  /* -------------------------------------------------------------- controls --- */
-  $("bPlay").onclick = toggleStart;
-  $("bPrev").onclick = function () { goLine(curLine() - ((vid.currentTime - (cues[curLine()] || { s: 0 }).s) > 1.2 ? 0 : 1)); };
-  $("bNext").onclick = function () { goLine(curLine() + 1); };
-  $("bRep").onclick = function () { goLine(curLine()); };
-  $("bLoop").onclick = toggleLoop;
-  $("bAuto").onclick = function () { prefs.autoPause = !prefs.autoPause; savePrefs(); rearm(); paintButtons(); };
-  $("bTr").onclick = function () { prefs.showTr = !prefs.showTr; savePrefs(); buildTranscript(); shown = -2; highlight(-1); sync(); paintButtons(); };
-  $("bRec").onclick = toggleRec;
-  $("bMine").onclick = toggleMine;
-  $("sub1").onchange = $("sub2").onchange = applySubs;
-  $("tr").addEventListener("click", function (e) { var r = e.target.closest(".cue"); if (r) goLine(+r.dataset.i); });
-  RATES.forEach(function (r) { var o = el("option", "", r + "×"); o.value = r; $("rate").appendChild(o); });
-  $("rate").onchange = function () { prefs.rate = +this.value; vid.playbackRate = prefs.rate; savePrefs(); };
-  function setRate(d) {
-    var i = RATES.indexOf(prefs.rate); if (i < 0) i = RATES.indexOf(1);
-    i = Math.max(0, Math.min(RATES.length - 1, i + d)); prefs.rate = RATES[i]; $("rate").value = prefs.rate; vid.playbackRate = prefs.rate; savePrefs();
-  }
-  fillLangs($("src"), prefs.src); fillLangs($("dst"), prefs.dst);
-  $("src").onchange = function () { prefs.src = this.value; savePrefs(); };
-  $("dst").onchange = function () { prefs.dst = this.value; savePrefs(); };
-
-  document.addEventListener("keydown", function (e) {
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
-    var tag = (e.target && e.target.tagName) || "";
-    if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag) || (e.target && e.target.isContentEditable)) return;
-    if ($("watch").hidden || !cur) return;
-    var k = e.key.length === 1 ? e.key.toLowerCase() : e.key, used = true;
-    if (k === "s") toggleStart();
-    else if (k === "r") toggleRec();
-    else if (k === "p") toggleMine();
-    else if (k === "ArrowLeft") $("bPrev").onclick();
-    else if (k === "ArrowRight") $("bNext").onclick();
-    else if (k === "l") goLine(curLine());
-    else if (k === "k") toggleLoop();
-    else if (k === "a") $("bAuto").onclick();
-    else if (k === "t") $("bTr").onclick();
-    else if (k === "[") setRate(-1);
-    else if (k === "]") setRate(1);
-    else if (k === "Escape") closePop();
-    else used = false;
-    if (used) e.preventDefault();
+  $("txMode").onclick = function () { setMode($("txRead").hidden ? "read" : "edit"); };
+  var txT = 0;
+  $("txEdit").addEventListener("input", function () {
+    if (!cur) return; var name = cur.name, val = this.value;
+    cues = parseTx(val); curCue = -2; markCue();
+    clearTimeout(txT); txT = setTimeout(function () { if (val.trim()) TX[name] = val; else delete TX[name]; Store.save("shadow-tx", TX); }, 500);
   });
-  window.addEventListener("beforeunload", function () { remember(true); });
+  $("txSize").value = LS("shadow-txsize", "1.15"); if (!$("txSize").value) $("txSize").value = "1.15";
+  function applySize() { $("txRead").style.fontSize = $("txSize").value + "rem"; $("txEdit").style.fontSize = $("txSize").value + "rem"; }
+  $("txSize").onchange = function () { LSset("shadow-txsize", this.value); applySize(); this.blur(); }; applySize();
+  $("oLine").checked = LS("shadow-oLine", "0") === "1";
+  $("oLine").onchange = function () { LSset("shadow-oLine", this.checked ? "1" : "0"); if (!this.checked) { lineLoop = null; markCue(); } };
+  function cueAt(t) { var k = -1; for (var i = 0; i < cues.length; i++) { if (cues[i].t != null && cues[i].t <= t + 0.05) k = i; else if (cues[i].t != null) break; } return k; }
+  function markCue() {
+    var box = $("txRead"), k = cueAt(v.currentTime), kids = box.hidden ? [] : box.children, now = $("nowLine");
+    if (k !== curCue) {
+      if (kids[curCue]) kids[curCue].classList.remove("now");
+      curCue = k;
+      if (kids[k]) { kids[k].classList.add("now"); var top = kids[k].offsetTop - box.offsetTop - box.clientHeight / 3; box.scrollTo ? box.scrollTo({ top: Math.max(0, top) }) : (box.scrollTop = Math.max(0, top)); }
+      var c = k >= 0 ? cues[k] : null, nx = null;
+      for (var j = k + 1; j < cues.length; j++) if (cues[j].t != null) { nx = j; break; }
+      now.hidden = !c && nx == null;                                   // before the first line: show only what is coming
+      if (!now.hidden && typeof nlBox !== "undefined" && nlBox && nlBox.classList.contains("float")) floatAt(parseFloat(nlBox.style.left) || 0, parseFloat(nlBox.style.top) || 42);
+      $("nowTs").textContent = c ? fmtT(c.t) : "▶"; $("nowTx").textContent = c ? c.text : "Starting soon…";
+      $("nextRow").hidden = nx == null; nextCue = nx == null ? -1 : nx;
+      if (nx != null) { $("nextTs").textContent = "next " + fmtT(cues[nx].t); $("nextTx").textContent = cues[nx].text; }
+    }
+    for (var i = 0; i < kids.length; i++) kids[i].classList.toggle("loop", !!lineLoop && lineLoop.i === i);
+    $("nlStop").hidden = $("lnStop").hidden = !lineLoop;
+    now.classList.toggle("loop", !!lineLoop && lineLoop.i === k);
+  }
+  v.addEventListener("timeupdate", markCue);
+  v.addEventListener("seeked", function () { ourSeek = false; markCue(); });
+  v.addEventListener("seeking", function () {                      // you dragged the video bar somewhere else: leave the line loop
+    if (!ourSeek && lineLoop && (v.currentTime < lineLoop.a - 0.3 || v.currentTime > lineLoop.b + 0.3)) { lineLoop = null; markCue(); }
+  });
+  var ab = { a: null, b: null, on: false };
+  function loopTick() {
+    if (!lineLoop && !ab.on) { rafOn = false; return; }
+    if (!v.paused) {
+      var t = v.currentTime;
+      if (lineLoop && t >= lineLoop.b - 0.04) { ourSeek = true; v.currentTime = lineLoop.a; }
+      else if (ab.on && t >= ab.b - 0.04 && t < ab.b + 0.8) { ourSeek = true; v.currentTime = ab.a; }   // reached B: back to A (a seek elsewhere is left alone)
+    }
+    requestAnimationFrame(loopTick);
+  }
+  function ensureTick() { if (!rafOn) { rafOn = true; requestAnimationFrame(loopTick); } }
+  $("txRead").addEventListener("click", function (e) { var d = e.target.closest(".cue"); if (d) playCue(+d.dataset.i); });
+  var nextCue = -1;
+  $("nowLine").addEventListener("click", function (e) { if (e.target.closest("#nextRow")) { if (nextCue >= 0) playCue(nextCue); } else if (curCue >= 0) playCue(curCue); });     // the pinned line: click to hear it again
+  function stopLine(quiet) { if (!lineLoop) return false; lineLoop = null; markCue(); if (!quiet) say("Line repeat stopped."); return true; }
+  $("nlStop").addEventListener("click", function (e) { e.stopPropagation(); stopLine(); });
+  $("lnStop").addEventListener("click", function () { stopLine(); });
+  function playCue(i) {
+    var c = cues[i]; if (!c || c.t == null || !cur) return;
+    if (lineLoop && lineLoop.i === i) { stopLine(); return; }                  // clicking the repeating line again stops the repeat (the video plays on)
+    stopMine();
+    var nx = null; for (var j = i + 1; j < cues.length; j++) if (cues[j].t != null && cues[j].t > c.t) { nx = cues[j].t; break; }
+    if ($("oLine").checked) { lineLoop = { a: c.t, b: nx != null ? nx : (v.duration || 1e9), i: i }; ensureTick(); ab.on = false; refreshAB(); } else lineLoop = null;
+    ourSeek = true; try { v.currentTime = c.t; } catch (x) {}
+    v.play().catch(function () {}); markCue();
+  }
 
-  /* --------------------------------------------------------------- start --- */
-  Promise.all([Store.load("shadow-prefs", prefs), Store.load("shadow-pos", {}), Store.load("shadow-words", [])]).then(function (r) {
-    prefs = Object.assign(prefs, r[0] || {}); pos = r[1] || {}; words = Array.isArray(r[2]) ? r[2] : [];
-    $("src").value = prefs.src; $("dst").value = prefs.dst; $("rate").value = prefs.rate;
-    paintWordCount(); paintButtons();
-    return fetchList();
-  }).then(function () {
-    var last = items.filter(function (x) { return x.path === prefs.last; })[0];
-    if (last) openItem(last);
-  }).catch(function () {});
-  requestAnimationFrame(tick);
+  /* ---------- A -> B repeat: any part of the video, over and over ---------- */
+  var tf = function (t) { t = Math.max(0, t); var m = Math.floor(t / 60), x = t - m * 60; return m + ":" + (x < 10 ? "0" : "") + x.toFixed(1); };
+  function refreshAB() {
+    var info = $("abInfo"), strip = $("abStrip"), seg = $("abSeg"), dur = v.duration || 0;
+    $("bAB").classList.toggle("on", ab.on); $("bAB").innerHTML = (ab.on ? "■ Repeating" : "↻ Repeat") + "<kbd>\\</kbd>";
+    if (ab.a == null) { info.textContent = "Mark where to start and stop; that part repeats until you turn it off."; strip.hidden = true; return; }
+    info.innerHTML = "<b>A</b> " + tf(ab.a) + (ab.b != null ? "  →  <b>B</b> " + tf(ab.b) + "  (" + (ab.b - ab.a).toFixed(1) + " s)" + (ab.on ? " — repeating" : " — paused") : "  →  press ] to mark B");
+    if (dur > 0) {
+      strip.hidden = false; seg.className = "seg" + (ab.on ? " on" : "");
+      seg.style.left = (ab.a / dur * 100) + "%"; seg.style.width = (ab.b != null ? (ab.b - ab.a) / dur * 100 : 0.6) + "%";
+    } else strip.hidden = true;
+  }
+  function abPlayFromA() { stopMine(); ab.on = true; lineLoop = null; ensureTick(); ourSeek = true; try { v.currentTime = ab.a; } catch (e) {} v.play().catch(function () {}); refreshAB(); markCue(); }
+  function setA() {
+    if (!cur) return; var t = Math.round(v.currentTime * 100) / 100;
+    ab.a = t; if (ab.b != null && ab.b <= t + 0.2) { ab.b = null; ab.on = false; } refreshAB(); say("A set at " + tf(t) + " — now go to the end and press ]");
+  }
+  function setB() {
+    if (!cur) return; var t = Math.round(v.currentTime * 100) / 100;
+    if (ab.a == null) { ab.a = 0; }
+    if (t <= ab.a + 0.2) { say("B must come after A (A is at " + tf(ab.a) + ").", "rec"); return; }
+    ab.b = t; abPlayFromA(); say("Repeating " + tf(ab.a) + " → " + tf(ab.b));
+  }
+  function toggleAB() {
+    if (ab.a == null || ab.b == null) { say("Mark A ( [ ) and B ( ] ) first.", "rec"); return; }
+    if (ab.on) { ab.on = false; refreshAB(); say("Repeat A→B off."); } else abPlayFromA();
+  }
+  function clearAB() { ab = { a: null, b: null, on: false }; refreshAB(); say("A and B cleared."); }
+  $("bA").onclick = setA; $("bB").onclick = setB; $("bAB").onclick = toggleAB; $("bABx").onclick = clearAB;
+  v.addEventListener("loadedmetadata", refreshAB); v.addEventListener("durationchange", refreshAB);
+  ["bA", "bB", "bAB", "bABx"].forEach(function (id) { $(id).addEventListener("click", function () { this.blur(); }); });
+
+  /* ---------- the pinned top transcript: drag it anywhere (it floats), or dock it back ---------- */
+  var nlBox = $("nowLine"), drag = null, dragged = false;
+  function clampPos(x, y) { var w = nlBox.offsetWidth, h = nlBox.offsetHeight; return [Math.min(Math.max(0, x), Math.max(0, innerWidth - w)), Math.min(Math.max(42, y), Math.max(42, innerHeight - h))]; }
+  function floatAt(x, y) { var c = clampPos(x, y); nlBox.classList.add("float"); nlBox.style.left = c[0] + "px"; nlBox.style.top = c[1] + "px"; $("nlDock").hidden = false; return c; }
+  function dock() { nlBox.classList.remove("float"); nlBox.style.left = nlBox.style.top = ""; $("nlDock").hidden = true; LSset("shadow-nlpos", ""); fitVideo(); }
+  nlBox.addEventListener("pointerdown", function (e) {
+    if (e.target.closest("button") || (e.pointerType === "mouse" && e.button !== 0)) return;
+    if (e.pointerType !== "mouse" && !e.target.closest("#nlGrip")) return;               // on a touch screen only the ⠿ handle drags, so the bar can still be scrolled past
+    var r = nlBox.getBoundingClientRect(); drag = { id: e.pointerId, dx: e.clientX - r.left, dy: e.clientY - r.top, x0: e.clientX, y0: e.clientY, moved: false };
+  });
+  document.addEventListener("pointermove", function (e) {                  // on the document, so a fast drag that leaves the box is still followed
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.moved) { if (Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 5) return; drag.moved = true; nlBox.classList.add("dragging"); }
+    floatAt(e.clientX - drag.dx, e.clientY - drag.dy); fitVideo(); e.preventDefault();
+  });
+  function endDrag(e) {
+    if (!drag || (e && e.pointerId !== drag.id)) return;
+    if (drag.moved) { dragged = true; setTimeout(function () { dragged = false; }, 0); nlBox.classList.remove("dragging"); LSset("shadow-nlpos", JSON.stringify({ x: parseFloat(nlBox.style.left), y: parseFloat(nlBox.style.top) })); }
+    drag = null;
+  }
+  document.addEventListener("pointerup", endDrag); document.addEventListener("pointercancel", endDrag);
+  nlBox.addEventListener("click", function (e) { if (dragged) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);   // letting go after a drag is not a click
+  $("nlDock").addEventListener("click", function (e) { e.stopPropagation(); dock(); });
+  addEventListener("resize", function () { if (nlBox.classList.contains("float")) floatAt(parseFloat(nlBox.style.left) || 0, parseFloat(nlBox.style.top) || 42); });
+  try { var sp = JSON.parse(LS("shadow-nlpos", "") || "null"); if (sp && isFinite(sp.x) && isFinite(sp.y)) { nlBox.classList.add("float"); nlBox.style.left = sp.x + "px"; nlBox.style.top = sp.y + "px"; $("nlDock").hidden = false; } } catch (e) {}
+
+  /* ---------- the pinned top transcript: size buttons ---------- */
+  var NL0 = innerWidth < 700 ? 1.25 : 1.75, NL = parseFloat(LS("shadow-nl", String(NL0))); if (!(NL >= 1 && NL <= 4.6)) NL = NL0;
+  function setNL(x) { NL = Math.min(4.5, Math.max(1, Math.round(x * 100) / 100)); $("nowLine").style.setProperty("--nl", NL + "rem"); LSset("shadow-nl", String(NL)); $("nlMinus").disabled = NL <= 1; $("nlPlus").disabled = NL >= 4.5; }
+  setNL(NL);
+  $("nlMinus").addEventListener("click", function (e) { e.stopPropagation(); setNL(NL - 0.25); });
+  $("nlPlus").addEventListener("click", function (e) { e.stopPropagation(); setNL(NL + 0.25); });
+
+  /* ---------- full-size video: it gets the whole window under the top menu and the pinned transcript ---------- */
+  function topEdge() { var n = $("nowLine"); return 42 + (n.hidden || n.classList.contains("float") ? 0 : n.offsetHeight + 10); }
+  function fitVideo() {
+    if ($("work").hidden) return;
+    v.style.maxHeight = Math.max(200, innerHeight - topEdge() - 14) + "px";
+  }
+  function showVideo() {                                                // scroll so the whole picture is in view, just under the pinned bar
+    if ($("work").hidden) return; fitVideo();
+    var r = v.getBoundingClientRect(), top = topEdge() + 4;
+    if (r.top < top - 2 || r.bottom > innerHeight - 2) window.scrollTo({ top: Math.max(0, scrollY + r.top - top) });
+  }
+  addEventListener("resize", fitVideo);
+  if (window.ResizeObserver) new ResizeObserver(fitVideo).observe($("nowLine"));
+  v.addEventListener("loadedmetadata", showVideo);
+  v.addEventListener("play", function () { setTimeout(showVideo, 0); });
+  setTimeout(showVideo, 300);
+
+  /* ---------- keyboard ---------- */
+  document.addEventListener("keydown", function (e) {            // capture phase: the page's keys win over the video's own
+    if (e.ctrlKey || e.metaKey || e.altKey || !cur || $("work").hidden) return;
+    var t = e.target, tag = t && t.tagName;
+    if (tag === "INPUT" && t.type !== "checkbox" || tag === "TEXTAREA" || tag === "SELECT" || (t && t.isContentEditable)) return;
+    var k = e.key.toLowerCase(), used = true;
+    if (k === "b") toggleBoth();
+    else if (k === "s") toggleVideo();
+    else if (k === "r") recNow() ? stopRec() : startRec();
+    else if (k === "p") playMine();
+    else if (k === "o") playOriginal();
+    else if (k === "l") { $("oLoop").checked = !$("oLoop").checked; $("oLoop").onchange.call($("oLoop")); }
+    else if (k === "0") { try { v.currentTime = 0; } catch (x) {} }
+    else if (e.key === "[") setA();
+    else if (e.key === "]") setB();
+    else if (e.key === "\\") { if (!stopLine()) toggleAB(); }
+    else if (e.key === "Escape") { if (!stopLine()) used = false; }
+    else if (k === "x") { stopLine(true); clearAB(); }
+    else if (e.key === "+" || e.key === "=") setNL(NL + 0.25);
+    else if (e.key === "-" || e.key === "_") setNL(NL - 0.25);
+    else if (e.key === "ArrowLeft") { v.currentTime = Math.max(0, v.currentTime - 3); }
+    else if (e.key === "ArrowRight") { v.currentTime = Math.min(v.duration || 1e9, v.currentTime + 3); }
+    else used = false;
+    if (used) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
+  addEventListener("pagehide", function () { if (rec) stopRec(true); });
+
+  loadList();
 })();
 </script>
 </body>

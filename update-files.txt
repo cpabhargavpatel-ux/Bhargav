@@ -2,6 +2,7 @@ server.mjs
 public/french-ipa.html
 public/english.html
 public/fr-en-ipa.js
+public/fr-gu.js
 public/fr-vocab-more.js
 public/fr-sound-words.js
 public/fr-align.js
@@ -14,6 +15,7 @@ public/grammar.html
 public/irregular-verbs.js
 public/fr-mouth.js
 public/feynman.html
+public/shadowing.html
 public/irregular-verbs.html
 public/vocabulary.html
 public/app.html
@@ -31,4 +33,4 @@ public/pdf.min.js
 public/pdf.worker.min.js
 public/pdf_viewer.css
 public/apple-touch-icon.png
-public/shadowing.html
+public/watch.html

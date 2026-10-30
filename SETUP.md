@@ -96,17 +96,16 @@ sends only the parts of a large PDF you look at. The PDF reader is
 [PDF.js](https://mozilla.github.io/pdf.js/) (Apache-2.0), bundled as `pdf.min.js`,
 `pdf.worker.min.js` and `pdf_viewer.css`, so it works offline.
 
-## Shadowing (video practice tab)
+## Watch & Learn (video with clickable subtitles)
 
-Put videos or audio (MP4 plays everywhere; WebM, MOV, MP3, M4A also work) in the **`Shadowing`** folder next to
-`server.mjs` — sub-folders are fine — then open the **Shadowing** tab and press the refresh button.
-Add subtitles by putting `.srt` or `.vtt` files beside the video with the same name, for example
-`lesson1.mp4`, `lesson1.fr.srt` (the language you are learning) and `lesson1.en.srt` (the translation).
+A second video tab that works like Lingopie. It uses the same **`Shadowing`** folder next to `server.mjs`
+(sub-folders are fine), so the videos you already have show up. Add subtitles by putting `.srt` or `.vtt` files beside a
+video with the same name, for example `lesson1.mp4`, `lesson1.fr.srt` (the language you are learning) and
+`lesson1.en.srt` (the translation).
 Keys: **S** start/stop, **R** record your voice, **P** play your voice, **← →** previous/next line, **L** replay the line,
 **K** loop the line, **A** pause after each line, **T** translation on/off, **[ ]** slower/faster.
 Click any word in the subtitles to see its meaning and save it; saved words have a review mode.
 Word and line translations use a free online service, so they need an internet connection (everything else works offline).
-Recording needs the microphone, so open the app at `http://localhost:<port>` on the PC (or https on a phone, see above).
 Your latest recording of each video and your saved words are stored in your account.
 
 ## Run it automatically at sign-in (optional)
@@ -147,3 +146,52 @@ and server always run the same app, only the storage differs.
 - This is a small office/home tool served over plain HTTP on a trusted
   network. Do not expose port 8484 to the internet as-is — if remote access
   is ever needed, put it behind a VPN.
+
+## Shadowing (video + your own voice)
+
+Put videos in the **`Shadowing`** folder next to `server.mjs` (the app creates it on start), then open the
+**Shadowing** tab and pick one. `.mp4` (H.264 + AAC), `.m4v`, `.webm` and `.mov` work, and so do audio files
+(`.mp3`, `.m4a`, `.wav`). If a subtitle file has the same name (`lesson1.mp4` + `lesson1.srt` or `.vtt`) it is shown
+automatically. Large videos stream, so they start quickly and you can skip around.
+
+The list of videos folds away once you pick one (press **📁 Videos** to show it again) so the player gets the full width. Under the video is a **Transcript** box: paste your transcript with time stamps (`0:05 text`, `[00:12] text`, `1:02:30 text`, or a `.srt` as it is), press **Read**, and the current line follows the video; click a line to jump there, and tick *Repeat the line I click* to loop it. The line being said now is also pinned in a bar under the top menu all the time, wherever you scroll; it sits in the middle of the window in large type (it follows the Text size menu) and also shows the next line underneath, so you can see what is coming. Click the bar to hear the line again, or the next line to jump to it. It is saved per video in your account.
+
+Keys: **B** start the video and the recording together / stop both, **S** start / stop the video, **R** record your voice / stop, **P** play your voice / stop, **O** play the original video from the point where your recording started,
+**←** **→** back / forward 3 seconds, **0** back to the beginning, **L** repeat the video. The same actions are buttons
+for the phone and iPad. By default R also starts the video (and stops it when you stop), so you can speak along with it;
+use headphones so the video's sound doesn't leak into the recording. Your latest recording of each video is kept in your
+account, so P still works tomorrow, and a tick lets P replay the video (muted) alongside your voice. The microphone needs
+`http://localhost` on the PC or the `https://` address on an iPhone/iPad (see the Tailscale section above).
+
+## Word suggestions in the Vocabulary search
+
+Click the **Vocabulary** search box and it lists the words you searched or opened lately; start typing and it suggests
+words (matching with or without accents, and English meanings too — typing `hous` offers *maison*), with your earlier
+searches and looked-at words first. Use the arrow keys and Enter, or click one, and the list filters to that word.
+Your search history is saved in your account.
+
+### Repeat any part of a video (A to B), and the top transcript size
+
+Under the buttons is a **Repeat A→B** row. Press **[** (or *A start*) where the part begins and **]** (or *B end*) where it ends:
+the video jumps to A and repeats A to B until you press **\\** (or *Repeat*) to turn it off. **X** clears A and B. A bar under the
+video shows where the part is. Seeking somewhere else with the video's own bar is left alone. The pinned transcript bar has
+**A−** / **A+** buttons (and the **+** / **−** keys) to make its text smaller or bigger; the size is remembered.
+
+The buttons (start + record, Start, Record, My voice, Original, Repeat A→B) sit **below** the video, and the video is sized to
+fill the window under the top menu and the pinned transcript, so you see the whole picture; the page scrolls to put it in
+view when you open or start a video. The keyboard shortcuts work without scrolling down.
+
+To stop a transcript-line repeat: click the repeating line again, press **Esc** (or **\\**), press **■ Stop repeat** (it appears in
+the pinned transcript bar and in the transcript header while a line repeats), or untick *Repeat the line I click*. The video keeps playing.
+
+The pinned transcript bar can be **dragged anywhere** — over the video, to a corner, wherever you like: press on it (or on its **⠿** handle,
+which is the only part that drags on a touch screen) and move. It then floats there while you scroll, remembers its place, and stays
+inside the window. **⤒ Dock** puts it back under the top menu.
+
+## Gujarati sounds (French > Sounds / Vocabulary / Sentences)
+
+Under the English sound in each word's letters→sounds map there is a third row with the closest **Gujarati** sound
+(ઈ, શ, આં …), shown by the **Gujarati sounds** tick in the Options and lit up in step with the voice by **Highlight > Gujarati**.
+A sound with a dotted underline has no exact Gujarati letter (ü, eu, the throaty r, …): hover it, or open the sound in the
+player, to read how to adjust. The table is in `public/fr-gu.js` — it is easy to correct a letter there if one does not sound right to you.
+The Gujarati letters use your device's own Gujarati font (Nirmala UI on Windows, the built-in one on iPhone and iPad).
