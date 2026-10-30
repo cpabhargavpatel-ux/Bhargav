@@ -510,6 +510,15 @@
   .sv-b button:disabled { opacity: 0.4; cursor: default; }
   .sv-b button.del { border-color: var(--rule); color: var(--gray); margin-left: auto; }
   .sv-empty { color: var(--gray); font-size: 0.9rem; }
+  /* live English translation under a sentence */
+  .sp-trtog { display: flex; align-items: center; gap: 6px; margin: 6px 0 0; font-size: 0.84rem; color: var(--gray); cursor: pointer; }
+  .sp-tr { margin: 8px 0 0; padding: 8px 12px; border-left: 3px solid var(--blue); background: var(--blue-tint); border-radius: 6px; font-size: 1rem; line-height: 1.45; }
+  .sp-tr .lab { font: 700 0.7rem var(--sans); letter-spacing: .04em; text-transform: uppercase; color: var(--blue); margin-right: 8px; }
+  .sp-tr .src { display: block; margin-top: 2px; font-size: 0.74rem; color: var(--gray); }
+  .sp-tr .err { color: #B54708; }
+  .sp-tr button { font: inherit; font-size: 0.8rem; margin-left: 8px; padding: 2px 10px; border-radius: 6px; border: 1px solid var(--blue); background: #fff; color: var(--blue); cursor: pointer; }
+  .sv-tr { color: var(--blue); font-size: 0.92rem; margin-top: 2px; }
+  .sv-tr:empty { display: none; }
   /* ---------- Text size control (lives in the top tab bar) ---------- */
   #fontctl { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; align-self: center; font: 600 12px system-ui, sans-serif; color: #9fb0d6; }
   #fontctl + #modbuild { margin-left: 14px !important; }
@@ -816,7 +825,9 @@
   <section class="sp-sec" id="spSec">
     <h2>Sentence practice</h2>
     <textarea id="spText" lang="fr" placeholder="Où est la gare, s’il vous plaît ?" aria-label="French sentence"></textarea>
+    <label class="sp-trtog"><input type="checkbox" id="spTrOn" checked> Show the English translation under my sentences</label>
     <div class="lmap spmap" id="spMap" hidden aria-label="Letters to sounds, word by word"></div>
+    <div class="sp-tr" id="spTr" hidden aria-live="polite"><span class="lab">English</span><span id="spTrText"></span><button type="button" id="spTrDl" hidden>Download offline translator (one time)</button><span class="src" id="spTrSrc"></span></div>
     <div class="sp-row">
       <button class="play" id="spSay">▶ Say it</button>
       <button class="play loop" id="spLoop">Loop</button>
@@ -907,6 +918,7 @@
 <script src="/store.js"></script>
 <script src="/fr-en-ipa.js"></script>
 <script src="/fr-gu.js"></script>
+<script src="/fr-translate.js"></script>
 <script src="/fr-vocab-more.js"></script>
 <script src="/fr-sound-words.js"></script>
 <script src="/fr-align.js"></script>
@@ -2418,6 +2430,30 @@ refreshWeak();
   spMap.addEventListener("dblclick", e => { const g = wfWord(e); if (g) { clearTimeout(pressT); wfPin(+g.dataset.t); } });
   $("spFocusOff").addEventListener("click", () => wfSet(null));
   const drawSpMap = () => { renderSentenceMap(spMap, isSentence(txt.value) ? txt.value : ""); wfPaint(); };
+  /* live English translation under the sentence: the browser's own translator when it has one (no internet), else this app's server */
+  const trOn = $("spTrOn"), trBox = $("spTr"), trText = $("spTrText"), trSrc = $("spTrSrc"), trDl = $("spTrDl");
+  try { trOn.checked = localStorage.getItem("fr-showtr") !== "0"; } catch (e) {}
+  let trT = 0, trSeq = 0;
+  const SRC_NOTE = { device: "translated on this device — nothing was sent anywhere", server: "translated by this app's server (needs internet)", saved: "" };
+  function drawTr() {
+    const text = txt.value.trim(), my = ++trSeq;
+    if (!trOn.checked || !isSentence(text)) { trBox.hidden = true; return; }
+    trBox.hidden = false; trText.className = ""; trText.textContent = "…"; trSrc.textContent = ""; trDl.hidden = true;
+    FrTranslate.get(text).then(r => {
+      if (my !== trSeq) return;
+      trText.textContent = r.t || "—"; trSrc.textContent = SRC_NOTE[r.via] || "";
+      if (r.via === "server") FrTranslate.mode().then(m => { if (my === trSeq) trDl.hidden = m !== "download"; });
+    }).catch(e => { if (my !== trSeq) return; trText.className = "err"; trText.textContent = e.message || "Couldn’t translate this."; });
+  }
+  trDl.addEventListener("click", async () => {
+    trDl.disabled = true; trDl.textContent = "Downloading… 0%";
+    const ok = await FrTranslate.download(f => { trDl.textContent = "Downloading… " + Math.round(f * 100) + "%"; });
+    trDl.disabled = false; trDl.textContent = "Download offline translator (one time)";
+    if (ok) { trDl.hidden = true; drawTr(); renderSaved(); } else trSrc.textContent = "The download didn’t work — the server translation is used instead.";
+  });
+  trOn.addEventListener("change", () => { try { localStorage.setItem("fr-showtr", trOn.checked ? "1" : "0"); } catch (e) {} drawTr(); renderSaved(); });
+  txt.addEventListener("input", () => { clearTimeout(trT); trT = setTimeout(drawTr, 500); });
+  setTimeout(drawTr, 0);
   txt.addEventListener("input", () => { if (WFOCUS) { WFOCUS = null; } grow(); needHint(); try { localStorage.setItem("fr-sentence", txt.value); } catch (e) {} clearTimeout(mapT); mapT = setTimeout(drawSpMap, 250); });
   drawSpMap();
   grow();
@@ -2523,6 +2559,8 @@ refreshWeak();
       const d = document.createElement("div"); d.className = "sv";
       const t = document.createElement("div"); t.className = "sv-t"; t.lang = "fr"; t.textContent = r.text;
       const hd = document.createElement("div"); hd.className = "sv-head"; hd.append(t, makeBadge("t:" + r.key, "this sentence"));
+      const trl = document.createElement("div"); trl.className = "sv-tr";
+      if (trOn.checked && isSentence(r.text)) FrTranslate.get(r.text).then(x => { trl.textContent = x.t; }).catch(() => {});
       const m = document.createElement("div"); m.className = "sv-m";
       m.textContent = (r.attempts ? r.attempts + " recording" + (r.attempts > 1 ? "s" : "") : "no recording yet")
         + (r.last != null ? " · last " + r.last + "%" : "") + (r.best != null ? " · best " + r.best + "%" : "") + " · " + fmtDate(r.updated);
@@ -2539,7 +2577,7 @@ refreshWeak();
       nb.value = FRNOTES["t:" + r.key] || "";
       const gr = () => { nb.style.height = "auto"; nb.style.height = (nb.scrollHeight + 2) + "px"; };
       nb.addEventListener("input", gr); nb.addEventListener("change", () => setNote("t:" + r.key, nb.value));
-      d.append(hd, nb, m, bt); box.appendChild(d); gr();
+      d.append(hd, trl, nb, m, bt); box.appendChild(d); gr();
     }
     refreshWeak();
   }

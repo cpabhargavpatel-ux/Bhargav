@@ -108,6 +108,13 @@ Click any word in the subtitles to see its meaning and save it; saved words have
 Word and line translations use a free online service, so they need an internet connection (everything else works offline).
 Your latest recording of each video and your saved words are stored in your account.
 
+## Live English translation under French sentences
+
+On **French > Sentences**, the English translation appears under the sentence as you type, and under each saved sentence
+(untick "Show the English translation" to hide it). Chrome and Edge (138 or newer) have a translator built in: after a
+one-time "Download offline translator" click it works offline and sends nothing anywhere. Until then, and in other browsers,
+the server looks the sentence up (needs internet) — you never leave the page. Translations are remembered in the browser.
+
 ## Run it automatically at sign-in (optional)
 
 Task Scheduler → Create Task:
