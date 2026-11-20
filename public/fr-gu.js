@@ -15,7 +15,7 @@
     "o":  { gu: "ઓ",  note: "like ઓ, held steady, lips rounded — no glide" },
     "ɔ":  { gu: "ઑ",  note: "open ઓ, like ઑ in “ball” (as in બૉલ)" },
     "u":  { gu: "ઊ",  note: "like ઊ (pool), lips very round" },
-    "y":  { gu: "ઈ",  ap: 1, note: "no Gujarati letter — say ઈ with your lips rounded as for ઊ, as one steady vowel" },
+    "y":  { gu: "યૂ", ap: 1, note: "no Gujarati letter — written યૂ, but say ઈ with your lips rounded as for ઊ, as one steady vowel (not “yoo”)" },
     "ø": { gu: "એ",  ap: 1, note: "no Gujarati letter — say એ with your lips rounded as for ઓ" },
     "œ": { gu: "ઍ",  ap: 1, note: "no Gujarati letter — say ઍ with your lips rounded" },
     "ə":  { gu: "અ",  note: "the weak અ, often dropped" },
@@ -61,7 +61,7 @@
   /* English: the same spellings as the English row (ee, sh, on, zh …) written together, with a hyphen between syllables: bon-zhoor */
   function mergeEn(tk) {
     var say = window.FRIPA && window.FRIPA.say; if (!say) return "";
-    var it = tk.map(function (t) { return { t: norm(t).charAt(0), v: isV(t), s: say(t) || String(t) }; }), cut = {}, vi = [];
+    var it = tk.map(function (t) { return { t: norm(t).charAt(0), v: isV(t), s: (norm(t).charAt(0) === "ɥ" ? "w" : say(t)) || String(t) }; }), cut = {}, vi = [];
     it.forEach(function (x, i) { if (x.v) vi.push(i); });
     for (var k = 1; k < vi.length; k++) {
       var a = vi[k - 1], b = vi[k], n = b - a - 1;
@@ -74,8 +74,8 @@
   }
   /* Gujarati: consonant + vowel sign (ો), a consonant followed by a consonant gets a halant (સ્વ), nasal vowels take the dot (ં),
      a vowel at the start of a syllable is written in full (આ). A final consonant is written plain: Gujarati does not say a final “a”. */
-  var MATRA = { i: "ી", e: "ે", "ɛ": "ૅ", a: "ા", "ɑ": "ા", o: "ો", "ɔ": "ૉ", u: "ૂ", y: "ી", "ø": "ે", "œ": "ૅ", "ə": "" };
-  var INDEP = { i: "ઈ", e: "એ", "ɛ": "ઍ", a: "આ", "ɑ": "આ", o: "ઓ", "ɔ": "ઑ", u: "ઊ", y: "ઈ", "ø": "એ", "œ": "ઍ", "ə": "અ" };
+  var MATRA = { i: "ી", e: "ે", "ɛ": "ૅ", a: "ા", "ɑ": "ા", o: "ો", "ɔ": "ૉ", u: "ૂ", y: "્યૂ", "ø": "ે", "œ": "ૅ", "ə": "" };
+  var INDEP = { i: "ઈ", e: "એ", "ɛ": "ઍ", a: "આ", "ɑ": "આ", o: "ઓ", "ɔ": "ઑ", u: "ઊ", y: "યૂ", "ø": "એ", "œ": "ઍ", "ə": "અ" };
   var NASALV = { "ɛ": "e", "ɑ": "a", "ɔ": "o", "œ": "ə" };       // a nasal vowel is written with the plain vowel + ં (ઓં, not ઑં)
   var MERGED_C = { "ʁ": "ર" };                                    // inside a whole word the French r is written ર, as Gujarati writers usually do (the row above keeps the “gargle” ગ઼)
   function mergeGu(tk) {
@@ -83,6 +83,7 @@
     tk.forEach(function (t) {
       var d = norm(t), base = d.charAt(0), nasal = d.length > 1 && d.charAt(1) === "̃";
       if (isV(t)) { if (nasal) base = NASALV[base] || base; out += prevC ? MATRA[base] : INDEP[base]; if (nasal) out += A; prevC = false; return; }
+      if (base === "ɥ") { out += prevC ? "ુ" : "ઉ"; prevC = false; return; }      // huit, nuit: a quick ઉ before the next vowel (નુઈ)
       var e = find(t); if (!e) return;
       if (prevC) out += "્";
       out += MERGED_C[norm(t)] || e.gu; prevC = true;
