@@ -202,3 +202,12 @@ Under the English sound in each word's letters→sounds map there is a third row
 A sound with a dotted underline has no exact Gujarati letter (ü, eu, the throaty r, …): hover it, or open the sound in the
 player, to read how to adjust. The table is in `public/fr-gu.js` — it is easy to correct a letter there if one does not sound right to you.
 The Gujarati letters use your device's own Gujarati font (Nirmala UI on Windows, the built-in one on iPhone and iPad).
+
+### Merged sounds
+
+Under the letters→sounds map there is a line of **merged sounds**: each word's sounds joined into one spelling instead of sound by
+sound — in English (`bon-zhoor`, `mehr-see`: the same spellings as the English row, with a hyphen between syllables) and in Gujarati
+(`બોંઝૂર`, `મૅર્સી`: consonant + vowel sign, a halant between consonants, a dot for nasal vowels, a final consonant written plain).
+In a sentence every word gets its own tile (c’est and l’heure are one tile each) and the tile of the word being said lights up.
+The **Merged sounds** tick in the Options turns the line on or off; it shows the English half when *English sounds* is ticked and the
+Gujarati half when *Gujarati sounds* is ticked. The French r is written ર in these whole-word spellings.

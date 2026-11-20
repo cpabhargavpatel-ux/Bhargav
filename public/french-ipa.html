@@ -403,6 +403,17 @@
   /* Gujarati row, under the English one */
   .lm-ar.g { background: #8a3fb5; }
   .lm-ar.g::after { border-top-color: #8a3fb5; }
+  /* merged sounds: the whole word as one spelling, under the map */
+  .lm-merge { display: none; flex-wrap: wrap; gap: 8px 12px; margin: 8px 0 2px; }
+  .lm-merge[hidden] { display: none !important; }
+  body.show-mg.show-anc .lm-merge, body.show-mg.show-gu .lm-merge { display: flex; }
+  .lm-merge .mg { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 12px; border-radius: 10px; background: #fff9ee; border: 1px solid #f0dcb4; min-width: 0; }
+  .lm-merge .mg.miss { background: transparent; border-style: dashed; color: #8a8f99; font-style: italic; }
+  .lm-merge .mg-en { display: none; font: 700 1.15rem/1.25 var(--serif); color: #0b4f7c; letter-spacing: .01em; }
+  .lm-merge .mg-gu { display: none; font: 600 1.2rem/1.3 "Nirmala UI", "Noto Sans Gujarati", "Gujarati Sangam MN", "Shruti", system-ui, sans-serif; color: #6b2d94; }
+  body.show-anc .lm-merge .mg-en, body.show-gu .lm-merge .mg-gu { display: block; }
+  .lm-merge .mg.miss .mg-en { display: block; font-weight: 400; color: #8a8f99; }
+  .lm-merge .mg.now { background: #fff2c2; border-color: #f0b429; box-shadow: 0 0 0 2px #f0b429; }
   .lm-gu { display: none; font: 600 1.02rem/1.25 "Nirmala UI", "Noto Sans Gujarati", "Gujarati Sangam MN", "Shruti", system-ui, sans-serif; color: #6b2d94; padding: 0 5px; border-radius: 6px; background: #f5eefb; white-space: nowrap; cursor: default; }
   .lm-gu.ap { text-decoration: underline dotted #8a3fb5; text-underline-offset: 3px; }
   .lm-gu:hover { outline: 2px solid #8a3fb5; }
@@ -756,6 +767,7 @@
           <label class="enlab" title="Under the letters of the word, show the French sound each one makes (IPA)"><input type="checkbox" id="mapToggle" checked> French sounds</label>
           <label class="enlab" title="Under each French sound, show an arrow to the English sound (ee, sh, eh…)"><input type="checkbox" id="ancToggle" checked> English sounds</label>
           <label class="enlab" title="Under the English sound, show the closest Gujarati sound (ઈ, શ, આં…)"><input type="checkbox" id="guToggle" checked> Gujarati sounds</label>
+          <label class="enlab" title="Under the map: each word's sounds joined into ONE spelling, in English (bon-zhoor) and Gujarati (બોંઝૂર)"><input type="checkbox" id="mgToggle" checked> Merged sounds</label>
           <label class="enlab" title="On each sound tile (and under the player): the English word that has the sound, with a speaker to hear it"><input type="checkbox" id="tancToggle" checked> Anchor words</label>
           <label class="enlab" title="A picture of the tongue and lips for the sound being said"><input type="checkbox" id="mouthToggle" checked> Mouth</label>
         </span>
@@ -1236,16 +1248,35 @@ function drawUnits(parent, units, seps) {
     eaten += un0.l.length; put(eaten);
   });
 }
+/* MERGED SOUNDS: under a map, each word's sounds joined into one spelling \u2014 English (bon-zhoor) and Gujarati (\u0AAC\u0ACB\u0A82\u0A9D\u0AC2\u0AB0) */
+function unitTokens(units) { return (units || []).reduce((a, u) => u.silent ? a : a.concat(u.p), []); }
+function renderMerge(box, tiles) {
+  if (!box || !box.parentNode) return;
+  let mg = box.nextElementSibling;
+  if (!mg || !mg.classList.contains("lm-merge")) { mg = document.createElement("div"); mg.className = "lm-merge"; mg.setAttribute("aria-label", "Merged sounds: the whole word, in English and Gujarati"); box.parentNode.insertBefore(mg, box.nextSibling); }
+  mg.textContent = "";
+  let n = 0;
+  (tiles || []).forEach(t => {
+    const m = window.FRGU && t.tokens && t.tokens.length ? FRGU.merge(t.tokens) : null;
+    const d = document.createElement("div"); d.className = "mg" + (m ? "" : " miss"); if (t.tok != null) d.dataset.t = t.tok;
+    if (!m) { d.innerHTML = '<span class="mg-en"></span>'; d.firstChild.textContent = t.w || ""; mg.appendChild(d); return; }
+    d.title = "The sounds of \u201C" + (t.w || "") + "\u201D joined into one spelling";
+    d.innerHTML = '<span class="mg-en"></span><span class="mg-gu"></span>';
+    d.children[0].textContent = m.en; d.children[1].textContent = m.gu; mg.appendChild(d); n++;
+  });
+  mg.hidden = box.hidden || !n;
+}
 function renderMap(word, ipa) {
   const box = document.getElementById("lmap"); if (!box) return;
   box.classList.remove("multi"); box.textContent = ""; box.dataset.src = word || "";
   const a = alignAny(word, ipa);
   if (!a) {
     if (word && ipa && /['\u2019\-]/.test(word)) { renderSentenceMap(box, word); box.classList.add("multi"); return; }      // week-end and the like: map the parts one by one
-    box.hidden = true; return;
+    box.hidden = true; renderMerge(box, []); return;
   }
   drawUnits(box, a.units, a.seps);
   box.hidden = false;
+  renderMerge(box, [{ w: word, tokens: unitTokens(a.units) }]);
 }
 /* a whole sentence: every word gets its own letters -> sounds map, looked up in the vocabulary lists (l\u2019homme and est-ce are split at the ' or -) */
 /* rule-based French pronouncer for words that are not in the lists: spelling -> IPA (an estimate) */
@@ -1357,15 +1388,19 @@ function renderSentenceMap(box, text) {
   if (!box) return;
   box.textContent = ""; box.dataset.src = text || "";
   const parts = window.FRALIGN ? sentenceParts(text) : [];
-  let any = false;
+  let any = false; const mtiles = [];
   parts.forEach(pt => {
     const g = document.createElement("div"), ap = alignPart(pt), units = ap && ap.units;
     g.dataset.t = pt.t;
     if (units) { g.className = "lm-w" + (pt.e.guess ? " guess" : ""); drawUnits(g, units, ap.seps); any = true; g.title = pt.e.guess ? "\u201C" + pt.w + "\u201D is not in the word list \u2014 its sounds are estimated from the spelling" : (pt.e[2] ? pt.w + " \u2014 " + pt.e[2] : ""); }
     else { g.className = "lm-w miss"; g.title = "No pronunciation data for \u201C" + pt.w + "\u201D"; g.innerHTML = '<span class="lm-l">' + esc(pt.w) + "</span>"; }
     box.appendChild(g);
+    const last = mtiles[mtiles.length - 1];                                            // l\u2019heure, c\u2019est: the parts of one written word become ONE merged tile
+    if (last && last.tok === pt.t) { last.w += "\u2019" + pt.w; last.tokens = last.tokens && units ? last.tokens.concat(unitTokens(units)) : null; }
+    else mtiles.push({ w: pt.w, tokens: units ? unitTokens(units) : null, tok: pt.t });
   });
   box.hidden = !any;
+  renderMerge(box, mtiles);
 }
 /* MOUTH: tongue + lips for the sound being said (fr-mouth.js). It follows the selected sound, and the sound being spoken. */
 let mouthOn = true, mouthSym = "";
@@ -1434,6 +1469,8 @@ function karaokeStart(text, rate, voiceName) {
     document.querySelectorAll(".now").forEach(e => e.classList.remove("now"));
     lastW = w; lastS = si; if (!w) return;
     if (sent) w.g.classList.add("now");
+    const mgBox = box.nextElementSibling;                                              // the merged-sounds tile of the same word
+    if (mgBox && mgBox.classList.contains("lm-merge")) (sent ? mgBox.querySelectorAll('.mg[data-t="' + w.tok + '"]') : mgBox.querySelectorAll(".mg")).forEach(m => m.classList.add("now"));
     const el = w.sounds[si]; if (!el) return;
     if (mouthOn) showMouth(el.dataset.s);
     if (hlOn) {
@@ -1520,6 +1557,10 @@ function karaokeStart(text, rate, voiceName) {
   try { ong = localStorage.getItem("fr-showgu") !== "0"; } catch (e) {}
   gt.checked = ong; document.body.classList.toggle("show-gu", ong);
   gt.addEventListener("change", () => { document.body.classList.toggle("show-gu", gt.checked); karaokeStop(); try { localStorage.setItem("fr-showgu", gt.checked ? "1" : "0"); } catch (e) {} });
+  const mgt = document.getElementById("mgToggle"); let onm = true;
+  try { onm = localStorage.getItem("fr-showmg") !== "0"; } catch (e) {}
+  mgt.checked = onm; document.body.classList.toggle("show-mg", onm);
+  mgt.addEventListener("change", () => { document.body.classList.toggle("show-mg", mgt.checked); try { localStorage.setItem("fr-showmg", mgt.checked ? "1" : "0"); } catch (e) {} });
   const hg = document.getElementById("hlguToggle");
   try { hlGu = localStorage.getItem("fr-hlgu") !== "0"; } catch (e) {}
   hg.checked = hlGu;
