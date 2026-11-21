@@ -16,8 +16,8 @@
     "ɔ":  { gu: "ઑ",  note: "open ઓ, like ઑ in “ball” (as in બૉલ)" },
     "u":  { gu: "ઊ",  note: "like ઊ (pool), lips very round" },
     "y":  { gu: "યૂ", ap: 1, note: "no Gujarati letter — written યૂ, but say ઈ with your lips rounded as for ઊ, as one steady vowel (not “yoo”)" },
-    "ø": { gu: "એ",  ap: 1, note: "no Gujarati letter — say એ with your lips rounded as for ઓ" },
-    "œ": { gu: "ઍ",  ap: 1, note: "no Gujarati letter — say ઍ with your lips rounded" },
+    "ø": { gu: "અ",  ap: 1, note: "no Gujarati letter — written અ (like the “uh” of “euh”), but say it with your lips rounded, a little further forward" },
+    "œ": { gu: "અ",  ap: 1, note: "no Gujarati letter — written અ, but say it with your lips rounded (shorter and more open than the eu of peu)" },
     "ə":  { gu: "અ",  note: "the weak અ, often dropped" },
     /* nasal vowels: the vowel with the nose open (anusvara), no n or g said */
     ["ɛ" + T]: { gu: "એ" + A, note: "એં — air through the nose, don’t pronounce the ન" },
@@ -74,15 +74,20 @@
   }
   /* Gujarati: consonant + vowel sign (ો), a consonant followed by a consonant gets a halant (સ્વ), nasal vowels take the dot (ં),
      a vowel at the start of a syllable is written in full (આ). A final consonant is written plain: Gujarati does not say a final “a”. */
-  var MATRA = { i: "ી", e: "ે", "ɛ": "ૅ", a: "ા", "ɑ": "ા", o: "ો", "ɔ": "ૉ", u: "ૂ", y: "્યૂ", "ø": "ે", "œ": "ૅ", "ə": "" };
-  var INDEP = { i: "ઈ", e: "એ", "ɛ": "ઍ", a: "આ", "ɑ": "આ", o: "ઓ", "ɔ": "ઑ", u: "ઊ", y: "યૂ", "ø": "એ", "œ": "ઍ", "ə": "અ" };
+  var MATRA = { i: "ી", e: "ે", "ɛ": "ૅ", a: "ા", "ɑ": "ા", o: "ો", "ɔ": "ૉ", u: "ૂ", y: "્યૂ", "ø": "", "œ": "", "ə": "" };
+  var INDEP = { i: "ઈ", e: "એ", "ɛ": "ઍ", a: "આ", "ɑ": "આ", o: "ઓ", "ɔ": "ઑ", u: "ઊ", y: "યૂ", "ø": "અ", "œ": "અ", "ə": "અ" };
   var NASALV = { "ɛ": "e", "ɑ": "a", "ɔ": "o", "œ": "ə" };       // a nasal vowel is written with the plain vowel + ં (ઓં, not ઑં)
   var MERGED_C = { "ʁ": "ર" };                                    // inside a whole word the French r is written ર, as Gujarati writers usually do (the row above keeps the “gargle” ગ઼)
   function mergeGu(tk) {
     var out = "", prevC = false;
-    tk.forEach(function (t) {
+    tk.forEach(function (t, i) {
       var d = norm(t), base = d.charAt(0), nasal = d.length > 1 && d.charAt(1) === "̃";
-      if (isV(t)) { if (nasal) base = NASALV[base] || base; out += prevC ? MATRA[base] : INDEP[base]; if (nasal) out += A; prevC = false; return; }
+      if (isV(t)) {
+        if (nasal) base = NASALV[base] || base;
+        var m = prevC ? MATRA[base] : INDEP[base]; out += m;
+        if (prevC && m === "" && !nasal && i === tk.length - 1) out += "અ";       // a final “uh” after a consonant is written out (પઅ), or Gujarati would drop it
+        if (nasal) out += A; prevC = false; return;
+      }
       if (base === "ɥ") { out += prevC ? "ુ" : "ઉ"; prevC = false; return; }      // huit, nuit: a quick ઉ before the next vowel (નુઈ)
       var e = find(t); if (!e) return;
       if (prevC) out += "્";
